@@ -1,7 +1,18 @@
 // Seed script for local D1 dev database.
-// Requires SLICE-2 (Drizzle schema + migrations) to be complete before running.
-//
 // Usage: pnpm seed
+//
+// Hashes passwords with PBKDF2 (same algorithm as auth.server.ts) then
+// inserts 5 family accounts + 10 sample recipes via `wrangler d1 execute`.
+
+import { execFileSync } from "node:child_process";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(__dirname, "..");
+const WRANGLER = join(ROOT, "node_modules", ".bin", "wrangler");
 
 export const FAMILY_ACCOUNTS = [
   { email: "henry@spice.local", name: "Henry", passwordPlain: "change-me-henry" },
@@ -198,15 +209,148 @@ export const SAMPLE_RECIPES = [
   },
 ];
 
+const PBKDF2_ITERATIONS = 100_000;
+
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await globalThis.crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    keyMaterial,
+    256
+  );
+  const saltHex = Array.from(salt)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const hashHex = Array.from(new Uint8Array(bits))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `${saltHex}:${hashHex}`;
+}
+
+function esc(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+function slug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 async function main() {
-  console.log("ProjectSpice seed script");
-  console.log("Requires SLICE-2 (Drizzle schema) to be complete before running.\n");
-  console.log(`Will create ${FAMILY_ACCOUNTS.length} family accounts:`);
-  FAMILY_ACCOUNTS.forEach((a) => console.log(`  - ${a.name} <${a.email}>`));
-  console.log(`\nWill create ${SAMPLE_RECIPES.length} sample recipes:`);
-  SAMPLE_RECIPES.forEach((r) => console.log(`  - ${r.title}`));
-  console.log("\nRe-run after SLICE-2 is delivered.");
-  process.exit(0);
+  console.log("ProjectSpice seed script\n");
+
+  // 1. Hash passwords (PBKDF2, same algo as auth.server.ts)
+  console.log("Hashing passwords...");
+  const now = Date.now();
+  const users = await Promise.all(
+    FAMILY_ACCOUNTS.map(async (a) => ({
+      id: globalThis.crypto.randomUUID(),
+      email: a.email,
+      name: a.name,
+      passwordHash: await hashPassword(a.passwordPlain),
+    }))
+  );
+  const henry = users[0];
+
+  // 2. Build tag set (deduped) for Henry's sample recipes
+  const allTags = [...new Set(SAMPLE_RECIPES.flatMap((r) => r.tags))];
+  const tagRows = allTags.map((name) => ({
+    id: globalThis.crypto.randomUUID(),
+    name,
+  }));
+  const tagIdByName = Object.fromEntries(tagRows.map((t) => [t.name, t.id]));
+
+  // 3. Build recipe rows
+  const recipeRows = SAMPLE_RECIPES.map((r) => ({
+    id: globalThis.crypto.randomUUID(),
+    title: r.title,
+    slug: slug(r.title),
+    sourceType: r.source_type,
+    prepTimeMin: r.prep_time_min,
+    activeTimeMin: r.active_time_min,
+    totalTimeMin: r.total_time_min,
+    servings: r.servings,
+    description: r.description,
+    directionsText: r.directions_text,
+    ingredients: r.ingredients,
+    tags: r.tags,
+  }));
+
+  // 4. Build SQL
+  const lines: string[] = [];
+
+  // Clear existing seed data (idempotent)
+  lines.push("DELETE FROM users;");
+
+  // Users
+  for (const u of users) {
+    lines.push(
+      `INSERT INTO users (id, email, password_hash, name, created_at) VALUES ('${u.id}', '${esc(u.email)}', '${esc(u.passwordHash)}', '${esc(u.name)}', ${now});`
+    );
+  }
+
+  // Tags (Henry's)
+  for (const t of tagRows) {
+    lines.push(
+      `INSERT INTO tags (id, user_id, name, created_at) VALUES ('${t.id}', '${henry.id}', '${esc(t.name)}', ${now});`
+    );
+  }
+
+  // Recipes + ingredients + recipe_tags (all under Henry)
+  for (const r of recipeRows) {
+    lines.push(
+      `INSERT INTO recipes (id, user_id, title, slug, source_type, description, prep_time_min, active_time_min, total_time_min, servings, directions_text, visibility, created_at, updated_at) VALUES ('${r.id}', '${henry.id}', '${esc(r.title)}', '${esc(r.slug)}', '${esc(r.sourceType)}', '${esc(r.description ?? "")}', ${r.prepTimeMin ?? "NULL"}, ${r.activeTimeMin ?? "NULL"}, ${r.totalTimeMin ?? "NULL"}, ${r.servings ?? "NULL"}, '${esc(r.directionsText)}', 'private', ${now}, ${now});`
+    );
+
+    r.ingredients.forEach((ing, i) => {
+      const ingId = globalThis.crypto.randomUUID();
+      lines.push(
+        `INSERT INTO ingredients (id, recipe_id, sort_order, quantity_raw, unit_raw, name) VALUES ('${ingId}', '${r.id}', ${i}, '${esc(ing.quantity_raw ?? "")}', '${esc(ing.unit_raw ?? "")}', '${esc(ing.name)}');`
+      );
+    });
+
+    for (const tagName of r.tags) {
+      const tagId = tagIdByName[tagName];
+      if (tagId) {
+        lines.push(
+          `INSERT INTO recipe_tags (recipe_id, tag_id) VALUES ('${r.id}', '${tagId}');`
+        );
+      }
+    }
+  }
+
+  // 5. Write temp SQL file and execute
+  const sqlFile = join(tmpdir(), `projectspice-seed-${Date.now()}.sql`);
+  writeFileSync(sqlFile, lines.join("\n") + "\n");
+
+  console.log(
+    `Executing ${lines.length} SQL statements against local D1...\n`
+  );
+  try {
+    execFileSync(WRANGLER, ["d1", "execute", "DB", "--local", `--file=${sqlFile}`], {
+      stdio: "inherit",
+      cwd: ROOT,
+    });
+  } finally {
+    unlinkSync(sqlFile);
+  }
+
+  console.log("\nSeed complete!");
+  console.log(`  ${users.length} family accounts created:`);
+  FAMILY_ACCOUNTS.forEach((a) =>
+    console.log(`    ${a.name} <${a.email}> / ${a.passwordPlain}`)
+  );
+  console.log(`  ${recipeRows.length} sample recipes seeded under Henry`);
 }
 
 main().catch((e) => {
