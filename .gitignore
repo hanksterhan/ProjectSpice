@@ -1,0 +1,18 @@
+node_modules/
+build/
+.wrangler/
+.react-router/
+dist/
+
+# Secrets — never commit
+.dev.vars
+.env
+
+# Editor
+.DS_Store
+*.local
+.vscode/
+.idea/
+
+# Wrangler generated types (regenerated on install)
+worker-configuration.d.ts
