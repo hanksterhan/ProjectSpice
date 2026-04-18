@@ -58,30 +58,21 @@ const UNICODE_FRACTION_PATTERN = /[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚]/;
 /** Characters that may appear in a quantity token (digit, fraction chars, space, dash, slash, dot) */
 const QUANTITY_CHARS_RE = /^[\d⅛¼⅓⅜½⅝⅔¾⅞ \-\/\.]+$/;
 
-// ---------------------------------------------------------------------------
-// Step 2: Weight-in-parens patterns
-// ---------------------------------------------------------------------------
-
 /**
- * Matches parenthesised weight expressions, e.g.:
- *   (6.1 oz / 173g)   (14.5 oz)   (411g)   (1 lb)   (250g)   (1 oz)
- *
- * Capture groups:
- *   1 – optional "oz" amount
- *   2 – optional "g" amount
- *   3 – optional "kg" amount
- *   4 – optional "lb" amount
+ * Captures the raw quantity token before any normalization so quantity_raw
+ * preserves the original notation (½, 11/2, 1 ½, etc.).
+ * Order of alternatives matters: longest match wins.
  */
-const WEIGHT_PARENS_RE =
-  /\(\s*(?:(\d+(?:\.\d+)?)\s*oz\s*(?:\/\s*)?)?(?:(\d+(?:\.\d+)?)\s*g\b)?(?:\s*(?:\/\s*)?(\d+(?:\.\d+)?)\s*kg)?\s*\)/gi;
+const UNICODE_FRAC_CLASS = "½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚";
+const QTY_RAW_RE = new RegExp(
+  `^([${UNICODE_FRAC_CLASS}]` +
+  `|\\d+(?:\\.\\d+)?(?:[${UNICODE_FRAC_CLASS}]|\\s+[${UNICODE_FRAC_CLASS}]|\\s+\\d+\\/\\d+|\\/\\d+)?` +
+  `|\\d+\\/\\d+)`
+);
 
-// Separate simpler pattern to also capture lb-only and standalone oz-only cleanly
-const WEIGHT_PARENS_FULL_RE =
-  /\(\s*(?:(\d+(?:\.\d+)?)\s*oz(?:\s*\/\s*(\d+(?:\.\d+)?)\s*g)?)?\s*\)|(\((\d+(?:\.\d+)?)\s*g\))|(\((\d+(?:\.\d+)?)\s*kg\))|(\((\d+(?:\.\d+)?)\s*lb\))/gi;
-
-// Consolidated weight extractor using a single regex
-const WEIGHT_PARENS_COMBINED_RE =
-  /\(\s*(?:(?:(\d+(?:\.\d+)?)\s*oz)(?:\s*\/\s*(\d+(?:\.\d+)?)\s*g)?|(?:(\d+(?:\.\d+)?)\s*g\b)|(?:(\d+(?:\.\d+)?)\s*kg\b)|(?:(\d+(?:\.\d+)?)\s*lb\b))\s*\)/gi;
+// ---------------------------------------------------------------------------
+// Step 2: Weight-in-parens extraction
+// ---------------------------------------------------------------------------
 
 function extractWeightInParens(text: string): {
   cleaned: string;
@@ -360,9 +351,18 @@ function parseIngredientText(text: string): RawParsed {
     remaining = remaining.slice(0, remaining.length - notesMatch[0].length).trim();
   }
 
-  // Also capture comma-separated qualifiers as notes (e.g. "softened", "minced")
-  // Only if there's a comma after a reasonable name length
-  // We skip this to keep the name intact as many tests expect the comma-separated part in name.
+  // Comma-suffix qualifier: extract short post-comma text as notes.
+  // Threshold ≤2 words avoids splitting "boneless, skinless chicken thighs".
+  if (notes === null) {
+    const commaIdx = remaining.indexOf(",");
+    if (commaIdx !== -1) {
+      const postComma = remaining.slice(commaIdx + 1).trim();
+      if (postComma.split(/\s+/).filter(Boolean).length <= 2) {
+        notes = postComma || null;
+        remaining = remaining.slice(0, commaIdx).trim();
+      }
+    }
+  }
 
   const name = remaining.replace(/\s+/g, " ").trim();
 
@@ -458,6 +458,10 @@ export function parseIngredientLine(
   const { cleaned: afterFootnotes, footnote_ref } = extractFootnotes(working);
   working = afterFootnotes;
 
+  // Capture raw quantity now — before normalization steps alter the notation.
+  const rawQtyCapture = working.match(QTY_RAW_RE);
+  const quantity_raw_captured = rawQtyCapture ? rawQtyCapture[1].trim() : "";
+
   // -------------------------------------------------------------------------
   // Step 4: Unicode fraction normalization
   // -------------------------------------------------------------------------
@@ -481,7 +485,7 @@ export function parseIngredientLine(
   const quantity_decimal = parseQuantityDecimal(raw.quantity);
 
   return {
-    quantity_raw: raw.quantity,
+    quantity_raw: quantity_raw_captured,
     quantity_decimal,
     unit_raw: raw.unit,
     unit_canonical,

@@ -160,7 +160,8 @@ describe("parseIngredientLine – weight in parens", () => {
       null
     );
     expect(approx(r.weight_g, 411, 1)).toBe(true);
-    expect(r.name).toMatch(/diced tomatoes/i);
+    expect(r.name).toBe("diced tomatoes");
+    expect(r.notes).toBe("drained");
   });
 
   it("(1 oz) capers → weight_g ≈ 28.35", () => {
@@ -298,6 +299,8 @@ describe("parseIngredientLine – standard ingredient lines", () => {
   it("4 oz cream cheese, softened", () => {
     const r = parseIngredientLine("4 oz cream cheese, softened", null);
     expect(r.unit_canonical).toBe("oz");
+    expect(r.name).toBe("cream cheese");
+    expect(r.notes).toBe("softened");
   });
 
   it("200g unsalted butter", () => {
@@ -357,10 +360,11 @@ describe("parseIngredientLine – Paprika real-world edge cases", () => {
     expect(approx(r.weight_g, 14 * 28.3495, 1)).toBe(true);
   });
 
-  it("3 cloves garlic, minced ① → footnote_ref='①'", () => {
+  it("3 cloves garlic, minced ① → footnote_ref='①', notes='minced'", () => {
     const r = parseIngredientLine("3 cloves garlic, minced ①", null);
     expect(r.footnote_ref).toBe("①");
-    expect(r.name).not.toContain("①");
+    expect(r.name).toBe("garlic");
+    expect(r.notes).toBe("minced");
   });
 
   it("1½ teaspoons ground cumin → quantity_decimal≈1.5, unit_canonical='tsp'", () => {
@@ -382,9 +386,10 @@ describe("parseIngredientLine – Paprika real-world edge cases", () => {
     expect(approx(r.quantity_decimal, 2.5)).toBe(true);
   });
 
-  it("6 large eggs, beaten → quantity_decimal=6", () => {
+  it("6 large eggs, beaten → quantity_decimal=6, notes='beaten'", () => {
     const r = parseIngredientLine("6 large eggs, beaten", null);
     expect(r.quantity_decimal).toBe(6);
+    expect(r.notes).toBe("beaten");
   });
 
   it("1 cup (240ml) heavy cream → weight_g=null, unit_canonical='cup'", () => {
@@ -397,5 +402,71 @@ describe("parseIngredientLine – Paprika real-world edge cases", () => {
   it("pinch of cayenne pepper → unit_canonical='pinch'", () => {
     const r = parseIngredientLine("pinch of cayenne pepper", null);
     expect(r.unit_canonical).toBe("pinch");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SECTION: URL scraper fixture cases (8 cases)
+// Covers patterns common on recipe websites: multi-word units, parenthetical
+// brand hints, comma qualifiers, "to taste", and quantity_raw preservation.
+// ---------------------------------------------------------------------------
+
+describe("parseIngredientLine – URL scraper fixture cases", () => {
+  it("⅔ cup plain Greek yogurt → qty≈0.667, quantity_raw='⅔'", () => {
+    const r = parseIngredientLine("⅔ cup plain Greek yogurt", null);
+    expect(approx(r.quantity_decimal, 2 / 3, 0.005)).toBe(true);
+    expect(r.quantity_raw).toBe("⅔");
+    expect(r.unit_canonical).toBe("cup");
+  });
+
+  it("4 fl oz whole milk → unit_canonical='fl_oz'", () => {
+    const r = parseIngredientLine("4 fl oz whole milk", null);
+    expect(r.unit_canonical).toBe("fl_oz");
+    expect(r.quantity_decimal).toBe(4);
+    expect(r.quantity_raw).toBe("4");
+  });
+
+  it("1 tablespoon soy sauce (low sodium) → notes='low sodium', name='soy sauce'", () => {
+    const r = parseIngredientLine("1 tablespoon soy sauce (low sodium)", null);
+    expect(r.unit_canonical).toBe("tbsp");
+    expect(r.name).toBe("soy sauce");
+    expect(r.notes).toBe("low sodium");
+  });
+
+  it("3 cloves garlic, pressed → name='garlic', notes='pressed'", () => {
+    const r = parseIngredientLine("3 cloves garlic, pressed", null);
+    expect(r.unit_canonical).toBe("count");
+    expect(r.name).toBe("garlic");
+    expect(r.notes).toBe("pressed");
+    expect(r.quantity_raw).toBe("3");
+  });
+
+  it("kosher salt, to taste → qty=null, notes='to taste', name='kosher salt'", () => {
+    const r = parseIngredientLine("kosher salt, to taste", null);
+    expect(r.quantity_decimal).toBeNull();
+    expect(r.unit_canonical).toBeNull();
+    expect(r.name).toBe("kosher salt");
+    expect(r.notes).toBe("to taste");
+  });
+
+  it("1 lb (453g) lean ground beef → weight_g≈453, unit_canonical='lb'", () => {
+    const r = parseIngredientLine("1 lb (453g) lean ground beef", null);
+    expect(approx(r.weight_g, 453, 1)).toBe(true);
+    expect(r.unit_canonical).toBe("lb");
+    expect(r.quantity_raw).toBe("1");
+  });
+
+  it("2 cups chicken broth or stock → name includes 'or stock', no comma split", () => {
+    const r = parseIngredientLine("2 cups chicken broth or stock", null);
+    expect(r.quantity_decimal).toBe(2);
+    expect(r.unit_canonical).toBe("cup");
+    expect(r.name).toMatch(/or stock/);
+    expect(r.notes).toBeNull();
+  });
+
+  it("1½ cups flour — quantity_raw preserves '1½' before normalization", () => {
+    const r = parseIngredientLine("1½ cups flour", null);
+    expect(r.quantity_raw).toBe("1½");
+    expect(approx(r.quantity_decimal, 1.5)).toBe(true);
   });
 });
