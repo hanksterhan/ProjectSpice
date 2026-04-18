@@ -49,14 +49,12 @@ const UNICODE_FRACTIONS: ReadonlyMap<string, number> = new Map([
   ["⅚", 5 / 6],
 ]);
 
-const UNICODE_FRACTION_PATTERN = /[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚]/;
-
 // ---------------------------------------------------------------------------
 // Step 1: Group header detection regex
 // ---------------------------------------------------------------------------
 
 /** Characters that may appear in a quantity token (digit, fraction chars, space, dash, slash, dot) */
-const QUANTITY_CHARS_RE = /^[\d⅛¼⅓⅜½⅝⅔¾⅞ \-\/\.]+$/;
+const QUANTITY_CHARS_RE = /^[\d⅛¼⅓⅜½⅝⅔¾⅞ \-/.]+$/;
 
 /**
  * Captures the raw quantity token before any normalization so quantity_raw
