@@ -9,7 +9,8 @@
     {
       "binding": "DB",
       "database_name": "projectspice-dev",
-      "database_id": "local-dev"
+      "database_id": "local-dev",
+      "migrations_dir": "./drizzle"
     }
   ],
   "kv_namespaces": [
@@ -43,7 +44,8 @@
           "binding": "DB",
           "database_name": "projectspice-staging",
           // Run: wrangler d1 create projectspice-staging
-          "database_id": "REPLACE_WITH_STAGING_D1_ID"
+          "database_id": "REPLACE_WITH_STAGING_D1_ID",
+          "migrations_dir": "./drizzle"
         }
       ],
       "kv_namespaces": [
@@ -75,7 +77,8 @@
           "binding": "DB",
           "database_name": "projectspice-production",
           // Run: wrangler d1 create projectspice-production
-          "database_id": "REPLACE_WITH_PRODUCTION_D1_ID"
+          "database_id": "REPLACE_WITH_PRODUCTION_D1_ID",
+          "migrations_dir": "./drizzle"
         }
       ],
       "kv_namespaces": [
