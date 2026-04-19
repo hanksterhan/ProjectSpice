@@ -22,13 +22,18 @@ export function meta(_args: Route.MetaArgs) {
   return [{ title: "My Recipes — ProjectSpice" }];
 }
 
+const FTS_OPERATORS = new Set(["AND", "OR", "NOT"]);
+
 function sanitizeFtsQuery(q: string): string {
-  return q
+  const words = q
     .replace(/['"*()]/g, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .join(" ");
+    .filter((w) => !FTS_OPERATORS.has(w.toUpperCase()));
+  if (words.length === 0) return "";
+  // Quote each word so FTS5 treats them as exact tokens, not operators
+  return words.map((w) => `"${w}"`).join(" ");
 }
 
 function orderByClause(sort: SortOption): string {
@@ -45,7 +50,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const sort: SortOption = ["recent", "alpha", "most-made"].includes(rawSort)
     ? (rawSort as SortOption)
     : "recent";
-  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
+  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
   const d1 = context.cloudflare.env.DB;
