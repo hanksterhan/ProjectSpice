@@ -22,8 +22,11 @@ export default [
   // Settings
   route("settings/tags", "routes/settings.tags.tsx"),
   route("settings/cookbooks", "routes/settings.cookbooks.tsx"),
+  route("settings/collections", "routes/settings.collections.tsx"),
   // Cookbooks
   route("cookbooks/:id", "routes/cookbooks.$id.tsx"),
+  // Collections
+  route("collections/:id", "routes/collections.$id.tsx"),
   // Import API resource routes
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
