@@ -19,6 +19,8 @@ export default [
   route("imports/gpt", "routes/imports.gpt.tsx"),
   // URL scraper import
   route("imports/url", "routes/imports.url.tsx"),
+  // Settings
+  route("settings/tags", "routes/settings.tags.tsx"),
   // Import API resource routes
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
