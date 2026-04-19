@@ -112,48 +112,65 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     existingRows.map((r) => r.paprikaId).filter(Boolean)
   );
 
-  // ── Collect all unique tag names in this batch ──────────────────────────
-  const allTagNames = new Set<string>();
+  // ── Collect all unique category names in this batch ────────────────────
+  const allCategoryNames = new Set<string>();
   for (const r of recipes) {
     for (const cat of r.categories ?? []) {
       const t = cat.trim();
-      if (t) allTagNames.add(t);
+      if (t) allCategoryNames.add(t);
     }
   }
 
-  // ── Upsert tags, then build name→id map ─────────────────────────────────
-  if (allTagNames.size > 0) {
-    const tagInserts = Array.from(allTagNames).map((name) => ({
+  // ── Upsert tags (one per category name) + cookbooks (one per category) ──
+  if (allCategoryNames.size > 0) {
+    const categoryList = Array.from(allCategoryNames);
+
+    const tagInserts = categoryList.map((name) => ({
       id: crypto.randomUUID(),
       userId: user.id,
       name,
     }));
-    // Insert in batches of 100 to stay under D1 statement limits
     for (let i = 0; i < tagInserts.length; i += 100) {
       await db
         .insert(schema.tags)
         .values(tagInserts.slice(i, i + 100))
         .onConflictDoNothing();
     }
+
+    // Upsert cookbooks with the same names
+    const cookbookInserts = categoryList.map((name) => ({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      name,
+    }));
+    for (let i = 0; i < cookbookInserts.length; i += 100) {
+      await db
+        .insert(schema.cookbooks)
+        .values(cookbookInserts.slice(i, i + 100))
+        .onConflictDoNothing();
+    }
   }
 
-  // Query back to get real IDs (handles both newly inserted and pre-existing)
-  const tagNameList = Array.from(allTagNames);
-  const tagIdMap = new Map<string, string>(); // name → id
-  if (tagNameList.length > 0) {
-    // inArray has its own limits; chunk at 100
-    for (let i = 0; i < tagNameList.length; i += 100) {
-      const chunk = tagNameList.slice(i, i + 100);
-      const rows = await db
+  // Query back real IDs for tags and cookbooks
+  const categoryList = Array.from(allCategoryNames);
+  const tagIdMap = new Map<string, string>(); // name → tag id
+  const cookbookIdMap = new Map<string, string>(); // name → cookbook id
+  if (categoryList.length > 0) {
+    for (let i = 0; i < categoryList.length; i += 100) {
+      const chunk = categoryList.slice(i, i + 100);
+      const tagRows = await db
         .select({ id: schema.tags.id, name: schema.tags.name })
         .from(schema.tags)
+        .where(and(eq(schema.tags.userId, user.id), inArray(schema.tags.name, chunk)));
+      for (const row of tagRows) tagIdMap.set(row.name, row.id);
+
+      const cbRows = await db
+        .select({ id: schema.cookbooks.id, name: schema.cookbooks.name })
+        .from(schema.cookbooks)
         .where(
-          and(
-            eq(schema.tags.userId, user.id),
-            inArray(schema.tags.name, chunk)
-          )
+          and(eq(schema.cookbooks.userId, user.id), inArray(schema.cookbooks.name, chunk))
         );
-      for (const row of rows) tagIdMap.set(row.name, row.id);
+      for (const row of cbRows) cookbookIdMap.set(row.name, row.id);
     }
   }
 
@@ -168,10 +185,12 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   type RecipeRow = typeof schema.recipes.$inferInsert;
   type IngredientRow = typeof schema.ingredients.$inferInsert;
   type RecipeTagRow = typeof schema.recipeTags.$inferInsert;
+  type CookbookRecipeRow = typeof schema.cookbookRecipes.$inferInsert;
 
   const recipeRows: RecipeRow[] = [];
   const ingredientRows: IngredientRow[] = [];
   const recipeTagRows: RecipeTagRow[] = [];
+  const cookbookRecipeRows: CookbookRecipeRow[] = [];
 
   for (const raw of recipes) {
     if (!raw.uid || !raw.name) {
@@ -271,12 +290,13 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       });
     }
 
-    // Recipe → tag links
+    // Recipe → tag + cookbook links
     for (const cat of raw.categories ?? []) {
-      const tagId = tagIdMap.get(cat.trim());
-      if (tagId) {
-        recipeTagRows.push({ recipeId, tagId });
-      }
+      const name = cat.trim();
+      const tagId = tagIdMap.get(name);
+      if (tagId) recipeTagRows.push({ recipeId, tagId });
+      const cookbookId = cookbookIdMap.get(name);
+      if (cookbookId) cookbookRecipeRows.push({ cookbookId, recipeId, sortOrder: 0 });
     }
   }
 
@@ -297,10 +317,11 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   // D1 (SQLite) supports up to 999 bound params per statement.
   // recipes: ~25 cols → max 39 rows/statement; use 30 to stay safe.
   // ingredients: ~12 cols → max 83 rows/statement; use 80.
-  // recipe_tags: 2 cols → max 400 rows/statement; use 200.
+  // recipe_tags / cookbook_recipes: 2–3 cols → use 200/100 respectively.
   const RECIPE_CHUNK = 30;
   const INGREDIENT_CHUNK = 80;
   const TAG_CHUNK = 200;
+  const CB_RECIPE_CHUNK = 100;
 
   for (let i = 0; i < recipeRows.length; i += RECIPE_CHUNK) {
     const chunk = recipeRows.slice(i, i + RECIPE_CHUNK);
@@ -327,6 +348,15 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       await db.insert(schema.recipeTags).values(chunk).onConflictDoNothing();
     } catch (err) {
       errors.push(`Tag-link insert ${i}–${i + chunk.length} failed: ${String(err)}`);
+    }
+  }
+
+  for (let i = 0; i < cookbookRecipeRows.length; i += CB_RECIPE_CHUNK) {
+    const chunk = cookbookRecipeRows.slice(i, i + CB_RECIPE_CHUNK);
+    try {
+      await db.insert(schema.cookbookRecipes).values(chunk).onConflictDoNothing();
+    } catch (err) {
+      errors.push(`Cookbook-recipe insert ${i}–${i + chunk.length} failed: ${String(err)}`);
     }
   }
 
