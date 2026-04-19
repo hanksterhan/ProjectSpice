@@ -196,7 +196,7 @@ export default function RecipeDetail({
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link
-            to="/"
+            to="/recipes"
             className="text-muted-foreground hover:text-foreground text-sm"
           >
             ← Back
