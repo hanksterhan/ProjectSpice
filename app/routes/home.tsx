@@ -31,7 +31,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               Signed in as <strong>{loaderData.user.name}</strong> (
               {loaderData.user.email})
             </p>
-            <div className="flex gap-4 text-sm">
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <a
+                href="/recipes"
+                className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                My Recipes
+              </a>
+              <a
+                href="/imports/paprika"
+                className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                Import from Paprika
+              </a>
               <a
                 href="/change-password"
                 className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
