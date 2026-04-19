@@ -33,7 +33,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Invalid email or password." };
   }
 
-  return createUserSession(request, context, user.id, "/");
+  const redirectTo = user.onboardingCompletedAt ? "/" : "/onboarding";
+  return createUserSession(request, context, user.id, redirectTo);
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {

@@ -9,6 +9,9 @@ export default [
   route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:id", "routes/recipes.$id.tsx"),
   route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
+  // Onboarding
+  route("onboarding", "routes/onboarding.tsx"),
+  route("onboarding/cookbook-review", "routes/onboarding.cookbook-review.tsx"),
   // Paprika import
   route("imports/paprika", "routes/imports.paprika.tsx"),
   route("imports/paprika-html", "routes/imports.paprika-html.tsx"),

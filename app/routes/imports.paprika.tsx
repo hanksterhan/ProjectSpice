@@ -10,8 +10,10 @@
 
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { eq } from "drizzle-orm";
 import type { Route } from "./+types/imports.paprika";
 import { requireUser } from "~/lib/auth.server";
+import { createDb, schema } from "~/db";
 import {
   parsePaprikaArchive,
   toTextPayload,
@@ -23,8 +25,13 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  await requireUser(request, context);
-  return {};
+  const user = await requireUser(request, context);
+  const { db } = createDb(context.cloudflare.env.DB);
+  const fullUser = await db.query.users.findFirst({
+    where: eq(schema.users.id, user.id),
+    columns: { onboardingCompletedAt: true },
+  });
+  return { inOnboarding: !fullUser?.onboardingCompletedAt };
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,7 +53,8 @@ const PHOTO_BATCH = 20;   // photos per upload batch
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ImportPaprika() {
+export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
+  const { inOnboarding } = loaderData;
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -325,10 +333,14 @@ export default function ImportPaprika() {
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => navigate("/recipes")}
+                onClick={() =>
+                  navigate(
+                    inOnboarding ? "/onboarding/cookbook-review" : "/recipes"
+                  )
+                }
                 className="rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors"
               >
-                View My Recipes
+                {inOnboarding ? "Review My Cookbooks" : "View My Recipes"}
               </button>
               <button
                 onClick={() => {

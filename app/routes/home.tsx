@@ -1,6 +1,8 @@
-import { Form } from "react-router";
+import { Form, redirect } from "react-router";
+import { eq } from "drizzle-orm";
 import type { Route } from "./+types/home";
 import { getUser } from "~/lib/auth.server";
+import { createDb, schema } from "~/db";
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -11,6 +13,14 @@ export function meta(_args: Route.MetaArgs) {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await getUser(request, context);
+  if (user) {
+    const { db } = createDb(context.cloudflare.env.DB);
+    const fullUser = await db.query.users.findFirst({
+      where: eq(schema.users.id, user.id),
+      columns: { onboardingCompletedAt: true },
+    });
+    if (!fullUser?.onboardingCompletedAt) throw redirect("/onboarding");
+  }
   return {
     environment: context.cloudflare.env.ENVIRONMENT,
     user: user ? { name: user.name, email: user.email } : null,
