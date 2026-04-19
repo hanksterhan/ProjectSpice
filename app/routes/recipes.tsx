@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
@@ -18,6 +18,12 @@ type RecipeCard = {
   cookCount: number;
 };
 
+type TagCount = {
+  id: string;
+  name: string;
+  recipeCount: number;
+};
+
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "My Recipes — ProjectSpice" }];
 }
@@ -32,7 +38,6 @@ function sanitizeFtsQuery(q: string): string {
     .filter(Boolean)
     .filter((w) => !FTS_OPERATORS.has(w.toUpperCase()));
   if (words.length === 0) return "";
-  // Quote each word so FTS5 treats them as exact tokens, not operators
   return words.map((w) => `"${w}"`).join(" ");
 }
 
@@ -40,6 +45,44 @@ function orderByClause(sort: SortOption): string {
   if (sort === "alpha") return "r.title ASC";
   if (sort === "most-made") return "cook_count DESC, r.created_at DESC";
   return "r.created_at DESC";
+}
+
+// Build WHERE clause fragments for tag + archived filters.
+// Returns a SQL fragment starting with AND (if non-empty) and the corresponding params.
+function buildFilterFragments(
+  selectedTags: string[],
+  showArchived: boolean,
+  userId: string
+): { sql: string; params: unknown[] } {
+  const parts: string[] = [];
+  const params: unknown[] = [];
+
+  if (!showArchived) {
+    // Show recipe if: not in any cookbook, OR in at least one non-archived cookbook.
+    // Hides recipes whose only cookbook associations are archived.
+    parts.push(`(
+      NOT EXISTS (SELECT 1 FROM cookbook_recipes cr WHERE cr.recipe_id = r.id)
+      OR EXISTS (
+        SELECT 1 FROM cookbook_recipes cr
+        JOIN cookbooks cb ON cr.cookbook_id = cb.id
+        WHERE cr.recipe_id = r.id AND cb.archived = 0
+      )
+    )`);
+  }
+
+  for (const tag of selectedTags) {
+    parts.push(`EXISTS (
+      SELECT 1 FROM recipe_tags rt
+      JOIN tags t ON rt.tag_id = t.id
+      WHERE rt.recipe_id = r.id AND t.name = ? AND t.user_id = ?
+    )`);
+    params.push(tag, userId);
+  }
+
+  return {
+    sql: parts.length > 0 ? " AND " + parts.join(" AND ") : "",
+    params,
+  };
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -52,18 +95,30 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     : "recent";
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
+  const rawTags = url.searchParams.get("tags") ?? "";
+  const selectedTags = rawTags
+    ? rawTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
+  const showArchived = url.searchParams.get("archived") === "1";
 
   const d1 = context.cloudflare.env.DB;
   const { db } = createDb(d1);
 
   const safeQ = q ? sanitizeFtsQuery(q) : "";
   const orderBy = orderByClause(sort);
+  const { sql: filterSql, params: filterParams } = buildFilterFragments(
+    selectedTags,
+    showArchived,
+    user.id
+  );
 
   let rows: RecipeCard[];
   let total: number;
 
   if (safeQ) {
-    // FTS5 search path
     const [rowsResult, countResult] = await Promise.all([
       d1
         .prepare(
@@ -73,16 +128,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            JOIN recipes r ON r.rowid = fts.rowid
            LEFT JOIN (
              SELECT recipe_id, COUNT(*) as cook_count
-             FROM cooking_log WHERE user_id = ?1
+             FROM cooking_log WHERE user_id = ?
              GROUP BY recipe_id
            ) cl ON r.id = cl.recipe_id
-           WHERE recipes_fts MATCH ?2
-             AND r.user_id = ?3
+           WHERE recipes_fts MATCH ?
+             AND r.user_id = ?
              AND r.deleted_at IS NULL
+             ${filterSql}
            ORDER BY ${orderBy}
-           LIMIT ?4 OFFSET ?5`
+           LIMIT ? OFFSET ?`
         )
-        .bind(user.id, safeQ, user.id, PAGE_SIZE, offset)
+        .bind(user.id, safeQ, user.id, ...filterParams, PAGE_SIZE, offset)
         .all<{
           id: string;
           title: string;
@@ -96,11 +152,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           `SELECT COUNT(*) as cnt
            FROM recipes_fts fts
            JOIN recipes r ON r.rowid = fts.rowid
-           WHERE recipes_fts MATCH ?1
-             AND r.user_id = ?2
-             AND r.deleted_at IS NULL`
+           WHERE recipes_fts MATCH ?
+             AND r.user_id = ?
+             AND r.deleted_at IS NULL
+             ${filterSql}`
         )
-        .bind(safeQ, user.id)
+        .bind(safeQ, user.id, ...filterParams)
         .first<{ cnt: number }>(),
     ]);
     rows = (rowsResult.results ?? []).map((r) => ({
@@ -113,7 +170,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }));
     total = countResult?.cnt ?? 0;
   } else {
-    // Regular query path (with cook_count for most-made sort)
     const [rowsResult, countResult] = await Promise.all([
       d1
         .prepare(
@@ -122,14 +178,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            FROM recipes r
            LEFT JOIN (
              SELECT recipe_id, COUNT(*) as cook_count
-             FROM cooking_log WHERE user_id = ?1
+             FROM cooking_log WHERE user_id = ?
              GROUP BY recipe_id
            ) cl ON r.id = cl.recipe_id
-           WHERE r.user_id = ?2 AND r.deleted_at IS NULL
+           WHERE r.user_id = ?
+             AND r.deleted_at IS NULL
+             ${filterSql}
            ORDER BY ${orderBy}
-           LIMIT ?3 OFFSET ?4`
+           LIMIT ? OFFSET ?`
         )
-        .bind(user.id, user.id, PAGE_SIZE, offset)
+        .bind(user.id, user.id, ...filterParams, PAGE_SIZE, offset)
         .all<{
           id: string;
           title: string;
@@ -138,15 +196,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           created_at: number;
           cook_count: number;
         }>(),
-      db
-        .select({ count: count() })
-        .from(schema.recipes)
-        .where(
-          and(
-            eq(schema.recipes.userId, user.id),
-            isNull(schema.recipes.deletedAt)
-          )
-        ),
+      d1
+        .prepare(
+          `SELECT COUNT(*) as cnt
+           FROM recipes r
+           WHERE r.user_id = ?
+             AND r.deleted_at IS NULL
+             ${filterSql}`
+        )
+        .bind(user.id, ...filterParams)
+        .first<{ cnt: number }>(),
     ]);
     rows = (rowsResult.results ?? []).map((r) => ({
       id: r.id,
@@ -156,8 +215,28 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       createdAt: r.created_at,
       cookCount: r.cook_count,
     }));
-    total = countResult[0]?.count ?? 0;
+    total = countResult?.cnt ?? 0;
   }
+
+  // All tags for the faceted browser (counts are across non-deleted recipes, no filter applied)
+  const allTagsResult = await d1
+    .prepare(
+      `SELECT t.id, t.name, COUNT(DISTINCT r.id) as recipe_count
+       FROM tags t
+       LEFT JOIN recipe_tags rt ON t.id = rt.tag_id
+       LEFT JOIN recipes r ON rt.recipe_id = r.id AND r.deleted_at IS NULL AND r.user_id = ?
+       WHERE t.user_id = ?
+       GROUP BY t.id, t.name
+       ORDER BY t.name ASC`
+    )
+    .bind(user.id, user.id)
+    .all<{ id: string; name: string; recipe_count: number }>();
+
+  const allTags: TagCount[] = (allTagsResult.results ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    recipeCount: r.recipe_count,
+  }));
 
   // Batch-load tags for result recipes
   const tagsByRecipe: Record<string, string[]> = {};
@@ -180,6 +259,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     recipes: rows,
     tagsByRecipe,
+    allTags,
+    selectedTags,
+    showArchived,
     total,
     page,
     pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -203,20 +285,36 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 export default function RecipeList({ loaderData }: Route.ComponentProps) {
-  const { recipes, tagsByRecipe, total, page, pageCount, sort, q } =
-    loaderData;
+  const {
+    recipes,
+    tagsByRecipe,
+    allTags,
+    selectedTags,
+    showArchived,
+    total,
+    page,
+    pageCount,
+    sort,
+    q,
+  } = loaderData;
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState(q);
+  const [filterOpen, setFilterOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Sync input when URL q changes (e.g. browser back/forward)
   useEffect(() => {
     setInputValue(q);
   }, [q]);
 
   function buildParams(overrides: Record<string, string | null>): string {
     const params = new URLSearchParams();
-    const base: Record<string, string | null> = { q: q || null, sort, page: String(page) };
+    const base: Record<string, string | null> = {
+      q: q || null,
+      sort,
+      page: String(page),
+      tags: selectedTags.length > 0 ? selectedTags.join(",") : null,
+      archived: showArchived ? "1" : null,
+    };
     const merged = { ...base, ...overrides };
     for (const [k, v] of Object.entries(merged)) {
       if (v !== null && v !== "" && !(k === "page" && v === "1")) {
@@ -240,12 +338,35 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
+  function toggleTag(tagName: string) {
+    const newTags = selectedTags.includes(tagName)
+      ? selectedTags.filter((t) => t !== tagName)
+      : [...selectedTags, tagName];
+    const qs = buildParams({
+      tags: newTags.length > 0 ? newTags.join(",") : null,
+      page: "1",
+    });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`);
+  }
+
+  function toggleArchived() {
+    const qs = buildParams({ archived: showArchived ? null : "1", page: "1" });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`);
+  }
+
+  function clearFilters() {
+    const qs = buildParams({ tags: null, archived: null, page: "1" });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`);
+    setFilterOpen(false);
+  }
+
   function buildPageUrl(targetPage: number) {
     const qs = buildParams({ page: String(targetPage) });
     return `/recipes${qs ? `?${qs}` : ""}`;
   }
 
   const hasRecipes = recipes.length > 0;
+  const hasActiveFilters = selectedTags.length > 0 || showArchived;
 
   return (
     <div className="min-h-screen bg-background">
@@ -255,6 +376,12 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
           {total > 0 && (
             <span className="text-xs text-muted-foreground hidden sm:block">
               {total} recipe{total !== 1 ? "s" : ""}
+              {selectedTags.length > 0 && (
+                <span className="ml-1">· {selectedTags.join(", ")}</span>
+              )}
+              {showArchived && (
+                <span className="ml-1">· incl. archived</span>
+              )}
             </span>
           )}
           <Link
@@ -266,7 +393,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-4">
         {/* Search + Sort bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -293,15 +420,108 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
+        {/* Filter bar */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              onClick={() => setFilterOpen(!filterOpen)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                filterOpen || selectedTags.length > 0
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-foreground border-input hover:bg-muted"
+              }`}
+            >
+              Tags
+              {selectedTags.length > 0 && (
+                <span className="rounded-full bg-primary-foreground/20 w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                  {selectedTags.length}
+                </span>
+              )}
+              <span className="text-[10px] opacity-60">{filterOpen ? "▲" : "▼"}</span>
+            </button>
+
+            <button
+              onClick={toggleArchived}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                showArchived
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-foreground border-input hover:bg-muted"
+              }`}
+            >
+              {showArchived ? "Hide archived" : "Show archived"}
+            </button>
+
+            {/* Active tag chips */}
+            {selectedTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium hover:bg-primary/20 transition-colors"
+              >
+                {tag}
+                <span className="opacity-60">×</span>
+              </button>
+            ))}
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Collapsible tag panel */}
+        {filterOpen && allTags.length > 0 && (
+          <div className="border rounded-lg p-3 bg-muted/20">
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => {
+                const active = selectedTags.includes(tag.name);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.name)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground border-input hover:bg-muted"
+                    }`}
+                  >
+                    {tag.name}
+                    <span
+                      className={`text-[10px] tabular-nums ${
+                        active ? "text-primary-foreground/70" : "text-muted-foreground"
+                      }`}
+                    >
+                      {tag.recipeCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Results */}
         {!hasRecipes ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-            {q ? (
+            {q || hasActiveFilters ? (
               <>
-                <p className="text-lg font-medium">No recipes match "{q}"</p>
+                <p className="text-lg font-medium">No recipes match your filters</p>
                 <p className="text-sm text-muted-foreground">
-                  Try a different search term.
+                  {q && `Search: "${q}"`}
+                  {q && hasActiveFilters && " · "}
+                  {selectedTags.length > 0 && `Tags: ${selectedTags.join(", ")}`}
                 </p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-1 text-sm text-primary hover:underline"
+                >
+                  Clear filters
+                </button>
               </>
             ) : (
               <>
@@ -338,9 +558,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
                       <span>{formatTime(recipe.totalTimeMin)}</span>
                     ) : null}
                     {recipe.cookCount > 0 ? (
-                      <span className="ml-auto">
-                        Cooked {recipe.cookCount}×
-                      </span>
+                      <span className="ml-auto">Cooked {recipe.cookCount}×</span>
                     ) : null}
                   </div>
                   {visibleTags.length > 0 && (
