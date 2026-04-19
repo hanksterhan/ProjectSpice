@@ -15,6 +15,8 @@ export default [
   // Paprika import
   route("imports/paprika", "routes/imports.paprika.tsx"),
   route("imports/paprika-html", "routes/imports.paprika-html.tsx"),
+  // GPT / AI import
+  route("imports/gpt", "routes/imports.gpt.tsx"),
   // Import API resource routes
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
