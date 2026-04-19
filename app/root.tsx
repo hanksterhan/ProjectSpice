@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 import { useEffect } from "react";
 
@@ -20,11 +21,19 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
     }
   }, []);
+
+  useEffect(() => {
+    if (location.pathname === "/login") {
+      navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_RECIPE_CACHE" });
+    }
+  }, [location.pathname]);
 
   return (
     <html lang="en">

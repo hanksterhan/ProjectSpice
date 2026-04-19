@@ -115,6 +115,12 @@ async function trimCache(cache, max) {
   }
 }
 
+self.addEventListener("message", (e) => {
+  if (e.data?.type === "CLEAR_RECIPE_CACHE") {
+    caches.delete(RECIPE_CACHE);
+  }
+});
+
 function offlinePage() {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline — ProjectSpice</title><style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fafaf9;color:#1c1917}.card{text-align:center;padding:2rem;max-width:20rem}h1{font-size:1.25rem;font-weight:600;margin:0 0 .5rem}p{font-size:.875rem;color:#78716c;margin:0 0 1.5rem}a{color:#ea580c;font-size:.875rem}</style></head><body><div class="card"><h1>You're offline</h1><p>This recipe hasn't been cached yet. Open it while connected to view it offline.</p><a href="/">Go home</a></div></body></html>`;
 }
