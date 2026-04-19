@@ -11,8 +11,10 @@ export default [
   route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
   // Paprika import
   route("imports/paprika", "routes/imports.paprika.tsx"),
+  route("imports/paprika-html", "routes/imports.paprika-html.tsx"),
   // Import API resource routes
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
+  route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
   route("api/imports/paprika/photos", "routes/api.imports.paprika.photos.ts"),
   route("api/imports/:id", "routes/api.imports.$id.ts"),
 ] satisfies RouteConfig;
