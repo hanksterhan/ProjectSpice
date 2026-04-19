@@ -421,8 +421,8 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
         </div>
 
         {/* Filter bar */}
-        {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
+          {allTags.length > 0 && (
             <button
               onClick={() => setFilterOpen(!filterOpen)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
@@ -439,40 +439,40 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
               )}
               <span className="text-[10px] opacity-60">{filterOpen ? "▲" : "▼"}</span>
             </button>
+          )}
 
+          <button
+            onClick={toggleArchived}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+              showArchived
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-foreground border-input hover:bg-muted"
+            }`}
+          >
+            {showArchived ? "Hide archived" : "Show archived"}
+          </button>
+
+          {/* Active tag chips */}
+          {selectedTags.map((tag) => (
             <button
-              onClick={toggleArchived}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                showArchived
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-foreground border-input hover:bg-muted"
-              }`}
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium hover:bg-primary/20 transition-colors"
             >
-              {showArchived ? "Hide archived" : "Show archived"}
+              {tag}
+              <span className="opacity-60">×</span>
             </button>
+          ))}
 
-            {/* Active tag chips */}
-            {selectedTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium hover:bg-primary/20 transition-colors"
-              >
-                {tag}
-                <span className="opacity-60">×</span>
-              </button>
-            ))}
-
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-        )}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
 
         {/* Collapsible tag panel */}
         {filterOpen && allTags.length > 0 && (
