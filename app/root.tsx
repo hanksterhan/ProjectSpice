@@ -6,9 +6,11 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { OfflineIndicator } from "~/components/offline-indicator";
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -18,6 +20,12 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    }
+  }, []);
+
   return (
     <html lang="en">
       <head>
@@ -27,6 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <OfflineIndicator />
         {children}
         <ScrollRestoration />
         <Scripts />

@@ -21,6 +21,7 @@
   "dependencies": {
     "drizzle-orm": "^0.45.2",
     "fflate": "^0.8.2",
+    "idb": "^8.0.3",
     "isbot": "^5.1.31",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

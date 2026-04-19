@@ -154,6 +154,19 @@ export default function RecipeDetail({
     };
   }, [isDeleted, navigate]);
 
+  useEffect(() => {
+    import("~/lib/offline-db").then(({ cacheRecipe }) => {
+      cacheRecipe({
+        id: recipe.id,
+        userId: recipe.userId,
+        recipe: recipe as unknown as Record<string, unknown>,
+        ingredients: ingredients as unknown[],
+        tags,
+        cookCount,
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [recipe.id]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   const hasScalable = ingredients.some(
     (i) => !i.isGroupHeader && i.quantityDecimal != null
   );
