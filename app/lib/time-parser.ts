@@ -30,13 +30,25 @@ function stripUndefinedPrefix(s: string): string {
 }
 
 /**
- * Parse a single duration string (e.g. "1 hr 30 min", "1:30", "45 minutes")
- * into total minutes. Returns null for day-scale or unrecognizable input.
+ * Parse a single duration string (e.g. "1 hr 30 min", "1:30", "45 minutes",
+ * "PT2H30M") into total minutes. Returns null for day-scale or unrecognizable input.
  */
 export function parseDuration(s: string): number | null {
   s = s.trim();
   if (!s) return null;
   if (DAY_SCALE_RE.test(s)) return null;
+
+  // ISO 8601 duration: PT45M, PT2H30M, P1DT2H (day component → null)
+  if (/^P/i.test(s)) {
+    const iso = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:\d+S)?$/i.exec(s);
+    if (iso) {
+      if (iso[1] && parseInt(iso[1]) > 0) return null; // day-scale → time_notes
+      const hours = parseInt(iso[2] || "0");
+      const mins = parseInt(iso[3] || "0");
+      if (hours === 0 && mins === 0) return null;
+      return hours * 60 + mins;
+    }
+  }
 
   // HH:MM format (e.g. "1:30" → 90, "0:45" → 45)
   const hhMm = /^(\d{1,2}):(\d{2})$/.exec(s);
