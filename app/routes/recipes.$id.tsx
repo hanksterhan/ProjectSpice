@@ -1,5 +1,5 @@
-import { data } from "react-router";
-import { useState } from "react";
+import { data, Form, Link, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 import { eq, and, isNull, asc, count } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth.server";
@@ -8,6 +8,44 @@ import { createDb, schema } from "~/db";
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
   return [{ title: `${title} — ProjectSpice` }];
+}
+
+export async function action({ params, request, context }: Route.ActionArgs) {
+  const user = await requireUser(request, context);
+  const fd = await request.formData();
+  const intent = String(fd.get("_intent") ?? "");
+
+  const { db } = createDb(context.cloudflare.env.DB);
+
+  if (intent === "delete") {
+    const recipeTitle = String(fd.get("recipeTitle") ?? "");
+    await db
+      .update(schema.recipes)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          eq(schema.recipes.id, params.id),
+          eq(schema.recipes.userId, user.id),
+          isNull(schema.recipes.deletedAt)
+        )
+      );
+    return { deleted: true as const, title: recipeTitle };
+  }
+
+  if (intent === "restore") {
+    await db
+      .update(schema.recipes)
+      .set({ deletedAt: null })
+      .where(
+        and(
+          eq(schema.recipes.id, params.id),
+          eq(schema.recipes.userId, user.id)
+        )
+      );
+    return { restored: true as const };
+  }
+
+  throw data(null, { status: 400 });
 }
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
@@ -93,10 +131,28 @@ function formatQuantity(qty: number): string {
   return qty.toFixed(2).replace(/\.?0+$/, "");
 }
 
-export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
+export default function RecipeDetail({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const { recipe, ingredients, tags, cookCount } = loaderData;
+  const navigate = useNavigate();
   const [scaleFactor, setScaleFactor] = useState(1);
   const [customScale, setCustomScale] = useState("");
+
+  const isDeleted = actionData != null && "deleted" in actionData && actionData.deleted;
+  const deletedTitle = isDeleted && "title" in actionData ? actionData.title : "";
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    if (!isDeleted) return;
+    const interval = setInterval(() => setCountdown((c) => c - 1), 1000);
+    const timeout = setTimeout(() => navigate("/"), 10000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isDeleted, navigate]);
 
   const hasScalable = ingredients.some(
     (i) => !i.isGroupHeader && i.quantityDecimal != null
@@ -119,16 +175,52 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Undo toast */}
+      {isDeleted && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-foreground text-background px-4 py-3 shadow-lg text-sm">
+          <span>
+            "{deletedTitle}" deleted ({countdown}s)
+          </span>
+          <Form method="post">
+            <input type="hidden" name="_intent" value="restore" />
+            <button
+              type="submit"
+              className="font-semibold underline underline-offset-2 hover:opacity-80"
+            >
+              Undo
+            </button>
+          </Form>
+        </div>
+      )}
+
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <a
-            href="/"
+          <Link
+            to="/"
             className="text-muted-foreground hover:text-foreground text-sm"
           >
             ← Back
-          </a>
+          </Link>
           <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm truncate">{recipe.title}</span>
+          <span className="font-medium text-sm truncate flex-1">
+            {recipe.title}
+          </span>
+          <Link
+            to={`/recipes/${recipe.id}/edit`}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Edit
+          </Link>
+          <Form method="post">
+            <input type="hidden" name="_intent" value="delete" />
+            <input type="hidden" name="recipeTitle" value={recipe.title} />
+            <button
+              type="submit"
+              className="text-sm text-red-500 hover:text-red-600"
+            >
+              Delete
+            </button>
+          </Form>
         </div>
       </header>
 

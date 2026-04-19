@@ -5,5 +5,7 @@ export default [
   route("login", "routes/login.tsx"),
   route("logout", "routes/logout.tsx"),
   route("change-password", "routes/change-password.tsx"),
+  route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:id", "routes/recipes.$id.tsx"),
+  route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
 ] satisfies RouteConfig;
