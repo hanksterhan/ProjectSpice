@@ -370,8 +370,8 @@ export default function ImportPaprikaHtml() {
                 Choose <strong>Web Page</strong> (HTML) format
               </li>
               <li>
-                Save the folder, then <strong>ZIP the folder</strong> and select
-                it above
+                Save the folder, then <strong>ZIP the Recipes subfolder only</strong>{" "}
+                (not the full export with images) and select it above
               </li>
             </ol>
             <p className="pt-1">

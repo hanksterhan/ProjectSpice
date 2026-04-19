@@ -15,7 +15,7 @@ import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
 import { parseDuration, parseTimeString } from "~/lib/time-parser";
-import { parseServings } from "~/lib/paprika-binary-parser";
+import { normaliseDifficulty, parseServings } from "~/lib/paprika-binary-parser";
 import type { PaprikaHtmlRecipe } from "~/lib/paprika-html-parser";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -243,7 +243,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       timeNotes,
       servings,
       servingsUnit,
-      difficulty: normalise(raw.difficulty),
+      difficulty: normaliseDifficulty(raw.difficulty ?? "") ?? normalise(raw.difficulty),
       directionsText: raw.directions?.trim() ?? "",
       notes: normalise(raw.notes),
       imageSourceUrl: normalise(raw.imageSourceUrl),
