@@ -9,6 +9,7 @@ export default [
   route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:id", "routes/recipes.$id.tsx"),
   route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
+  route("recipes/:id/cook", "routes/recipes.$id.cook.tsx"),
   // Onboarding
   route("onboarding", "routes/onboarding.tsx"),
   route("onboarding/cookbook-review", "routes/onboarding.cookbook-review.tsx"),

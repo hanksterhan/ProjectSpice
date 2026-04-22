@@ -33,11 +33,10 @@ scripts/
 
 | Slice | Status | Description |
 |-------|--------|-------------|
-| SLICE-1 | done | Remix scaffold + CF Workers + Tailwind + shadcn |
-| SLICE-2 | done | Drizzle schema (21 tables) + D1 migrations + Sessions API wrapper |
-| SLICE-3 | done | Auth — KV sessions, PBKDF2, login/logout, 5 family accounts seeded |
-| SLICE-4 | done | Ingredient string parser subsystem (62 fixture tests) |
-| SLICE-5 | next | Time string parser |
+| SLICE-1 – 17 | done | Scaffold → auth → parsers → recipe CRUD → imports → tags/cookbooks/collections |
+| SLICE-18 | done | Service Worker + offline recipe cache (Workbox + IDB mirror) |
+| SLICE-19 | done | Cooking mode (Wake Lock, tap/swipe/keyboard nav, multi-timer, mise-en-place) |
+| SLICE-20 | next | Cooking log entry — "I Made This" + rating/notes/modifications |
 
 ## Hard Constraints
 

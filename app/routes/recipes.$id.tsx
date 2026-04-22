@@ -219,6 +219,12 @@ export default function RecipeDetail({
             {recipe.title}
           </span>
           <Link
+            to={`/recipes/${recipe.id}/cook`}
+            className="text-sm font-medium text-primary hover:opacity-80"
+          >
+            Cook
+          </Link>
+          <Link
             to={`/recipes/${recipe.id}/edit`}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
