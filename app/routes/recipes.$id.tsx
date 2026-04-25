@@ -225,6 +225,12 @@ export default function RecipeDetail({
             Cook
           </Link>
           <Link
+            to={`/logs/new?recipeId=${recipe.id}`}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            I Made This
+          </Link>
+          <Link
             to={`/recipes/${recipe.id}/edit`}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
