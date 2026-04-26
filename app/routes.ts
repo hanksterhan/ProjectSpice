@@ -32,6 +32,9 @@ export default [
   route("cookbooks/:id", "routes/cookbooks.$id.tsx"),
   // Collections
   route("collections/:id", "routes/collections.$id.tsx"),
+  // Shopping Lists
+  route("shopping-lists", "routes/shopping-lists.tsx"),
+  route("shopping-lists/:id", "routes/shopping-lists.$id.tsx"),
   // Import API resource routes
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),

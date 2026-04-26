@@ -231,6 +231,12 @@ export default function RecipeDetail({
             I Made This
           </Link>
           <Link
+            to={`/shopping-lists?recipeId=${recipe.id}`}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Add to List
+          </Link>
+          <Link
             to={`/recipes/${recipe.id}/edit`}
             className="text-sm text-muted-foreground hover:text-foreground"
           >

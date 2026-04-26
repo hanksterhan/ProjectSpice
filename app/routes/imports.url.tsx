@@ -318,7 +318,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       },
       redirect: "follow",
     });
-  } catch (err) {
+  } catch {
     await db.update(schema.importJobs).set({ status: "failed", completedAt: new Date() }).where(eq(schema.importJobs.id, jobId));
     return { error: "Could not reach that URL. Check your connection or try again." };
   }

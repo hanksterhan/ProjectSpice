@@ -102,7 +102,7 @@ function extractTags(obj: Record<string, unknown>): string[] {
   return [...new Set(tags)];
 }
 
-function normalizeRecipeObject(obj: Record<string, unknown>, url: string): ScrapedRecipe | null {
+function normalizeRecipeObject(obj: Record<string, unknown>, _url: string): ScrapedRecipe | null {
   const title =
     typeof obj.name === "string" ? obj.name.trim() : null;
   if (!title) return null;
@@ -193,7 +193,7 @@ function extractJsonLd(html: string, url: string): ScrapedRecipe | null {
 function extractItempropText(html: string, prop: string): string | null {
   // Match itemprop="..." in various element types; extract text content
   const re = new RegExp(
-    `<(?:meta|time|span|p|div|li|h[1-6])[^>]*itemprop=["']${prop}["'][^>]*(?:content=["']([^"']+)["'][^>]*\/?>|datetime=["']([^"']+)["'][^>]*\/?>|>(.*?)<\/(?:span|p|div|li|h[1-6])>)`,
+    `<(?:meta|time|span|p|div|li|h[1-6])[^>]*itemprop=["']${prop}["'][^>]*(?:content=["']([^"']+)["'][^>]*/?>|datetime=["']([^"']+)["'][^>]*/?>|>(.*?)</(?:span|p|div|li|h[1-6])>)`,
     "i"
   );
   const m = re.exec(html);
@@ -204,7 +204,7 @@ function extractItempropText(html: string, prop: string): string | null {
 function extractItempropAll(html: string, prop: string): string[] {
   const results: string[] = [];
   const re = new RegExp(
-    `<(?:meta|time|span|p|div|li)[^>]*itemprop=["']${prop}["'][^>]*(?:content=["']([^"']+)["'][^>]*\/?>|>(.*?)<\\/(?:span|p|div|li)>)`,
+    `<(?:meta|time|span|p|div|li)[^>]*itemprop=["']${prop}["'][^>]*(?:content=["']([^"']+)["'][^>]*/?>|>(.*?)</(?:span|p|div|li)>)`,
     "gi"
   );
   let m: RegExpExecArray | null;
@@ -215,7 +215,7 @@ function extractItempropAll(html: string, prop: string): string[] {
   return results;
 }
 
-function extractHeuristic(html: string, url: string): ScrapedRecipe | null {
+function extractHeuristic(html: string, _url: string): ScrapedRecipe | null {
   const title = extractItempropText(html, "name");
   if (!title) return null;
 
