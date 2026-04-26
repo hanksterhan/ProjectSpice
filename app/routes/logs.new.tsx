@@ -73,7 +73,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (!recipe) throw data(null, { status: 404 });
   }
 
+  const logId = crypto.randomUUID();
+
   await db.insert(schema.cookingLog).values({
+    id: logId,
     userId: user.id,
     recipeId,
     cookedAt,
@@ -82,7 +85,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     modifications,
   });
 
-  throw redirect(recipeId ? `/recipes/${recipeId}` : "/recipes");
+  throw redirect(`/logs/${logId}`);
 }
 
 const INPUT =

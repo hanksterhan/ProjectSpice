@@ -11,6 +11,9 @@ export default [
   route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
   route("recipes/:id/cook", "routes/recipes.$id.cook.tsx"),
   route("logs/new", "routes/logs.new.tsx"),
+  route("logs/:id", "routes/logs.$id.tsx"),
+  // CDN image serving (R2 → browser with immutable cache headers)
+  route("cdn/images/*", "routes/cdn.images.$.ts"),
   // Onboarding
   route("onboarding", "routes/onboarding.tsx"),
   route("onboarding/cookbook-review", "routes/onboarding.cookbook-review.tsx"),
