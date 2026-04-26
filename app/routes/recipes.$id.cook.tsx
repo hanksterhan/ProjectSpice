@@ -1,4 +1,4 @@
-import { data, Link, useNavigate } from "react-router";
+import { data, Link, useFetcher, useNavigate } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id.cook";
@@ -127,6 +127,7 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
   const [timers, setTimers] = useState<Timer[]>([]);
   const [showTimerForm, setShowTimerForm] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showQuickLog, setShowQuickLog] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
 
   const totalSteps = directions.length;
@@ -298,11 +299,12 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
     if (anyRunning) {
       setShowExitDialog(true);
     } else {
-      navigate(`/recipes/${recipe.id}`);
+      setShowQuickLog(true);
     }
   }
   function confirmExit() {
-    navigate(`/recipes/${recipe.id}`);
+    setShowExitDialog(false);
+    setShowQuickLog(true);
   }
 
   // --- Ingredient checklist -----------------------------------------------
@@ -572,6 +574,15 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
         </div>
       )}
 
+      {/* Quick log sheet */}
+      {showQuickLog && (
+        <QuickLogSheet
+          recipeId={recipe.id}
+          recipeTitle={recipe.title}
+          onSkip={() => navigate(`/recipes/${recipe.id}`)}
+        />
+      )}
+
       {/* Screen-reader live region for step */}
       <div className="sr-only" aria-live="polite">
         Step {stepIdx + 1} of {totalSteps}: {currentStep}
@@ -661,6 +672,106 @@ function TimerForm({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function todayLocalDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function QuickLogSheet({
+  recipeId,
+  recipeTitle,
+  onSkip,
+}: {
+  recipeId: string;
+  recipeTitle: string;
+  onSkip: () => void;
+}) {
+  const fetcher = useFetcher();
+  const [rating, setRating] = useState(0);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div
+        className="absolute inset-0 bg-black/50"
+        aria-hidden="true"
+        onClick={onSkip}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quicklog-title"
+        className={`relative bg-background rounded-t-2xl shadow-2xl px-5 pt-5 pb-10 space-y-6 transition-transform duration-300 ease-out ${
+          visible ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="quicklog-title" className="font-semibold text-lg leading-snug">
+              How did it go?
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+              {recipeTitle}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onSkip}
+            className="shrink-0 text-sm text-muted-foreground hover:text-foreground pt-0.5"
+          >
+            Skip
+          </button>
+        </div>
+
+        <fetcher.Form method="post" action="/logs/new" className="space-y-6">
+          <input type="hidden" name="recipeId" value={recipeId} />
+          <input type="hidden" name="cookedAt" value={todayLocalDate()} />
+          <input type="hidden" name="rating" value={rating > 0 ? rating : ""} />
+
+          <div
+            className="flex justify-center gap-4"
+            role="group"
+            aria-label="Star rating"
+          >
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(rating === star ? 0 : star)}
+                className={`text-5xl leading-none touch-manipulation transition-colors ${
+                  star <= rating
+                    ? "text-yellow-400"
+                    : "text-muted-foreground/30 hover:text-yellow-300"
+                }`}
+                aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                aria-pressed={star <= rating}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="submit"
+            disabled={fetcher.state !== "idle"}
+            className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-3 text-base font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {fetcher.state !== "idle" ? "Saving…" : "Save Log"}
+          </button>
+        </fetcher.Form>
+      </div>
     </div>
   );
 }
