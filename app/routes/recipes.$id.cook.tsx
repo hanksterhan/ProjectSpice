@@ -251,7 +251,7 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
   // --- Keyboard nav -------------------------------------------------------
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (showExitDialog || showTimerForm) return;
+      if (showExitDialog || showTimerForm || showQuickLog) return;
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
 
@@ -273,7 +273,7 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
     return () => window.removeEventListener("keydown", onKey);
     // pauseAll changes on every timer update; we intentionally capture the latest
     // via closure each effect run.
-  }, [goPrev, goNext, showExitDialog, showTimerForm, anyRunning]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [goPrev, goNext, showExitDialog, showTimerForm, showQuickLog, anyRunning]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Swipe --------------------------------------------------------------
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -701,6 +701,14 @@ function QuickLogSheet({
     const id = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { e.preventDefault(); onSkip(); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onSkip]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
