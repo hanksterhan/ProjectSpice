@@ -64,6 +64,8 @@ type BatchResult = {
   errors: string[];
 };
 
+const CATEGORY_UPSERT_CHUNK = 15;
+
 export async function action({ request, context }: Route.ActionArgs): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -130,10 +132,10 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       userId: user.id,
       name,
     }));
-    for (let i = 0; i < tagInserts.length; i += 100) {
+    for (let i = 0; i < tagInserts.length; i += CATEGORY_UPSERT_CHUNK) {
       await db
         .insert(schema.tags)
-        .values(tagInserts.slice(i, i + 100))
+        .values(tagInserts.slice(i, i + CATEGORY_UPSERT_CHUNK))
         .onConflictDoNothing();
     }
 
@@ -143,10 +145,10 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       userId: user.id,
       name,
     }));
-    for (let i = 0; i < cookbookInserts.length; i += 100) {
+    for (let i = 0; i < cookbookInserts.length; i += CATEGORY_UPSERT_CHUNK) {
       await db
         .insert(schema.cookbooks)
-        .values(cookbookInserts.slice(i, i + 100))
+        .values(cookbookInserts.slice(i, i + CATEGORY_UPSERT_CHUNK))
         .onConflictDoNothing();
     }
   }
@@ -156,8 +158,8 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const tagIdMap = new Map<string, string>(); // name → tag id
   const cookbookIdMap = new Map<string, string>(); // name → cookbook id
   if (categoryList.length > 0) {
-    for (let i = 0; i < categoryList.length; i += 100) {
-      const chunk = categoryList.slice(i, i + 100);
+    for (let i = 0; i < categoryList.length; i += 50) {
+      const chunk = categoryList.slice(i, i + 50);
       const tagRows = await db
         .select({ id: schema.tags.id, name: schema.tags.name })
         .from(schema.tags)

@@ -51,6 +51,24 @@ type Progress = {
 const RECIPE_BATCH = 100; // recipes per text batch
 const PHOTO_BATCH = 20;   // photos per upload batch
 
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  if (!res.ok) {
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return data as T;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
@@ -118,18 +136,19 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
             expectedTotal: parsedRecipes.length,
           }),
         });
-        const data = (await res.json()) as {
+        const data = await readJsonResponse<{
           jobId: string;
           imported: number;
           skipped: number;
           errors: string[];
-        };
+        }>(res);
         if (!jobId) jobId = data.jobId;
         totalImported += data.imported;
         totalSkipped += data.skipped;
         if (data.errors?.length) allErrors.push(...data.errors);
       } catch (err) {
         allErrors.push(`Batch ${i}–${i + RECIPE_BATCH} failed: ${String(err)}`);
+        break;
       }
 
       setProgress((p) => ({
@@ -165,7 +184,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ photos: batch }),
         });
-        const data = (await res.json()) as { uploaded: number; errors: string[] };
+        const data = await readJsonResponse<{ uploaded: number; errors: string[] }>(res);
         uploaded += data.uploaded;
         if (data.errors?.length) allErrors.push(...data.errors);
       } catch (err) {
