@@ -18,8 +18,8 @@ import { createDb, schema } from "~/db";
 import {
   improveRecipe,
   type ImprovementEnv,
-  type RecipeInput,
 } from "~/lib/ai-improve.server";
+import type { RecipeInput } from "~/lib/ai-improve.shared";
 
 function sseEvent(payload: Record<string, unknown>): string {
   return `data: ${JSON.stringify(payload)}\n\n`;

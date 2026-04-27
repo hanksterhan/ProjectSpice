@@ -10,37 +10,11 @@
  * code wraps it behind the `callWorkersAI` injectable. Tests stub that layer.
  */
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface RecipeInput {
-  id: string;
-  title: string;
-  description: string | null;
-  directionsText: string | null;
-  notes: string | null;
-  contentHash: string | null;
-  ingredients: IngredientLine[];
-}
-
-export interface IngredientLine {
-  sortOrder: number;
-  groupName: string | null;
-  quantityRaw: string | null;
-  unitRaw: string | null;
-  name: string;
-  notes: string | null;
-  isGroupHeader: boolean;
-}
-
-export interface ImprovedRecipe {
-  title: string;
-  description: string;
-  ingredients: string[]; // raw lines, one per ingredient
-  directions: string;
-  notes: string;
-}
+import {
+  recipeIngredientLines,
+  type ImprovedRecipe,
+  type RecipeInput,
+} from "./ai-improve.shared";
 
 export interface ImprovementResult {
   improved: ImprovedRecipe;
@@ -157,14 +131,7 @@ Do not include any text outside the JSON object.`;
 }
 
 export function buildUserPrompt(recipe: RecipeInput): string {
-  const ingredientLines = recipe.ingredients
-    .filter((i) => !i.isGroupHeader)
-    .map((i) => {
-      const parts = [i.quantityRaw, i.unitRaw, i.name, i.notes]
-        .filter(Boolean)
-        .join(" ");
-      return `- ${parts}`;
-    });
+  const ingredientLines = recipeIngredientLines(recipe).map((line) => `- ${line}`);
 
   return `Please improve this recipe:
 
@@ -315,59 +282,6 @@ export async function callOpenAI(
     text,
     tokensIn: data.usage?.prompt_tokens ?? 0,
     tokensOut: data.usage?.completion_tokens ?? 0,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Diff computation (field-level)
-// ---------------------------------------------------------------------------
-
-export interface RecipeDiff {
-  title: { changed: boolean; original: string; improved: string };
-  description: { changed: boolean; original: string; improved: string };
-  ingredients: { changed: boolean; original: string[]; improved: string[] };
-  directions: { changed: boolean; original: string; improved: string };
-  notes: { changed: boolean; original: string; improved: string };
-}
-
-export function computeDiff(
-  original: RecipeInput,
-  improved: ImprovedRecipe
-): RecipeDiff {
-  const originalIngredients = original.ingredients
-    .filter((i) => !i.isGroupHeader)
-    .map((i) =>
-      [i.quantityRaw, i.unitRaw, i.name, i.notes].filter(Boolean).join(" ")
-    );
-
-  return {
-    title: {
-      changed: original.title !== improved.title,
-      original: original.title,
-      improved: improved.title,
-    },
-    description: {
-      changed: (original.description ?? "") !== improved.description,
-      original: original.description ?? "",
-      improved: improved.description,
-    },
-    ingredients: {
-      changed:
-        JSON.stringify(originalIngredients) !==
-        JSON.stringify(improved.ingredients),
-      original: originalIngredients,
-      improved: improved.ingredients,
-    },
-    directions: {
-      changed: (original.directionsText ?? "") !== improved.directions,
-      original: original.directionsText ?? "",
-      improved: improved.directions,
-    },
-    notes: {
-      changed: (original.notes ?? "") !== improved.notes,
-      original: original.notes ?? "",
-      improved: improved.notes,
-    },
   };
 }
 

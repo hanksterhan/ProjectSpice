@@ -13,13 +13,15 @@ import type { Route } from "./+types/recipes.$id.improve";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import {
-  computeDiff,
   DAILY_QUOTA,
   getQuotaUsed,
+} from "~/lib/ai-improve.server";
+import {
+  computeDiff,
   type ImprovedRecipe,
   type RecipeDiff,
   type RecipeInput,
-} from "~/lib/ai-improve.server";
+} from "~/lib/ai-improve.shared";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
 
 export function meta({ data: d }: Route.MetaArgs) {

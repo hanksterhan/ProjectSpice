@@ -3,7 +3,6 @@ import {
   buildCacheKey,
   checkFoodSafety,
   applyFoodSafetyFilter,
-  computeDiff,
   parseImprovedRecipeJson,
   buildSystemPrompt,
   buildUserPrompt,
@@ -11,9 +10,12 @@ import {
   DAILY_QUOTA,
   PROMPT_VERSION,
   WORKERS_AI_TOKEN_LIMIT,
-  type RecipeInput,
-  type ImprovedRecipe,
 } from "../ai-improve.server";
+import {
+  computeDiff,
+  type ImprovedRecipe,
+  type RecipeInput,
+} from "../ai-improve.shared";
 
 // ---------------------------------------------------------------------------
 // Helpers
