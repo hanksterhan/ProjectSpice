@@ -120,20 +120,34 @@ export function annotateStep(
 ): IngredientSpan[] {
   if (!step || termIndex.length === 0) return [];
 
-  const normStep = normalise(step);
-  const spans: IngredientSpan[] = [];
-  // Track which character positions in the normalised string are consumed
-  const consumed = new Uint8Array(normStep.length);
+  // Build parallel arrays: normChars[i] and origOffset[i].
+  // normalise() can collapse whitespace runs, changing lengths; we need a
+  // mapping from every normalised position back to the original string offset.
+  const normChars: string[] = [];
+  const origOffset: number[] = []; // origOffset[normIdx] = original char index
 
-  // Build a position map: normStep char i → original step char offset.
-  // normalise() replaces some chars with spaces, so lengths stay equal.
-  // (normalise collapses runs of spaces; we need the original positions)
-  // Rather than rebuilding the mapping, we work in normalised space for
-  // matching but record spans using an offset derived from the raw text.
-  // Because normalise() only lowercases + replaces non-alphanum with spaces,
-  // the character *count* is preserved.  We can therefore use the normalised
-  // index directly as a byte offset into the original string, and grab the
-  // corresponding substring from the original.
+  let origIdx = 0;
+  while (origIdx < step.length) {
+    const ch = step[origIdx];
+    const normCh = ch.toLowerCase().replace(/[^a-z0-9\s]/, " ");
+    // Skip if this would be a redundant space (collapse runs)
+    if (normCh === " " && normChars.length > 0 && normChars[normChars.length - 1] === " ") {
+      origIdx++;
+      continue;
+    }
+    normChars.push(normCh);
+    origOffset.push(origIdx);
+    origIdx++;
+  }
+  // Trim trailing space from normalised view
+  while (normChars.length > 0 && normChars[normChars.length - 1] === " ") {
+    normChars.pop();
+    origOffset.pop();
+  }
+  const normStep = normChars.join("");
+
+  const spans: IngredientSpan[] = [];
+  const consumed = new Uint8Array(normStep.length);
 
   let pos = 0;
   while (pos < normStep.length) {
@@ -157,18 +171,21 @@ export function annotateStep(
         /\W/.test(normStep[pos + term.length]);
       if (!before || !after) continue;
 
-      // Check none of these positions are already consumed
       let alreadyUsed = false;
       for (let k = pos; k < pos + term.length; k++) {
         if (consumed[k]) { alreadyUsed = true; break; }
       }
       if (alreadyUsed) continue;
 
-      // Record the match using the original step text
+      // Map normalised positions back to original string offsets
+      const origStart = origOffset[pos];
+      const normEnd = pos + term.length - 1;
+      const origEnd = origOffset[normEnd] + 1; // exclusive
+
       spans.push({
-        start: pos,
-        end: pos + term.length,
-        text: step.slice(pos, pos + term.length),
+        start: origStart,
+        end: origEnd,
+        text: step.slice(origStart, origEnd),
         ingredientId: entry.ingredientId,
         label: entry.label,
       });

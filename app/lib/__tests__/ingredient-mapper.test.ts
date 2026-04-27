@@ -171,6 +171,20 @@ describe("segmentStep", () => {
     expect(segs).toHaveLength(1);
     expect(segs[0].kind).toBe("text");
   });
+
+  it("correctly slices original text when punctuation precedes match", () => {
+    // "olive oil" follows a comma+space — normalised collapses fine
+    const segs = segmentStep("Add: olive oil.", termIndex);
+    const span = segs.find((s) => s.kind === "span" && s.ingredientId === "o1");
+    expect(span?.text).toBe("olive oil");
+  });
+
+  it("reconstructs full text from segments without gaps or duplicates", () => {
+    const step = "Heat the olive oil and add a pinch of salt.";
+    const segs = segmentStep(step, termIndex);
+    const reconstructed = segs.map((s) => s.text).join("");
+    expect(reconstructed).toBe(step);
+  });
 });
 
 import { beforeAll } from "vitest";
