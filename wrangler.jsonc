@@ -1,99 +1,99 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "projectspice",
-  "compatibility_date": "2025-01-01",
-  "main": "./workers/app.ts",
-
-  // Local dev bindings (wrangler uses local SQLite / in-memory)
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "projectspice-dev",
-      "database_id": "local-dev",
-      "migrations_dir": "./drizzle"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "SESSIONS",
-      "id": "local-sessions-dev"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "IMAGES",
-      "bucket_name": "projectspice-images-dev"
-    }
-  ],
-  "vars": {
-    "ENVIRONMENT": "development"
-  },
-
-  "env": {
-    // -----------------------------------------------------------------
-    // Staging — deploy with: pnpm deploy:staging
-    // Domain:   <project>.workers.dev (or spice-staging.h6nk.dev)
-    // -----------------------------------------------------------------
-    "staging": {
-      "name": "projectspice-staging",
-      "vars": {
-        "ENVIRONMENT": "staging"
-      },
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "projectspice-staging",
-          // Run: wrangler d1 create projectspice-staging
-          "database_id": "REPLACE_WITH_STAGING_D1_ID",
-          "migrations_dir": "./drizzle"
-        }
-      ],
-      "kv_namespaces": [
-        {
-          "binding": "SESSIONS",
-          // Run: wrangler kv namespace create SESSIONS --env staging
-          "id": "REPLACE_WITH_STAGING_KV_ID"
-        }
-      ],
-      "r2_buckets": [
-        {
-          "binding": "IMAGES",
-          "bucket_name": "projectspice-images-staging"
-        }
-      ]
-    },
-
-    // -----------------------------------------------------------------
-    // Production — deploy with: pnpm deploy:prod
-    // Domain:   spice.h6nk.dev (custom domain, set in CF dashboard)
-    // -----------------------------------------------------------------
-    "production": {
-      "name": "projectspice-production",
-      "vars": {
-        "ENVIRONMENT": "production"
-      },
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "projectspice-production",
-          // Run: wrangler d1 create projectspice-production
-          "database_id": "REPLACE_WITH_PRODUCTION_D1_ID",
-          "migrations_dir": "./drizzle"
-        }
-      ],
-      "kv_namespaces": [
-        {
-          "binding": "SESSIONS",
-          // Run: wrangler kv namespace create SESSIONS --env production
-          "id": "REPLACE_WITH_PRODUCTION_KV_ID"
-        }
-      ],
-      "r2_buckets": [
-        {
-          "binding": "IMAGES",
-          "bucket_name": "projectspice-images-prod"
-        }
-      ]
-    }
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "projectspice",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "./workers/app.ts",
+	// Local dev bindings (wrangler uses local SQLite / in-memory)
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "projectspice-dev",
+			"database_id": "local-dev",
+			"migrations_dir": "./drizzle"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSIONS",
+			"id": "local-sessions-dev"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "IMAGES",
+			"bucket_name": "projectspice-images-dev"
+		}
+	],
+	"vars": {
+		"ENVIRONMENT": "development"
+	},
+	"env": {
+		// -----------------------------------------------------------------
+		// Staging — deploy with: pnpm deploy:staging
+		// Domain:   <project>.workers.dev (or spice-staging.h6nk.dev)
+		// -----------------------------------------------------------------
+		"staging": {
+			"name": "projectspice-staging",
+			"vars": {
+				"ENVIRONMENT": "staging"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "projectspice-staging",
+					// Run: wrangler d1 create projectspice-staging
+					"database_id": "25130362-0c8b-4add-93a2-8c1c8b3684e7",
+					"migrations_dir": "./drizzle"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "SESSIONS",
+					// Run: wrangler kv namespace create SESSIONS --env staging
+					"id": "79c2089959fe4333801bab2659aa60cd"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "IMAGES",
+					"bucket_name": "projectspice-images-staging"
+				}
+			]
+		},
+		// -----------------------------------------------------------------
+		// Production — deploy with: pnpm deploy:prod
+		// Domain:   spice.h6nk.dev (custom domain, set in CF dashboard)
+		// -----------------------------------------------------------------
+		"production": {
+			"name": "projectspice-production",
+			"vars": {
+				"ENVIRONMENT": "production"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "projectspice-production",
+					// Run: wrangler d1 create projectspice-production
+					"database_id": "da3cb1e0-f360-4cf0-8959-d7dc51eeb792",
+					"migrations_dir": "./drizzle"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "SESSIONS",
+					// Run: wrangler kv namespace create SESSIONS --env production
+					"id": "abd93542750f4b0992e6252074363dc5"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "IMAGES",
+					"bucket_name": "projectspice-images-prod"
+				}
+			]
+		}
+	}
 }

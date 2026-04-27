@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
+    "postbuild": "tsx scripts/scrub-build-secrets.ts",
     "cf-typegen": "wrangler types",
     "dev": "react-router dev",
-    "deploy:staging": "pnpm cf:check -- --env staging --remote-secrets && pnpm build && wrangler deploy --env staging",
-    "deploy:prod": "pnpm cf:check -- --env production --remote-secrets && pnpm build && wrangler deploy --env production",
+    "deploy:staging": "pnpm cf:check --env staging --remote-secrets && CLOUDFLARE_ENV=staging pnpm build && wrangler deploy --env staging",
+    "deploy:prod": "pnpm cf:check --env production --remote-secrets && CLOUDFLARE_ENV=production pnpm build && wrangler deploy --env production",
     "preview": "pnpm build && vite preview",
     "typecheck": "pnpm cf-typegen && react-router typegen && tsc -b",
     "lint": "eslint .",
@@ -15,8 +16,8 @@
     "test:watch": "vitest",
     "paprika:truth": "tsx scripts/paprika-truth-test.ts",
     "cf:check": "tsx scripts/cloudflare-readiness.ts",
-    "cf:provision:staging": "wrangler d1 create projectspice-staging --env staging --binding DB --location wnam --update-config && wrangler kv namespace create SESSIONS --env staging --binding SESSIONS --update-config && wrangler r2 bucket create projectspice-images-staging --env staging --binding IMAGES --location wnam --update-config",
-    "cf:provision:prod": "wrangler d1 create projectspice-production --env production --binding DB --location wnam --update-config && wrangler kv namespace create SESSIONS --env production --binding SESSIONS --update-config && wrangler r2 bucket create projectspice-images-prod --env production --binding IMAGES --location wnam --update-config",
+    "cf:provision:staging": "wrangler d1 create projectspice-staging --env staging --binding DB --location wnam && wrangler kv namespace create SESSIONS --env staging --binding SESSIONS && wrangler r2 bucket create projectspice-images-staging --env staging --binding IMAGES --location wnam",
+    "cf:provision:prod": "wrangler d1 create projectspice-production --env production --binding DB --location wnam && wrangler kv namespace create SESSIONS --env production --binding SESSIONS && wrangler r2 bucket create projectspice-images-prod --env production --binding IMAGES --location wnam",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply DB --local",
     "db:migrate:staging": "wrangler d1 migrations apply DB --env staging --remote",
@@ -43,7 +44,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.13.5",
-    "@cloudflare/workers-types": "^4.0.0",
+    "@cloudflare/workers-types": "^4.20260426.1",
     "@eslint/js": "^9.0.0",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
@@ -60,6 +61,6 @@
     "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.0",
-    "wrangler": "^4.40.0"
+    "wrangler": "^4.85.0"
   }
 }
