@@ -67,13 +67,27 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (!name) return { error: "Profile name is required." };
     if (!systemPrompt) return { error: "System prompt is required." };
 
+    // Duplicate name guard
+    const [collision] = await db
+      .select({ id: schema.aiProfiles.id })
+      .from(schema.aiProfiles)
+      .where(
+        and(eq(schema.aiProfiles.userId, user.id), eq(schema.aiProfiles.name, name))
+      );
+    if (collision) return { error: `A profile named "${name}" already exists.` };
+
     let preferences: Record<string, unknown> = {};
     if (preferencesRaw) {
+      let parsed: unknown;
       try {
-        preferences = JSON.parse(preferencesRaw);
+        parsed = JSON.parse(preferencesRaw);
       } catch {
         return { error: "Preferences must be valid JSON." };
       }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return { error: "Preferences must be a JSON object, not an array or primitive." };
+      }
+      preferences = parsed as Record<string, unknown>;
     }
     if (familyMemberAge) {
       const age = Number(familyMemberAge);
@@ -116,11 +130,16 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     let preferences: Record<string, unknown> = {};
     if (preferencesRaw) {
+      let parsed: unknown;
       try {
-        preferences = JSON.parse(preferencesRaw);
+        parsed = JSON.parse(preferencesRaw);
       } catch {
         return { error: "Preferences must be valid JSON." };
       }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return { error: "Preferences must be a JSON object, not an array or primitive." };
+      }
+      preferences = parsed as Record<string, unknown>;
     }
     if (familyMemberAge) {
       const age = Number(familyMemberAge);
