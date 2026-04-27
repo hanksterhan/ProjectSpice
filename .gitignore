@@ -3,6 +3,8 @@ build/
 .wrangler/
 .react-router/
 dist/
+test-results/
+playwright-report/
 
 # Secrets — never commit
 .dev.vars
