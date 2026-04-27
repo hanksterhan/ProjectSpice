@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { OfflineIndicator } from "~/components/offline-indicator";
+import { OfflineLogSync } from "~/components/offline-log-sync";
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -45,6 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <OfflineIndicator />
+        <OfflineLogSync />
         {children}
         <ScrollRestoration />
         <Scripts />

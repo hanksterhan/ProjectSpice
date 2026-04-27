@@ -1,7 +1,7 @@
 import { openDB } from "idb";
 
 const DB_NAME = "projectspice-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface CachedRecipeEntry {
   id: string;
@@ -18,10 +18,14 @@ export interface PendingLogEntry {
   userId: string;
   recipeId: string | null;
   cookedAt: string;
-  rating: number | null;
+  rating: string | number | null;
   notes: string | null;
   modifications: string | null;
   createdAt: number;
+  status: "pending" | "syncing" | "failed";
+  attempts: number;
+  lastAttemptAt: number | null;
+  lastError: string | null;
 }
 
 function getDb() {
@@ -61,14 +65,23 @@ export async function getCachedRecipes(
 }
 
 export async function queueLog(
-  entry: Omit<PendingLogEntry, "id" | "createdAt">
-): Promise<void> {
+  entry: Omit<
+    PendingLogEntry,
+    "createdAt" | "status" | "attempts" | "lastAttemptAt" | "lastError"
+  >
+): Promise<PendingLogEntry> {
   const db = await getDb();
-  await db.add("sync-queue", {
+  const queued: PendingLogEntry = {
     ...entry,
-    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    id: entry.id,
     createdAt: Date.now(),
-  });
+    status: "pending",
+    attempts: 0,
+    lastAttemptAt: null,
+    lastError: null,
+  };
+  await db.put("sync-queue", queued);
+  return queued;
 }
 
 export async function getPendingLogs(): Promise<PendingLogEntry[]> {
@@ -79,6 +92,16 @@ export async function getPendingLogs(): Promise<PendingLogEntry[]> {
 export async function removePendingLog(id: string): Promise<void> {
   const db = await getDb();
   await db.delete("sync-queue", id);
+}
+
+export async function updatePendingLog(
+  id: string,
+  updates: Partial<Omit<PendingLogEntry, "id">>
+): Promise<void> {
+  const db = await getDb();
+  const existing = await db.get("sync-queue", id);
+  if (!existing) return;
+  await db.put("sync-queue", { ...existing, ...updates });
 }
 
 export async function clearUserRecipeCache(userId: string): Promise<void> {

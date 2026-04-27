@@ -43,6 +43,7 @@ export default [
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
   route("api/imports/paprika/photos", "routes/api.imports.paprika.photos.ts"),
   route("api/imports/:id", "routes/api.imports.$id.ts"),
+  route("api/logs", "routes/api.logs.ts"),
   // Export
   route("api/export", "routes/api.export.ts"),
   // AI improvement SSE endpoint

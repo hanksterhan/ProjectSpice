@@ -1,9 +1,17 @@
-import { data, Form, Link, redirect } from "react-router";
-import { useState } from "react";
+import { Form, Link, redirect, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 import { and, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/logs.new";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { createCookingLog } from "~/lib/cooking-log.server";
+import {
+  createLogClientId,
+  queueLogDraft,
+  shouldQueueLogAfterFailure,
+  submitLogDraft,
+  type LogDraft,
+} from "~/lib/offline-log-sync";
 
 export function meta() {
   return [{ title: "Log a Cook — ProjectSpice" }];
@@ -35,57 +43,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = await requireUser(request, context);
   const fd = await request.formData();
-
-  const recipeId = String(fd.get("recipeId") ?? "").trim() || null;
-  const cookedAtRaw = String(fd.get("cookedAt") ?? "").trim();
-  const ratingRaw = String(fd.get("rating") ?? "").trim();
-  const notes = String(fd.get("notes") ?? "").trim() || null;
-  const modifications = String(fd.get("modifications") ?? "").trim() || null;
-
-  if (!cookedAtRaw) {
-    return data({ error: "Date is required" }, { status: 400 });
-  }
-
-  const cookedAt = new Date(cookedAtRaw);
-  if (isNaN(cookedAt.getTime())) {
-    return data({ error: "Invalid date" }, { status: 400 });
-  }
-
-  const rating = ratingRaw ? parseInt(ratingRaw, 10) : null;
-  if (rating !== null && (rating < 1 || rating > 5)) {
-    return data({ error: "Rating must be 1–5" }, { status: 400 });
-  }
-
   const { db } = createDb(context.cloudflare.env.DB);
-
-  if (recipeId) {
-    const [recipe] = await db
-      .select({ id: schema.recipes.id })
-      .from(schema.recipes)
-      .where(
-        and(
-          eq(schema.recipes.id, recipeId),
-          eq(schema.recipes.userId, user.id),
-          isNull(schema.recipes.deletedAt)
-        )
-      )
-      .limit(1);
-    if (!recipe) throw data(null, { status: 404 });
-  }
-
-  const logId = crypto.randomUUID();
-
-  await db.insert(schema.cookingLog).values({
-    id: logId,
-    userId: user.id,
-    recipeId,
-    cookedAt,
-    rating,
-    notes,
-    modifications,
+  const result = await createCookingLog(db, user.id, {
+    clientRequestId: String(fd.get("clientRequestId") ?? "").trim() || null,
+    recipeId: String(fd.get("recipeId") ?? "").trim() || null,
+    cookedAt: String(fd.get("cookedAt") ?? "").trim(),
+    rating: String(fd.get("rating") ?? "").trim(),
+    notes: String(fd.get("notes") ?? "").trim() || null,
+    modifications: String(fd.get("modifications") ?? "").trim() || null,
   });
 
-  throw redirect(`/logs/${logId}`);
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  throw redirect(`/logs/${result.logId}`);
 }
 
 const INPUT =
@@ -103,10 +75,17 @@ function todayLocalDate(): string {
 
 export default function NewLog({ loaderData, actionData }: Route.ComponentProps) {
   const { recipe } = loaderData;
+  const navigate = useNavigate();
   const [rating, setRating] = useState(0);
+  const [clientRequestId, setClientRequestId] = useState("");
+  const [offlineStatus, setOfflineStatus] = useState<string | null>(null);
 
   const backHref = recipe ? `/recipes/${recipe.id}` : "/recipes";
   const backLabel = recipe ? `← ${recipe.title}` : "← Recipes";
+
+  useEffect(() => {
+    setClientRequestId(createLogClientId());
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,13 +103,62 @@ export default function NewLog({ loaderData, actionData }: Route.ComponentProps)
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <Form method="post" className="space-y-6">
+        <Form
+          method="post"
+          className="space-y-6"
+          onSubmit={async (event) => {
+            const form = event.currentTarget;
+            event.preventDefault();
+            const fd = new FormData(form);
+            const id = String(fd.get("clientRequestId") ?? "").trim() || createLogClientId();
+            if (!clientRequestId) setClientRequestId(id);
+            const draft: LogDraft = {
+              clientRequestId: id,
+              recipeId: String(fd.get("recipeId") ?? "").trim() || null,
+              cookedAt: String(fd.get("cookedAt") ?? "").trim(),
+              rating: String(fd.get("rating") ?? "").trim() || null,
+              notes: String(fd.get("notes") ?? "").trim() || null,
+              modifications: String(fd.get("modifications") ?? "").trim() || null,
+            };
+
+            if (!draft.cookedAt) {
+              setOfflineStatus("Date is required.");
+              return;
+            }
+
+            try {
+              if (navigator.onLine) {
+                const result = await submitLogDraft(draft);
+                navigate(`/logs/${result.logId}`);
+                return;
+              }
+              throw new Error("offline");
+            } catch (err) {
+              if (!shouldQueueLogAfterFailure(err)) {
+                setOfflineStatus(err instanceof Error ? err.message : "Could not save log.");
+                return;
+              }
+              try {
+                await queueLogDraft(draft);
+                window.dispatchEvent(new Event("projectspice:offline-log-queued"));
+                setOfflineStatus("Saved offline. It will sync when you reconnect.");
+                setTimeout(() => navigate(recipe ? `/recipes/${recipe.id}` : "/recipes"), 900);
+              } catch {
+                setOfflineStatus(err instanceof Error ? err.message : "Could not save offline.");
+              }
+            }
+          }}
+        >
+          <input type="hidden" name="clientRequestId" value={clientRequestId} />
           {recipe && (
             <input type="hidden" name="recipeId" value={recipe.id} />
           )}
 
           {actionData?.error && (
             <p className="text-sm text-red-500">{actionData.error}</p>
+          )}
+          {offlineStatus && (
+            <p className="text-sm text-amber-600">{offlineStatus}</p>
           )}
 
           {recipe ? (

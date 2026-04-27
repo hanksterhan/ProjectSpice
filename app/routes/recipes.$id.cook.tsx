@@ -1,9 +1,16 @@
-import { data, Link, useFetcher, useNavigate } from "react-router";
+import { data, Link, useNavigate } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id.cook";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import {
+  createLogClientId,
+  queueLogDraft,
+  shouldQueueLogAfterFailure,
+  submitLogDraft,
+  type LogDraft,
+} from "~/lib/offline-log-sync";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -693,9 +700,11 @@ function QuickLogSheet({
   recipeTitle: string;
   onSkip: () => void;
 }) {
-  const fetcher = useFetcher();
   const [rating, setRating] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [clientRequestId] = useState(() => createLogClientId());
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -743,11 +752,41 @@ function QuickLogSheet({
           </button>
         </div>
 
-        <fetcher.Form method="post" action="/logs/new" className="space-y-6">
-          <input type="hidden" name="recipeId" value={recipeId} />
-          <input type="hidden" name="cookedAt" value={todayLocalDate()} />
-          <input type="hidden" name="rating" value={rating > 0 ? rating : ""} />
-
+        <form
+          className="space-y-6"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            setSaving(true);
+            setStatus(null);
+            const draft: LogDraft = {
+              clientRequestId,
+              recipeId,
+              cookedAt: todayLocalDate(),
+              rating: rating > 0 ? rating : null,
+              notes: null,
+              modifications: null,
+            };
+            try {
+              if (navigator.onLine) {
+                await submitLogDraft(draft);
+                onSkip();
+                return;
+              }
+              throw new Error("offline");
+            } catch (err) {
+              if (!shouldQueueLogAfterFailure(err)) {
+                setStatus(err instanceof Error ? err.message : "Could not save log.");
+                return;
+              }
+              await queueLogDraft(draft);
+              window.dispatchEvent(new Event("projectspice:offline-log-queued"));
+              setStatus("Saved offline. It will sync when you reconnect.");
+              setTimeout(onSkip, 900);
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
           <div
             className="flex justify-center gap-4"
             role="group"
@@ -771,14 +810,18 @@ function QuickLogSheet({
             ))}
           </div>
 
+          {status && (
+            <p className="text-center text-sm text-amber-600">{status}</p>
+          )}
+
           <button
             type="submit"
-            disabled={fetcher.state !== "idle"}
+            disabled={saving}
             className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-3 text-base font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {fetcher.state !== "idle" ? "Saving…" : "Save Log"}
+            {saving ? "Saving…" : "Save Log"}
           </button>
-        </fetcher.Form>
+        </form>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { buildTermIndex, segmentStep, type MappableIngredient } from "~/lib/ingredient-mapper";
+import { cacheRecipe } from "~/lib/offline-db";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -229,15 +230,13 @@ export default function RecipeDetail({
   }, [isDeleted, navigate]);
 
   useEffect(() => {
-    import("~/lib/offline-db").then(({ cacheRecipe }) => {
-      cacheRecipe({
-        id: recipe.id,
-        userId: recipe.userId,
-        recipe: recipe as unknown as Record<string, unknown>,
-        ingredients: ingredients as unknown[],
-        tags,
-        cookCount,
-      }).catch(() => {});
+    cacheRecipe({
+      id: recipe.id,
+      userId: recipe.userId,
+      recipe: recipe as unknown as Record<string, unknown>,
+      ingredients: ingredients as unknown[],
+      tags,
+      cookCount,
     }).catch(() => {});
   }, [recipe.id]);  // eslint-disable-line react-hooks/exhaustive-deps
 
