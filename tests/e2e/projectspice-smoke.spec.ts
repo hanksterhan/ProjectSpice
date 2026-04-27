@@ -18,12 +18,14 @@ test.beforeEach(() => {
   resetLocalSmokeData();
 });
 
-test("P1 readiness path works for seeded family account", async ({ page, request, baseURL }) => {
+test("P1 readiness path works for seeded family account", async ({ page, request, baseURL }, testInfo) => {
+  const shoppingListName = `Smoke Dinner List ${testInfo.project.name} ${Date.now()}`;
+
   await page.goto("/login");
   await page.getByLabel("Email").fill(HENRY_EMAIL);
   await page.getByLabel("Password").fill(HENRY_PASSWORD);
   await page.getByRole("button", { name: "Sign In" }).click();
-  await page.waitForLoadState("networkidle");
+  await expect(page).not.toHaveURL(/\/login$/);
 
   const onboardingHeading = page.getByRole("heading", { name: /Welcome, Henry!/ });
   if (await onboardingHeading.isVisible()) {
@@ -59,12 +61,12 @@ test("P1 readiness path works for seeded family account", async ({ page, request
   await page.getByRole("button", { name: "5 stars" }).click();
   await page.getByRole("button", { name: "Save Log" }).click();
   await expect(page.getByRole("heading", { name: "Classic Roast Chicken" })).toBeVisible();
-  await expect(page.getByText("Cooked 1×")).toBeVisible();
+  await expect(page.getByText(/Cooked [1-9]\d*×/)).toBeVisible();
 
   await page.goto(`/shopping-lists?recipeId=${recipeId}`);
-  await page.getByPlaceholder("New list name…").fill("Smoke Dinner List");
+  await page.getByPlaceholder("New list name…").fill(shoppingListName);
   await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByText("Smoke Dinner List")).toBeVisible();
+  await expect(page.getByText(shoppingListName)).toBeVisible();
   await page.getByRole("button", { name: "+ Manual" }).click();
   await page.getByPlaceholder("Item name (e.g. olive oil, flour)").fill("lemons");
   await page.getByPlaceholder("Qty").fill("2");

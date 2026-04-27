@@ -1,7 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "projectspice",
-	"compatibility_date": "2025-01-01",
+	"compatibility_date": "2026-04-22",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -69,6 +69,15 @@
 		// -----------------------------------------------------------------
 		"production": {
 			"name": "projectspice-production",
+			"compatibility_date": "2026-04-27",
+			"workers_dev": false,
+			"preview_urls": false,
+			"routes": [
+				{
+					"pattern": "spice.h6nk.dev",
+					"custom_domain": true
+				}
+			],
 			"vars": {
 				"ENVIRONMENT": "production"
 			},

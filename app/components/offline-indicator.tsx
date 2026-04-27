@@ -21,7 +21,7 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-1.5 bg-amber-500 text-amber-950 py-1.5 text-sm font-medium"
+      className="pointer-events-none fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-1.5 bg-amber-500 text-amber-950 py-1.5 text-sm font-medium"
     >
       <span aria-hidden="true">⚡</span>
       Offline — cached recipes available
