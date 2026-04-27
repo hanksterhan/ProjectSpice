@@ -5,7 +5,7 @@
  * allows accept/reject per field, and applies the result as a copy.
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link, useLoaderData, useFetcher } from "react-router";
 import { data, redirect } from "react-router";
 import { and, eq, isNull, asc, desc } from "drizzle-orm";
@@ -328,7 +328,6 @@ export default function RecipeImprovePage() {
   const { recipe, ingredients, profiles, variants, quotaUsed, quotaLimit } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher();
-  const formRef = useRef<HTMLFormElement>(null);
 
   const [selectedProfile, setSelectedProfile] = useState<string>(
     profiles[0]?.id ?? ""
@@ -369,27 +368,20 @@ export default function RecipeImprovePage() {
     })),
   };
 
-  function handleImprove() {
-    if (!selectedProfile) return;
+  function handleImprove(profileIdOverride?: string) {
+    const profileId = profileIdOverride ?? selectedProfile;
+    if (!profileId) return;
+    if (profileIdOverride) setSelectedProfile(profileIdOverride);
     setImproved(null);
     setDiff(null);
     setError(null);
     setIsStreaming(true);
 
-    const evtSource = new EventSource(
-      `/api/recipes/${recipe.id}/improve?profileId=${encodeURIComponent(selectedProfile)}`,
-      { withCredentials: true }
-    );
-
-    // POST via fetch (SSE is GET-only in EventSource; we use fetch + ReadableStream)
-    evtSource.close();
-
-    // Use fetch with streaming instead
     fetch(`/api/recipes/${recipe.id}/improve`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profileId: selectedProfile }),
+      body: JSON.stringify({ profileId }),
     })
       .then(async (resp) => {
         if (!resp.ok) {
@@ -543,7 +535,7 @@ export default function RecipeImprovePage() {
               </select>
               <button
                 type="button"
-                onClick={handleImprove}
+                onClick={() => handleImprove()}
                 disabled={isStreaming || quotaRemaining <= 0 || !selectedProfile}
                 className="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-md disabled:opacity-50 whitespace-nowrap"
               >
@@ -648,7 +640,7 @@ export default function RecipeImprovePage() {
             </div>
 
             {/* Apply as copy */}
-            <fetcher.Form method="post" ref={formRef}>
+            <fetcher.Form method="post">
               <input type="hidden" name="_intent" value="apply" />
               <input type="hidden" name="profileId" value={selectedProfile} />
               <input type="hidden" name="title" value={finalTitle} />
@@ -718,10 +710,7 @@ export default function RecipeImprovePage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedProfile(p.id);
-                      handleImprove();
-                    }}
+                    onClick={() => handleImprove(p.id)}
                     disabled={isStreaming || quotaRemaining <= 0}
                     className="text-xs text-primary underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
                   >
