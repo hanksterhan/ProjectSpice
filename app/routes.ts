@@ -10,6 +10,7 @@ export default [
   route("recipes/:id", "routes/recipes.$id.tsx"),
   route("recipes/:id/edit", "routes/recipes.$id.edit.tsx"),
   route("recipes/:id/cook", "routes/recipes.$id.cook.tsx"),
+  route("recipes/:id/improve", "routes/recipes.$id.improve.tsx"),
   route("logs/new", "routes/logs.new.tsx"),
   route("logs/:id", "routes/logs.$id.tsx"),
   // CDN image serving (R2 → browser with immutable cache headers)
@@ -44,4 +45,6 @@ export default [
   route("api/imports/:id", "routes/api.imports.$id.ts"),
   // Export
   route("api/export", "routes/api.export.ts"),
+  // AI improvement SSE endpoint
+  route("api/recipes/:id/improve", "routes/api.recipes.$id.improve.ts"),
 ] satisfies RouteConfig;

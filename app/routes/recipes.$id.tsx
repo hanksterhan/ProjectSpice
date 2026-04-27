@@ -1,6 +1,6 @@
 import { data, Form, Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { eq, and, isNull, asc, count } from "drizzle-orm";
+import { eq, and, isNull, asc, count, desc } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
@@ -52,7 +52,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const { db } = createDb(context.cloudflare.env.DB);
 
-  const [recipeRows, ingredients, tagRows, logRows] = await Promise.all([
+  const [recipeRows, ingredients, tagRows, logRows, variantRows] = await Promise.all([
     db
       .select()
       .from(schema.recipes)
@@ -83,6 +83,18 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
           eq(schema.cookingLog.userId, user.id)
         )
       ),
+    // AI-improved variants
+    db
+      .select({ id: schema.recipes.id, title: schema.recipes.title, createdAt: schema.recipes.createdAt })
+      .from(schema.recipes)
+      .where(
+        and(
+          eq(schema.recipes.parentRecipeId, params.id),
+          eq(schema.recipes.userId, user.id),
+          isNull(schema.recipes.deletedAt)
+        )
+      )
+      .orderBy(desc(schema.recipes.createdAt)),
   ]);
 
   const recipe = recipeRows[0];
@@ -93,6 +105,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     ingredients,
     tags: tagRows.map((r) => r.name),
     cookCount: logRows[0]?.total ?? 0,
+    variants: variantRows,
   };
 }
 
@@ -135,7 +148,7 @@ export default function RecipeDetail({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { recipe, ingredients, tags, cookCount } = loaderData;
+  const { recipe, ingredients, tags, cookCount, variants } = loaderData;
   const navigate = useNavigate();
   const [scaleFactor, setScaleFactor] = useState(1);
   const [customScale, setCustomScale] = useState("");
@@ -235,6 +248,12 @@ export default function RecipeDetail({
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             Add to List
+          </Link>
+          <Link
+            to={`/recipes/${recipe.id}/improve`}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Improve
           </Link>
           <Link
             to={`/recipes/${recipe.id}/edit`}
@@ -443,6 +462,30 @@ export default function RecipeDetail({
               {recipe.sourceUrl}
             </a>
           </p>
+        )}
+
+        {/* AI variant version panel */}
+        {variants.length > 0 && (
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              AI Versions
+            </p>
+            <ul className="space-y-1">
+              {variants.map((v) => (
+                <li key={v.id} className="flex items-center gap-2 text-sm">
+                  <Link
+                    to={`/recipes/${v.id}`}
+                    className="text-primary underline underline-offset-2 hover:opacity-80 flex-1 truncate"
+                  >
+                    {v.title}
+                  </Link>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {v.createdAt ? new Date(v.createdAt).toLocaleDateString() : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </main>
     </div>
