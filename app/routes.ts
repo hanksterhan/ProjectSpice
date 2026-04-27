@@ -29,6 +29,7 @@ export default [
   route("settings/tags", "routes/settings.tags.tsx"),
   route("settings/cookbooks", "routes/settings.cookbooks.tsx"),
   route("settings/collections", "routes/settings.collections.tsx"),
+  route("settings/ai-profiles", "routes/settings.ai-profiles.tsx"),
   // Cookbooks
   route("cookbooks/:id", "routes/cookbooks.$id.tsx"),
   // Collections
