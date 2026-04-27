@@ -25,6 +25,7 @@ export default [
   // URL scraper import
   route("imports/url", "routes/imports.url.tsx"),
   // Settings
+  route("settings", "routes/settings.tsx"),
   route("settings/tags", "routes/settings.tags.tsx"),
   route("settings/cookbooks", "routes/settings.cookbooks.tsx"),
   route("settings/collections", "routes/settings.collections.tsx"),
@@ -40,4 +41,6 @@ export default [
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
   route("api/imports/paprika/photos", "routes/api.imports.paprika.photos.ts"),
   route("api/imports/:id", "routes/api.imports.$id.ts"),
+  // Export
+  route("api/export", "routes/api.export.ts"),
 ] satisfies RouteConfig;
