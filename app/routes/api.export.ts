@@ -20,6 +20,21 @@ import {
   type ExportLog,
 } from "~/lib/export-builder";
 
+// D1 bind limit is 100 variables per statement; chunk large IN queries.
+const D1_BATCH_SIZE = 99;
+
+async function fetchInBatches<T>(
+  ids: string[],
+  fetcher: (chunk: string[]) => Promise<T[]>
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < ids.length; i += D1_BATCH_SIZE) {
+    const chunk = ids.slice(i, i + D1_BATCH_SIZE);
+    results.push(...(await fetcher(chunk)));
+  }
+  return results;
+}
+
 export async function loader({ request, context }: Route.LoaderArgs): Promise<Response> {
   const user = await requireUser(request, context);
   const { db } = createDb(context.cloudflare.env.DB);
@@ -32,36 +47,40 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Re
 
   const recipeIds = recipeRows.map((r) => r.id);
 
-  // Ingredients (batch; D1 supports arrays in WHERE IN via drizzle)
+  // Ingredients — batched to respect D1's 100-variable bind limit
   const ingredientRows =
     recipeIds.length > 0
-      ? await db
-          .select()
-          .from(schema.ingredients)
-          .where(
-            recipeIds.length === 1
-              ? eq(schema.ingredients.recipeId, recipeIds[0])
-              : inArray(schema.ingredients.recipeId, recipeIds)
-          )
-          .orderBy(schema.ingredients.sortOrder)
+      ? await fetchInBatches(recipeIds, (chunk) =>
+          db
+            .select()
+            .from(schema.ingredients)
+            .where(
+              chunk.length === 1
+                ? eq(schema.ingredients.recipeId, chunk[0])
+                : inArray(schema.ingredients.recipeId, chunk)
+            )
+            .orderBy(schema.ingredients.sortOrder)
+        )
       : [];
 
-  // Tags via join
+  // Tags via join — batched for the same reason
   const tagRows =
     recipeIds.length > 0
-      ? await db
-          .select({
-            recipeId: schema.recipeTags.recipeId,
-            tagId: schema.tags.id,
-            tagName: schema.tags.name,
-          })
-          .from(schema.recipeTags)
-          .innerJoin(schema.tags, eq(schema.tags.id, schema.recipeTags.tagId))
-          .where(
-            recipeIds.length === 1
-              ? eq(schema.recipeTags.recipeId, recipeIds[0])
-              : inArray(schema.recipeTags.recipeId, recipeIds)
-          )
+      ? await fetchInBatches(recipeIds, (chunk) =>
+          db
+            .select({
+              recipeId: schema.recipeTags.recipeId,
+              tagId: schema.tags.id,
+              tagName: schema.tags.name,
+            })
+            .from(schema.recipeTags)
+            .innerJoin(schema.tags, eq(schema.tags.id, schema.recipeTags.tagId))
+            .where(
+              chunk.length === 1
+                ? eq(schema.recipeTags.recipeId, chunk[0])
+                : inArray(schema.recipeTags.recipeId, chunk)
+            )
+        )
       : [];
 
   // Cooking logs (all, including free-form without recipe link)
@@ -151,7 +170,8 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Re
 
   const fileName = `projectspice-export-${new Date().toISOString().slice(0, 10)}.zip`;
 
-  return new Response(zipped.buffer as ArrayBuffer, {
+  const body = zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength);
+  return new Response(body as ArrayBuffer, {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${fileName}"`,
