@@ -1,13 +1,13 @@
 /**
  * AI recipe improvement — fallback chain, KV cache, quota, food-safety post-filter.
  *
- * Fallback order (per plan iteration-3 Option B):
- *   1. Workers AI (Llama 3.1) — free, edge-native
- *   2. Anthropic via ANTHROPIC_OAUTH_TOKEN (subscription-bound)
- *   3. OpenAI via OPENAI_CODEX_TOKEN (subscription-bound)
+ * Runtime order:
+ *   1. Optional Workers AI caller, when the route supplies one
+ *   2. Anthropic via ANTHROPIC_OAUTH_TOKEN
+ *   3. OpenAI via OPENAI_CODEX_TOKEN
  *
- * Workers AI is not available in unit tests (no CF runtime), so the calling
- * code wraps it behind the `callWorkersAI` injectable. Tests stub that layer.
+ * The current React Router endpoint does not supply a Workers AI caller, so
+ * deployed requests use the Anthropic → OpenAI token chain directly.
  */
 
 import {
@@ -18,7 +18,7 @@ import {
 
 export interface ImprovementResult {
   improved: ImprovedRecipe;
-  provider: "workers-ai" | "anthropic" | "openai";
+  provider: "cache" | "workers-ai" | "anthropic" | "openai";
   tokensIn: number;
   tokensOut: number;
   fromCache: boolean;
@@ -317,7 +317,7 @@ export async function improveRecipe(
   if (cached) {
     return {
       improved: cached,
-      provider: "workers-ai",
+      provider: "cache",
       tokensIn: 0,
       tokensOut: 0,
       fromCache: true,
@@ -336,7 +336,7 @@ export async function improveRecipe(
   let tokensOut = 0;
   let tosError = false;
 
-  // Try Workers AI if within token budget
+  // Try Workers AI only when a caller has been explicitly wired by the route.
   if (env.callWorkersAI && tokenEstimate <= WORKERS_AI_TOKEN_LIMIT) {
     try {
       text = await env.callWorkersAI(userPrompt, systemPrompt);

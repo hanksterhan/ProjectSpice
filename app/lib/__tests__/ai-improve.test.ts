@@ -7,6 +7,7 @@ import {
   buildSystemPrompt,
   buildUserPrompt,
   estimateTokens,
+  improveRecipe,
   DAILY_QUOTA,
   PROMPT_VERSION,
   WORKERS_AI_TOKEN_LIMIT,
@@ -84,6 +85,41 @@ describe("buildCacheKey", () => {
     const k1 = buildCacheKey("hashA", "p", 1);
     const k2 = buildCacheKey("hashB", "p", 1);
     expect(k1).not.toBe(k2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// improveRecipe cache behavior
+// ---------------------------------------------------------------------------
+
+describe("improveRecipe", () => {
+  it("labels cached results as cache rather than a live AI provider", async () => {
+    const improved = makeImproved({ title: "Cached Pasta" });
+    const kv = {
+      get: vi.fn(async () => improved),
+      put: vi.fn(),
+      delete: vi.fn(),
+      list: vi.fn(),
+      getWithMetadata: vi.fn(),
+    } as unknown as KVNamespace;
+
+    const result = await improveRecipe(
+      makeRecipe(),
+      { id: "profile-1", systemPrompt: "Improve recipes." },
+      {
+        kv,
+        anthropicToken: undefined,
+        openaiToken: undefined,
+        callWorkersAI: null,
+      },
+      "user-1",
+      "2026-04-27"
+    );
+
+    expect(result.fromCache).toBe(true);
+    expect(result.provider).toBe("cache");
+    expect(result.improved.title).toBe("Cached Pasta");
+    expect(kv.put).not.toHaveBeenCalled();
   });
 });
 

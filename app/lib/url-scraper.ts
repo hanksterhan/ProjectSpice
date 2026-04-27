@@ -1,10 +1,9 @@
 /**
  * URL scraper for ProjectSpice.
  *
- * 3-tier pipeline:
+ * Structured-data pipeline:
  *   1. Schema.org JSON-LD extraction (highest confidence)
  *   2. Microdata heuristics (itemprop attributes)
- *   3. Workers AI fallback — stubbed (AI is P2)
  *
  * All time fields are returned as raw strings for the time-parser to handle
  * (including ISO 8601 durations like "PT2H30M").
@@ -279,8 +278,10 @@ export function scrapeHtml(html: string, url: string): ScrapeResult {
   const heuristicResult = extractHeuristic(html, url);
   if (heuristicResult) return { ok: true, recipe: heuristicResult };
 
-  // Tier 3: Workers AI fallback (P2 — stubbed)
-  // TODO: implement Workers AI extraction for recipes that have no structured data
-
-  return { ok: false, paywalled: false, error: "Could not extract recipe from this page. Try pasting the page HTML directly." };
+  return {
+    ok: false,
+    paywalled: false,
+    error:
+      "Could not extract structured recipe data from this page. Try pasting the page HTML directly.",
+  };
 }

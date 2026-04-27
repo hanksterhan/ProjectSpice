@@ -2,8 +2,8 @@
  * /imports/gpt
  *
  * GPT / AI recipe import page.
- * Paste a recipe from ChatGPT or another AI assistant,
- * parse it via PROJECTSPICE_RECIPE_V1 strict parser, save to DB.
+ * Paste a recipe from ChatGPT or another AI assistant, parse it via the
+ * PROJECTSPICE_RECIPE_V1 strict parser, and save it to D1.
  */
 
 import { useState } from "react";
@@ -78,7 +78,7 @@ function isGroupHeaderLine(line: string): boolean {
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
 export function meta() {
-  return [{ title: "Import from GPT / AI — ProjectSpice" }];
+  return [{ title: "Import AI-formatted recipe — ProjectSpice" }];
 }
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
@@ -107,10 +107,9 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const parsed = parseGptRecipe(content);
 
   if (!parsed || !parsed.title || parsed.ingredients.length === 0 || !parsed.directions.trim()) {
-    // TODO: Workers AI fallback will go here (AI binding: env.AI)
     return {
       error:
-        "Could not detect the recipe format. Try copying the prompt template and regenerating the recipe.",
+        "Could not detect the required ProjectSpice recipe format. Copy the prompt template, regenerate the recipe, and paste the full formatted result.",
     };
   }
 
@@ -241,17 +240,17 @@ export default function ImportGpt() {
             ← Recipes
           </Link>
           <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm">Import from GPT / AI</span>
+          <span className="font-medium text-sm">Import AI-formatted recipe</span>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* Page header */}
         <div>
-          <h1 className="text-2xl font-bold">Import from GPT / AI</h1>
+          <h1 className="text-2xl font-bold">Import AI-formatted recipe</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Paste a recipe from ChatGPT or another AI assistant. For best results,
-            use the template format below.
+            Paste a recipe that already follows ProjectSpice's template. This importer
+            validates the template and does not rewrite free-form text.
           </p>
         </div>
 
@@ -259,8 +258,8 @@ export default function ImportGpt() {
         <div className="rounded-lg border bg-muted/30 px-5 py-4 space-y-3">
           <p className="text-sm font-medium">Step 1: Ask your AI assistant</p>
           <p className="text-sm text-muted-foreground">
-            Copy the prompt template and send it to ChatGPT (or any AI). Then paste the
-            result below.
+            Copy the prompt template and send it to ChatGPT or another assistant. Then
+            paste the formatted result below.
           </p>
           <button
             type="button"

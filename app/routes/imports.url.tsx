@@ -2,8 +2,8 @@
  * /imports/url
  *
  * URL recipe scraper import page.
- * 3-tier pipeline: JSON-LD → microdata heuristics → Workers AI (P2 stub).
- * Paywall detected → shows paste-HTML fallback textarea.
+ * Structured-data pipeline: JSON-LD → microdata heuristics.
+ * Paywall or extraction failure → shows paste-HTML fallback textarea.
  * Rate limit: 20 URL scrapes per user per day (tracked via import_jobs).
  */
 
@@ -380,7 +380,8 @@ export default function ImportUrl() {
         <div>
           <h1 className="text-2xl font-bold">Import from URL</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Paste a recipe URL and ProjectSpice will extract the recipe automatically.
+            Paste a recipe URL and ProjectSpice will extract structured recipe data when
+            the page provides it. For blocked or unusual pages, paste the page HTML below.
           </p>
         </div>
 
@@ -425,7 +426,7 @@ export default function ImportUrl() {
               onClick={() => setShowPaste((v) => !v)}
               className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
             >
-              {showPaste ? "Hide paste fallback" : "Paywalled site? Paste HTML instead"}
+              {showPaste ? "Hide paste option" : "Need manual paste? Use page HTML"}
             </button>
           </div>
         </Form>

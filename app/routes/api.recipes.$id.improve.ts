@@ -109,9 +109,8 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     kv: env.SESSIONS,
     anthropicToken: env.ANTHROPIC_OAUTH_TOKEN || undefined,
     openaiToken: env.OPENAI_CODEX_TOKEN || undefined,
-    // Workers AI is not available in React Router loaders — would need a Queue
-    // consumer or service binding. For now, skip Workers AI in this path and
-    // rely on the Anthropic/OpenAI fallback chain directly.
+    // Workers AI would need a Queue consumer or service binding in this app.
+    // Until that is wired, this endpoint uses the Anthropic/OpenAI token chain directly.
     callWorkersAI: null,
   };
 
