@@ -25,6 +25,8 @@ export default [
   route("imports/gpt", "routes/imports.gpt.tsx"),
   // URL scraper import
   route("imports/url", "routes/imports.url.tsx"),
+  // Guided EPUB import
+  route("imports/epub", "routes/imports.epub.tsx"),
   // Settings
   route("settings", "routes/settings.tsx"),
   route("settings/tags", "routes/settings.tags.tsx"),
@@ -42,6 +44,7 @@ export default [
   route("api/imports/paprika", "routes/api.imports.paprika.ts"),
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
   route("api/imports/paprika/photos", "routes/api.imports.paprika.photos.ts"),
+  route("api/imports/epub", "routes/api.imports.epub.ts"),
   route("api/imports/:id", "routes/api.imports.$id.ts"),
   route("api/logs", "routes/api.logs.ts"),
   // Export

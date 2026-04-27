@@ -61,6 +61,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 Import from Paprika
               </a>
               <a
+                href="/imports/epub"
+                className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                Import EPUB
+              </a>
+              <a
                 href="/change-password"
                 className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
               >
