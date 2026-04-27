@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
+import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -248,6 +249,14 @@ function slug(title: string): string {
 
 async function main() {
   console.log("ProjectSpice seed script\n");
+  const { values } = parseArgs({
+    options: {
+      env: { type: "string" },
+      remote: { type: "boolean", default: false },
+    },
+  });
+  const targetEnv = values.env;
+  const remote = values.remote;
 
   // 1. Hash passwords (PBKDF2, same algo as auth.server.ts)
   console.log("Hashing passwords...");
@@ -333,11 +342,15 @@ async function main() {
   const sqlFile = join(tmpdir(), `projectspice-seed-${Date.now()}.sql`);
   writeFileSync(sqlFile, lines.join("\n") + "\n");
 
-  console.log(
-    `Executing ${lines.length} SQL statements against local D1...\n`
-  );
+  const targetLabel = remote
+    ? `${targetEnv ?? "default"} remote D1`
+    : "local D1";
+  console.log(`Executing ${lines.length} SQL statements against ${targetLabel}...\n`);
   try {
-    execFileSync(WRANGLER, ["d1", "execute", "DB", "--local", `--file=${sqlFile}`], {
+    const args = ["d1", "execute", "DB"];
+    if (targetEnv) args.push("--env", targetEnv);
+    args.push(remote ? "--remote" : "--local", `--file=${sqlFile}`);
+    execFileSync(WRANGLER, args, {
       stdio: "inherit",
       cwd: ROOT,
     });
