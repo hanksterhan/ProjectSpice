@@ -318,10 +318,10 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   // ── Chunked inserts — each chunk is one SQL statement ───────────────────
   // Local D1 can enforce a lower bind-parameter cap than SQLite's common 999.
   // Keep chunks conservative so full-corpus imports work in local dev too.
-  const RECIPE_CHUNK = 3;
-  const INGREDIENT_CHUNK = 8;
-  const TAG_CHUNK = 40;
-  const CB_RECIPE_CHUNK = 30;
+  const RECIPE_CHUNK = 2;
+  const INGREDIENT_CHUNK = 6;
+  const TAG_CHUNK = 30;
+  const CB_RECIPE_CHUNK = 20;
   const insertedRecipeIds = new Set<string>();
 
   for (let i = 0; i < recipeRows.length; i += RECIPE_CHUNK) {
