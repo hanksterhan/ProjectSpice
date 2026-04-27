@@ -1,9 +1,10 @@
 import { data, Form, Link, useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { eq, and, isNull, asc, count, desc } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { buildTermIndex, segmentStep, type MappableIngredient } from "~/lib/ingredient-mapper";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -144,6 +145,65 @@ function formatQuantity(qty: number): string {
   return qty.toFixed(2).replace(/\.?0+$/, "");
 }
 
+const PAREN_KEY = "spice_parenthetical_mode";
+
+function useParentheticalMode(): [boolean, () => void] {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    setOn(localStorage.getItem(PAREN_KEY) === "1");
+  }, []);
+  function toggle() {
+    setOn((prev) => {
+      const next = !prev;
+      localStorage.setItem(PAREN_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
+  return [on, toggle];
+}
+
+function IngredientPopover({
+  text,
+  label,
+}: {
+  text: string;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <span ref={ref} className="relative inline">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="border-b border-dotted border-foreground/60 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        aria-expanded={open}
+        aria-label={`Ingredient: ${label}`}
+      >
+        {text}
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 whitespace-nowrap rounded-md bg-popover text-popover-foreground border shadow-md text-xs px-2.5 py-1.5 pointer-events-none"
+        >
+          {label}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function RecipeDetail({
   loaderData,
   actionData,
@@ -152,6 +212,7 @@ export default function RecipeDetail({
   const navigate = useNavigate();
   const [scaleFactor, setScaleFactor] = useState(1);
   const [customScale, setCustomScale] = useState("");
+  const [parenthetical, toggleParenthetical] = useParentheticalMode();
 
   const isDeleted = actionData != null && "deleted" in actionData && actionData.deleted;
   const deletedTitle = isDeleted && "title" in actionData ? actionData.title : "";
@@ -189,6 +250,10 @@ export default function RecipeDetail({
     .flatMap((block) => block.split(/\n/))
     .map((s) => s.replace(/^\d+\.\s*/, "").trim())
     .filter(Boolean);
+
+  const termIndex = buildTermIndex(
+    ingredients.filter((i) => !i.isGroupHeader) as MappableIngredient[]
+  );
 
   function scaleActive(v: number) {
     return scaleFactor === v && customScale === "";
@@ -425,16 +490,58 @@ export default function RecipeDetail({
         {/* Directions */}
         {directions.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Directions</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold flex-1">Directions</h2>
+              {termIndex.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleParenthetical}
+                  className={`text-xs px-2 py-1 rounded border transition-colors ${
+                    parenthetical
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground border-input hover:bg-muted"
+                  }`}
+                  title="Toggle parenthetical ingredient quantities inline"
+                >
+                  (qty)
+                </button>
+              )}
+            </div>
             <ol className="space-y-4">
-              {directions.map((step, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-relaxed">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mt-0.5">
-                    {i + 1}
-                  </span>
-                  <p className="flex-1">{step}</p>
-                </li>
-              ))}
+              {directions.map((step, i) => {
+                const segments = termIndex.length > 0
+                  ? segmentStep(step, termIndex)
+                  : null;
+                return (
+                  <li key={i} className="flex gap-3 text-sm leading-relaxed">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <p className="flex-1">
+                      {segments
+                        ? segments.map((seg, j) =>
+                            seg.kind === "text" ? (
+                              <span key={j}>{seg.text}</span>
+                            ) : parenthetical ? (
+                              <span key={j}>
+                                {seg.text}
+                                <span className="text-muted-foreground text-xs ml-0.5">
+                                  ({seg.label})
+                                </span>
+                              </span>
+                            ) : (
+                              <IngredientPopover
+                                key={j}
+                                text={seg.text}
+                                label={seg.label}
+                              />
+                            )
+                          )
+                        : step}
+                    </p>
+                  </li>
+                );
+              })}
             </ol>
           </div>
         )}

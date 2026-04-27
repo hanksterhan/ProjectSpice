@@ -1,6 +1,47 @@
 import { Link } from "react-router";
+import { useEffect, useState } from "react";
 import type { Route } from "./+types/settings";
 import { requireUser } from "~/lib/auth.server";
+
+const PAREN_KEY = "spice_parenthetical_mode";
+
+function ParentheticalToggle() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    setOn(localStorage.getItem(PAREN_KEY) === "1");
+  }, []);
+  function toggle() {
+    setOn((prev) => {
+      const next = !prev;
+      localStorage.setItem(PAREN_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-gray-900">Inline ingredient quantities</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Show ingredient amounts as parentheticals in directions instead of popovers.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={on}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+          on ? "bg-gray-900" : "bg-gray-200"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+            on ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
 
 export function meta() {
   return [{ title: "Settings — ProjectSpice" }];
@@ -23,6 +64,16 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Preferences */}
+        <section>
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Preferences
+          </h2>
+          <div className="bg-white rounded-lg border divide-y">
+            <ParentheticalToggle />
+          </div>
+        </section>
+
         {/* Organisation */}
         <section>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
