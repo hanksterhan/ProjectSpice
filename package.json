@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "paprika:truth": "tsx scripts/paprika-truth-test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply DB --local",
     "seed": "tsx scripts/seed.ts",

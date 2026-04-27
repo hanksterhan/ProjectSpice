@@ -339,6 +339,9 @@ function parseIngredientText(text: string): RawParsed {
   if (unitMatch) {
     unit = unitMatch[1];
     remaining = remaining.slice(unitMatch[0].length).trim();
+    // Some Paprika lines are exported as "1 teaspoon, garlic powder".
+    // The comma separates unit from name there; it is not a note marker.
+    remaining = remaining.replace(/^,\s*/, "");
   }
 
   // Extract parenthetical notes from the remaining name
@@ -362,7 +365,16 @@ function parseIngredientText(text: string): RawParsed {
     }
   }
 
-  const name = remaining.replace(/\s+/g, " ").trim();
+  let name = remaining.replace(/\s+/g, " ").trim();
+  if (!name && unit) {
+    name =
+      quantity && /^(?:g|kg|oz|lb|ml|l)$/i.test(unit)
+        ? `${quantity}${unit}`
+        : unit;
+  } else if (!name && notes) {
+    name = notes;
+    notes = null;
+  }
 
   return { quantity, unit, name, notes };
 }
@@ -448,7 +460,8 @@ export function parseIngredientLine(
   // Step 2: Weight-in-parens extraction
   // -------------------------------------------------------------------------
   const { cleaned: afterWeight, weight_g } = extractWeightInParens(working);
-  working = afterWeight;
+  working =
+    afterWeight || (weight_g !== null ? working.replace(/[()]/g, "").trim() : afterWeight);
 
   // -------------------------------------------------------------------------
   // Step 3: Footnote marker stripping

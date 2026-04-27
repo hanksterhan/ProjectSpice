@@ -403,6 +403,28 @@ describe("parseIngredientLine – Paprika real-world edge cases", () => {
     const r = parseIngredientLine("pinch of cayenne pepper", null);
     expect(r.unit_canonical).toBe("pinch");
   });
+
+  it("3 cloves (can use up to 5) → keeps cloves as name", () => {
+    const r = parseIngredientLine("3 cloves (can use up to 5)", null);
+    expect(r.quantity_decimal).toBe(3);
+    expect(r.unit_canonical).toBe("count");
+    expect(r.name).toBe("cloves");
+    expect(r.notes).toBe("can use up to 5");
+  });
+
+  it("1 teaspoon, garlic powder → leading comma separates unit from name", () => {
+    const r = parseIngredientLine("1 teaspoon, garlic powder", null);
+    expect(r.quantity_decimal).toBe(1);
+    expect(r.unit_canonical).toBe("tsp");
+    expect(r.name).toBe("garlic powder");
+    expect(r.notes).toBeNull();
+  });
+
+  it("(130g) → preserves weight-only continuation text as name", () => {
+    const r = parseIngredientLine("(130g)", null);
+    expect(r.name).toBe("130g");
+    expect(r.notes).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------

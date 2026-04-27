@@ -1,6 +1,15 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["vite.config.ts", "vitest.config.ts", "eslint.config.js", "scripts/**/*"],
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "eslint.config.js",
+    "scripts/**/*",
+    "app/lib/export-builder.ts",
+    "app/lib/ingredient-parser.ts",
+    "app/lib/paprika-binary-parser.ts",
+    "app/lib/time-parser.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "strict": true,
