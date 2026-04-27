@@ -49,7 +49,7 @@ type Progress = {
 };
 
 const RECIPE_BATCH = 100; // recipes per text batch
-const PHOTO_BATCH = 20;   // photos per upload batch
+const PHOTO_BATCH = 3;    // photos per upload batch; base64 payloads get large quickly
 
 async function readJsonResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
@@ -161,16 +161,21 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
     }
 
     setProgress((p) => ({ ...p, jobId, errors: allErrors }));
-    setStep("done");
+
+    if (parsedRecipes.some((r) => r.photo_data)) {
+      await uploadPhotos(allErrors);
+    } else {
+      setStep("done");
+    }
   }
 
-  // ─── Step 3 (optional): Upload photos in batches ────────────────────────
-  async function handlePhotoUpload() {
+  // ─── Step 3: Upload photos in batches ───────────────────────────────────
+  async function uploadPhotos(existingErrors: string[] = []) {
     const withPhotos = parsedRecipes.filter((r) => r.photo_data);
     if (withPhotos.length === 0) return;
 
     setStep("uploading-photos");
-    const allErrors: string[] = [];
+    const allErrors = [...existingErrors];
     let uploaded = 0;
 
     for (let i = 0; i < withPhotos.length; i += PHOTO_BATCH) {
@@ -189,12 +194,13 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
         if (data.errors?.length) allErrors.push(...data.errors);
       } catch (err) {
         allErrors.push(`Photo batch ${i}–${i + PHOTO_BATCH} failed: ${String(err)}`);
+        break;
       }
 
       setProgress((p) => ({
         ...p,
         photosUploaded: uploaded,
-        errors: [...p.errors, ...allErrors],
+        errors: allErrors,
       }));
     }
 
@@ -278,7 +284,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
               onClick={handleImport}
               className="rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Import {progress.total.toLocaleString()} Recipes
+              Import {progress.total.toLocaleString()} Recipes + Photos
             </button>
           </div>
         )}
@@ -310,28 +316,9 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
                 {progress.skipped > 0 && (
                   <li><strong>{progress.skipped.toLocaleString()}</strong> already existed (skipped)</li>
                 )}
-                {progress.photosUploaded > 0 && (
-                  <li><strong>{progress.photosUploaded.toLocaleString()}</strong> photos uploaded</li>
-                )}
+                <li><strong>{progress.photosUploaded.toLocaleString()}</strong> photos uploaded</li>
               </ul>
             </div>
-
-            {/* Photo upload CTA */}
-            {photosAvailable > 0 && progress.photosUploaded === 0 && (
-              <div className="rounded-lg border px-5 py-4 space-y-3">
-                <p className="text-sm font-medium">Upload recipe photos (optional)</p>
-                <p className="text-sm text-muted-foreground">
-                  {photosAvailable.toLocaleString()} photos are available. Uploading stores them
-                  in R2 so they display even without an internet connection.
-                </p>
-                <button
-                  onClick={handlePhotoUpload}
-                  className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-                >
-                  Upload {photosAvailable.toLocaleString()} Photos
-                </button>
-              </div>
-            )}
 
             {/* Errors summary */}
             {progress.errors.length > 0 && (
@@ -381,7 +368,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Spinner />
-              <span className="text-sm text-muted-foreground">Uploading photos…</span>
+              <span className="text-sm text-muted-foreground">Uploading photos to app image storage…</span>
             </div>
             <ProgressBar
               current={progress.photosUploaded}
