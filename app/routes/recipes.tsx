@@ -4,6 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { appImageUrl } from "~/lib/image-url";
 
 const PAGE_SIZE = 24;
 
@@ -555,36 +556,48 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
                 <Link
                   key={recipe.id}
                   to={`/recipes/${recipe.id}`}
-                  className="group flex flex-col gap-2 rounded-lg border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all"
+                  className="group flex flex-col overflow-hidden rounded-lg border bg-card hover:border-primary/50 hover:shadow-sm transition-all"
                 >
-                  <h2 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                    {recipe.title}
-                  </h2>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
-                    {recipe.totalTimeMin ? (
-                      <span>{formatTime(recipe.totalTimeMin)}</span>
-                    ) : null}
-                    {recipe.cookCount > 0 ? (
-                      <span className="ml-auto">Cooked {recipe.cookCount}×</span>
-                    ) : null}
-                  </div>
-                  {visibleTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {visibleTags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {extraTags > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          +{extraTags}
-                        </span>
-                      )}
-                    </div>
+                  {appImageUrl(recipe.imageKey) ? (
+                    <img
+                      src={appImageUrl(recipe.imageKey) ?? undefined}
+                      alt=""
+                      className="h-36 w-full object-cover bg-muted"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-36 w-full bg-muted" />
                   )}
+                  <div className="flex flex-1 flex-col gap-2 p-4">
+                    <h2 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                      {recipe.title}
+                    </h2>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
+                      {recipe.totalTimeMin ? (
+                        <span>{formatTime(recipe.totalTimeMin)}</span>
+                      ) : null}
+                      {recipe.cookCount > 0 ? (
+                        <span className="ml-auto">Cooked {recipe.cookCount}×</span>
+                      ) : null}
+                    </div>
+                    {visibleTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {visibleTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {extraTags > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            +{extraTags}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </Link>
               );
             })}

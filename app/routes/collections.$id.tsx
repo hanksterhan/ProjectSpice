@@ -5,6 +5,7 @@ import { and, asc, eq, isNull, notInArray } from "drizzle-orm";
 import type { Route } from "./+types/collections.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { appImageUrl } from "~/lib/image-url";
 
 export function meta({ data }: Route.MetaArgs) {
   const name =
@@ -333,11 +334,12 @@ export default function CollectionDetail({
           <ul className="divide-y divide-gray-100 bg-white border rounded-lg">
             {recipes.map((r, idx) => (
               <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-                {r.imageKey ? (
+                {appImageUrl(r.imageKey) ? (
                   <img
-                    src={`/images/${r.imageKey}`}
+                    src={appImageUrl(r.imageKey) ?? undefined}
                     alt=""
                     className="w-12 h-12 rounded object-cover shrink-0"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />

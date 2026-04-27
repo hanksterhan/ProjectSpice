@@ -3,6 +3,7 @@ import { eq, and, asc } from "drizzle-orm";
 import type { Route } from "./+types/logs.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { appImageUrl } from "~/lib/image-url";
 
 export function meta() {
   return [{ title: "Cook Log — ProjectSpice" }];
@@ -226,7 +227,7 @@ export default function LogDetail({ loaderData, actionData }: Route.ComponentPro
               {photos.map((photo) => (
                 <div key={photo.id} className="relative group aspect-square">
                   <img
-                    src={`/cdn/images/${photo.imageKey}`}
+                    src={appImageUrl(photo.imageKey) ?? undefined}
                     alt={photo.caption ?? "Cooking photo"}
                     className="w-full h-full object-cover rounded-md"
                     loading="lazy"

@@ -1,7 +1,7 @@
 // Service worker: NetworkFirst for recipe pages, CacheFirst for images,
 // StaleWhileRevalidate for static assets.
 
-const CACHE_VER = 1;
+const CACHE_VER = 2;
 const RECIPE_CACHE = `recipes-v${CACHE_VER}`;
 const IMAGE_CACHE = `images-v${CACHE_VER}`;
 const ASSET_CACHE = `assets-v${CACHE_VER}`;
@@ -42,8 +42,8 @@ self.addEventListener("fetch", (e) => {
   // Skip React Router data fetches (Accept header includes text/x-component)
   if (request.headers.get("Accept")?.includes("text/x-component")) return;
 
-  // R2 images
-  if (url.pathname.startsWith("/images/")) {
+  // App-owned R2 images
+  if (url.pathname.startsWith("/cdn/images/")) {
     e.respondWith(cacheFirst(request, IMAGE_CACHE, MAX_IMAGE_ENTRIES));
     return;
   }
