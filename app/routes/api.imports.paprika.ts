@@ -316,27 +316,31 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   );
 
   // ── Chunked inserts — each chunk is one SQL statement ───────────────────
-  // D1 (SQLite) supports up to 999 bound params per statement.
-  // recipes: ~25 cols → max 39 rows/statement; use 30 to stay safe.
-  // ingredients: ~12 cols → max 83 rows/statement; use 80.
-  // recipe_tags / cookbook_recipes: 2–3 cols → use 200/100 respectively.
-  const RECIPE_CHUNK = 30;
-  const INGREDIENT_CHUNK = 80;
-  const TAG_CHUNK = 200;
-  const CB_RECIPE_CHUNK = 100;
+  // Local D1 can enforce a lower bind-parameter cap than SQLite's common 999.
+  // Keep chunks conservative so full-corpus imports work in local dev too.
+  const RECIPE_CHUNK = 3;
+  const INGREDIENT_CHUNK = 8;
+  const TAG_CHUNK = 40;
+  const CB_RECIPE_CHUNK = 30;
+  const insertedRecipeIds = new Set<string>();
 
   for (let i = 0; i < recipeRows.length; i += RECIPE_CHUNK) {
     const chunk = recipeRows.slice(i, i + RECIPE_CHUNK);
     try {
       await db.insert(schema.recipes).values(chunk);
       imported += chunk.length;
+      for (const row of chunk) insertedRecipeIds.add(row.id as string);
     } catch (err) {
       errors.push(`Recipe insert ${i}–${i + chunk.length} failed: ${String(err)}`);
     }
   }
 
-  for (let i = 0; i < ingredientRows.length; i += INGREDIENT_CHUNK) {
-    const chunk = ingredientRows.slice(i, i + INGREDIENT_CHUNK);
+  const insertedIngredientRows = ingredientRows.filter((row) => insertedRecipeIds.has(row.recipeId));
+  const insertedRecipeTagRows = recipeTagRows.filter((row) => insertedRecipeIds.has(row.recipeId));
+  const insertedCookbookRecipeRows = cookbookRecipeRows.filter((row) => insertedRecipeIds.has(row.recipeId));
+
+  for (let i = 0; i < insertedIngredientRows.length; i += INGREDIENT_CHUNK) {
+    const chunk = insertedIngredientRows.slice(i, i + INGREDIENT_CHUNK);
     try {
       await db.insert(schema.ingredients).values(chunk);
     } catch (err) {
@@ -344,8 +348,8 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     }
   }
 
-  for (let i = 0; i < recipeTagRows.length; i += TAG_CHUNK) {
-    const chunk = recipeTagRows.slice(i, i + TAG_CHUNK);
+  for (let i = 0; i < insertedRecipeTagRows.length; i += TAG_CHUNK) {
+    const chunk = insertedRecipeTagRows.slice(i, i + TAG_CHUNK);
     try {
       await db.insert(schema.recipeTags).values(chunk).onConflictDoNothing();
     } catch (err) {
@@ -353,8 +357,8 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     }
   }
 
-  for (let i = 0; i < cookbookRecipeRows.length; i += CB_RECIPE_CHUNK) {
-    const chunk = cookbookRecipeRows.slice(i, i + CB_RECIPE_CHUNK);
+  for (let i = 0; i < insertedCookbookRecipeRows.length; i += CB_RECIPE_CHUNK) {
+    const chunk = insertedCookbookRecipeRows.slice(i, i + CB_RECIPE_CHUNK);
     try {
       await db.insert(schema.cookbookRecipes).values(chunk).onConflictDoNothing();
     } catch (err) {
