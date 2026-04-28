@@ -11,6 +11,8 @@ import {
   canPubliclyShareRecipe,
   FAMILY_RECIPE_VISIBILITY,
 } from "~/lib/family-sharing";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, ImageFallback, SegmentedControl } from "~/components/ui";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -148,6 +150,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   const isOwner = canManageRecipe(recipe, user.id);
 
   return {
+    user: { name: user.name, email: user.email },
     recipe,
     ingredients,
     tags: tagRows.map((r) => r.name),
@@ -234,7 +237,7 @@ function IngredientPopover({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="border-b border-dotted border-foreground/60 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="cursor-pointer border-b border-dotted border-ink-3 focus:outline-none focus-visible:ps-focus-ring"
         aria-expanded={open}
         aria-label={`Ingredient: ${label}`}
       >
@@ -243,7 +246,7 @@ function IngredientPopover({
       {open && (
         <span
           role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 whitespace-nowrap rounded-md bg-popover text-popover-foreground border shadow-md text-xs px-2.5 py-1.5 pointer-events-none"
+          className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 text-xs text-ink shadow-[var(--shadow-2)]"
         >
           {label}
         </span>
@@ -256,12 +259,13 @@ export default function RecipeDetail({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { recipe, ingredients, tags, cookCount, variants } = loaderData;
+  const { user, recipe, ingredients, tags, cookCount, variants } = loaderData;
   const { isOwner, canPublicShare } = loaderData;
   const navigate = useNavigate();
   const [scaleFactor, setScaleFactor] = useState(1);
   const [customScale, setCustomScale] = useState("");
   const [parenthetical, toggleParenthetical] = useParentheticalMode();
+  const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
 
   const isDeleted = actionData != null && "deleted" in actionData && actionData.deleted;
   const deletedTitle = isDeleted && "title" in actionData ? actionData.title : "";
@@ -311,11 +315,19 @@ export default function RecipeDetail({
     setCustomScale("");
   }
 
+  const servingLabel = recipe.servings
+    ? `${recipe.servings * scaleFactor}${recipe.servingsUnit ? ` ${recipe.servingsUnit}` : ""}`
+    : null;
+  const sourceLabel = SOURCE_LABELS[recipe.sourceType] ?? recipe.sourceType;
+  const ownerLabel = isOwner ? "Your recipe" : `From ${recipe.ownerName}`;
+  const visibleIngredientCount = ingredients.filter((i) => !i.isGroupHeader).length;
+  const checkedCount = Object.values(checkedIngredients).filter(Boolean).length;
+
   return (
-    <div className="min-h-screen bg-background">
+    <AppShell user={user}>
       {/* Undo toast */}
       {isDeleted && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-foreground text-background px-4 py-3 shadow-lg text-sm">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-ink px-4 py-3 text-sm text-paper shadow-[var(--shadow-3)]">
           <span>
             "{deletedTitle}" deleted ({countdown}s)
           </span>
@@ -331,340 +343,443 @@ export default function RecipeDetail({
         </div>
       )}
 
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link
-            to="/recipes"
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            ← Back
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm truncate flex-1">
-            {recipe.title}
-          </span>
-          <Link
-            to={`/recipes/${recipe.id}/cook`}
-            className="text-sm font-medium text-primary hover:opacity-80"
-          >
-            Cook
-          </Link>
-          <Link
-            to={`/logs/new?recipeId=${recipe.id}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            I Made This
-          </Link>
-          <Link
-            to={`/shopping-lists?recipeId=${recipe.id}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Add to List
-          </Link>
-          {isOwner && (
-            <Link
-              to={`/recipes/${recipe.id}/improve`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Improve
-            </Link>
-          )}
-          {isOwner && (
-            <>
-              <Link
-                to={`/recipes/${recipe.id}/edit`}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Edit
-              </Link>
-              <Form method="post">
-                <input type="hidden" name="_intent" value="delete" />
-                <input type="hidden" name="recipeTitle" value={recipe.title} />
-                <button
-                  type="submit"
-                  className="text-sm text-red-500 hover:text-red-600"
-                >
-                  Delete
-                </button>
-              </Form>
-            </>
-          )}
-        </div>
-      </header>
+      <div className="space-y-5">
+        <Link to="/recipes" className="text-sm font-medium text-ink-3 hover:text-ink">
+          Back to recipes
+        </Link>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-8">
-        {/* Title + meta */}
-        <div className="space-y-3">
-          <h1 className="text-2xl font-bold leading-tight">{recipe.title}</h1>
-
-          {recipe.description && (
-            <p className="text-muted-foreground leading-relaxed">
-              {recipe.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-            {recipe.prepTimeMin ? (
-              <span>
-                <span className="font-medium text-foreground">Prep</span>{" "}
-                {formatTime(recipe.prepTimeMin)}
-              </span>
-            ) : null}
-            {recipe.activeTimeMin ? (
-              <span>
-                <span className="font-medium text-foreground">Active</span>{" "}
-                {formatTime(recipe.activeTimeMin)}
-              </span>
-            ) : null}
-            {recipe.totalTimeMin ? (
-              <span>
-                <span className="font-medium text-foreground">Total</span>{" "}
-                {formatTime(recipe.totalTimeMin)}
-              </span>
-            ) : null}
-            {recipe.servings ? (
-              <span>
-                <span className="font-medium text-foreground">Serves</span>{" "}
-                {recipe.servings}
-                {recipe.servingsUnit ? ` ${recipe.servingsUnit}` : ""}
-              </span>
-            ) : null}
-            {recipe.timeNotes ? (
-              <span className="italic">{recipe.timeNotes}</span>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {!isOwner && (
-              <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
-                From {recipe.ownerName}
-              </span>
-            )}
-            {isOwner && recipe.visibility === FAMILY_RECIPE_VISIBILITY && (
-              <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
-                Shared with family
-              </span>
-            )}
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium"
-              >
-                {tag}
-              </span>
-            ))}
-            {cookCount > 0 && (
-              <span className="text-xs text-muted-foreground ml-auto">
-                Cooked {cookCount}×
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Ingredients */}
-        {ingredients.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-lg font-semibold">Ingredients</h2>
-
-              {hasScalable && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-muted-foreground">Scale:</span>
-                  {(
-                    [
-                      { label: "½×", value: 0.5 },
-                      { label: "1×", value: 1 },
-                      { label: "2×", value: 2 },
-                    ] as const
-                  ).map(({ label, value }) => (
-                    <button
-                      key={value}
-                      onClick={() => applyScale(value)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
-                        scaleActive(value)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground border-input hover:bg-muted"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="custom"
-                    value={customScale}
-                    onChange={(e) => {
-                      setCustomScale(e.target.value);
-                      const v = parseFloat(e.target.value);
-                      if (v > 0) setScaleFactor(v);
-                    }}
-                    className="w-20 px-2 py-1 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                </div>
-              )}
+        <section className="overflow-hidden rounded-lg border border-rule bg-paper-2 shadow-[var(--shadow-1)]">
+          <div className="relative min-h-[18rem] overflow-hidden bg-paper-3 sm:min-h-[22rem]">
+            <ImageFallback
+              imageKey={recipe.imageKey}
+              alt={recipe.imageAlt ?? recipe.title}
+              label="Recipe"
+              widths={[640, 1024, 1440]}
+              className="absolute inset-0 h-full w-full"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0_/_5%)_25%,rgb(0_0_0_/_70%)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8">
+              <p className="ps-mono mb-2 text-xs uppercase text-white/80">
+                {ownerLabel} · {sourceLabel}
+              </p>
+              <h1 className="ps-display-editorial max-w-4xl text-3xl sm:text-5xl">
+                {recipe.title}
+              </h1>
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/90">
+                {recipe.totalTimeMin && <span>Total {formatTime(recipe.totalTimeMin)}</span>}
+                {servingLabel && <span>Serves {servingLabel}</span>}
+                {recipe.rating != null && <span>{renderStars(recipe.rating)}</span>}
+                <span>Cooked {cookCount}x</span>
+              </div>
             </div>
-
-            <ul className="space-y-1.5">
-              {ingredients.map((ing) => {
-                if (ing.isGroupHeader) {
-                  return (
-                    <li key={ing.id} className="pt-3 pb-0.5 first:pt-0">
-                      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                        {ing.name}
-                      </span>
-                    </li>
-                  );
-                }
-
-                const rawQty =
-                  ing.quantityDecimal != null
-                    ? formatQuantity(ing.quantityDecimal * scaleFactor)
-                    : (ing.quantityRaw ?? "");
-                const unit = ing.unitRaw ?? "";
-                const qtyUnit = [rawQty, unit].filter(Boolean).join("\u00a0");
-
-                return (
-                  <li key={ing.id} className="flex gap-3 text-sm leading-snug">
-                    <span className="w-20 shrink-0 text-right tabular-nums text-muted-foreground">
-                      {qtyUnit}
-                    </span>
-                    <span className="flex-1">
-                      {ing.name}
-                      {ing.notes ? (
-                        <span className="text-muted-foreground">
-                          , {ing.notes}
-                        </span>
-                      ) : null}
-                      {ing.weightG ? (
-                        <span className="text-muted-foreground text-xs ml-1">
-                          ({ing.weightG}g)
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
-        )}
 
-        {/* Directions */}
-        {directions.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold flex-1">Directions</h2>
-              {termIndex.length > 0 && (
-                <button
-                  type="button"
-                  onClick={toggleParenthetical}
-                  className={`text-xs px-2 py-1 rounded border transition-colors ${
-                    parenthetical
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground border-input hover:bg-muted"
-                  }`}
-                  title="Toggle parenthetical ingredient quantities inline"
-                >
-                  (qty)
-                </button>
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="space-y-6 p-5 sm:p-8">
+              {recipe.description && (
+                <p className="max-w-2xl text-sm leading-6 text-ink-2">{recipe.description}</p>
               )}
-            </div>
-            <ol className="space-y-4">
-              {directions.map((step, i) => {
-                const segments = termIndex.length > 0
-                  ? segmentStep(step, termIndex)
-                  : null;
-                return (
-                  <li key={i} className="flex gap-3 text-sm leading-relaxed">
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mt-0.5">
-                      {i + 1}
-                    </span>
-                    <p className="flex-1">
-                      {segments
-                        ? segments.map((seg, j) =>
-                            seg.kind === "text" ? (
-                              <span key={j}>{seg.text}</span>
-                            ) : parenthetical ? (
-                              <span key={j}>
-                                {seg.text}
-                                <span className="text-muted-foreground text-xs ml-0.5">
-                                  ({seg.label})
-                                </span>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {recipe.visibility === FAMILY_RECIPE_VISIBILITY && <Chip selected>Family</Chip>}
+                {!canPublicShare && <Chip tone="warning">Private source link</Chip>}
+                {tags.map((tag) => (
+                  <Chip key={tag}>{tag}</Chip>
+                ))}
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+                <IngredientPanel
+                  ingredients={ingredients}
+                  scaleFactor={scaleFactor}
+                  customScale={customScale}
+                  setCustomScale={setCustomScale}
+                  setScaleFactor={setScaleFactor}
+                  applyScale={applyScale}
+                  scaleActive={scaleActive}
+                  hasScalable={hasScalable}
+                  checkedIngredients={checkedIngredients}
+                  setCheckedIngredients={setCheckedIngredients}
+                  checkedCount={checkedCount}
+                  visibleIngredientCount={visibleIngredientCount}
+                />
+
+                <div className="space-y-7">
+                  {directions.length > 0 && (
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <h2 className="ps-display text-xl text-ink">Directions</h2>
+                        <span className="flex-1" />
+                        {termIndex.length > 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={parenthetical ? "primary" : "secondary"}
+                            onClick={toggleParenthetical}
+                            title="Toggle parenthetical ingredient quantities inline"
+                          >
+                            Qty inline
+                          </Button>
+                        )}
+                      </div>
+                      <ol className="space-y-3">
+                        {directions.map((step, i) => {
+                          const segments = termIndex.length > 0
+                            ? segmentStep(step, termIndex)
+                            : null;
+                          return (
+                            <li
+                              key={i}
+                              className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-rule pb-3 last:border-b-0"
+                            >
+                              <span className="ps-mono flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs font-semibold text-paper">
+                                {i + 1}
                               </span>
-                            ) : (
-                              <IngredientPopover
-                                key={j}
-                                text={seg.text}
-                                label={seg.label}
-                              />
-                            )
-                          )
-                        : step}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
+                              <p className="pt-0.5 text-sm leading-7 text-ink-2">
+                                {segments
+                                  ? segments.map((seg, j) =>
+                                      seg.kind === "text" ? (
+                                        <span key={j}>{seg.text}</span>
+                                      ) : parenthetical ? (
+                                        <span key={j}>
+                                          {seg.text}
+                                          <span className="ml-1 text-xs text-ink-4">
+                                            ({seg.label})
+                                          </span>
+                                        </span>
+                                      ) : (
+                                        <IngredientPopover
+                                          key={j}
+                                          text={seg.text}
+                                          label={seg.label}
+                                        />
+                                      )
+                                    )
+                                  : step}
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </section>
+                  )}
+
+                  {recipe.notes && (
+                    <section className="rounded-lg border-l-4 border-primary bg-paper-3 p-4">
+                      <h2 className="ps-mono text-xs font-semibold uppercase text-ink-3">Notes</h2>
+                      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-ink-2">
+                        {recipe.notes}
+                      </p>
+                    </section>
+                  )}
+
+                  {variants.length > 0 && <VariantPanel variants={variants} />}
+                </div>
+              </div>
+            </div>
+
+            <RecipeMetaRail
+              recipe={recipe}
+              isOwner={isOwner}
+              sourceLabel={sourceLabel}
+              canPublicShare={canPublicShare}
+              cookCount={cookCount}
+            />
+          </div>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  url: "Imported from URL",
+  gpt: "Created with GPT",
+  paprika_html: "Imported from Paprika",
+  paprika_binary: "Imported from Paprika",
+  pdf: "Imported from PDF",
+  epub: "Imported from EPUB",
+  manual: "Manual recipe",
+};
+
+function renderStars(rating: number) {
+  const value = Math.max(0, Math.min(5, rating));
+  return `${"★".repeat(value)}${"☆".repeat(5 - value)}`;
+}
+
+type Ingredient = Route.ComponentProps["loaderData"]["ingredients"][number];
+type Recipe = Route.ComponentProps["loaderData"]["recipe"];
+type Variant = Route.ComponentProps["loaderData"]["variants"][number];
+
+function IngredientPanel({
+  ingredients,
+  scaleFactor,
+  customScale,
+  setCustomScale,
+  setScaleFactor,
+  applyScale,
+  scaleActive,
+  hasScalable,
+  checkedIngredients,
+  setCheckedIngredients,
+  checkedCount,
+  visibleIngredientCount,
+}: {
+  ingredients: Ingredient[];
+  scaleFactor: number;
+  customScale: string;
+  setCustomScale: (value: string) => void;
+  setScaleFactor: (value: number) => void;
+  applyScale: (value: number) => void;
+  scaleActive: (value: number) => boolean;
+  hasScalable: boolean;
+  checkedIngredients: Record<string, boolean>;
+  setCheckedIngredients: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  checkedCount: number;
+  visibleIngredientCount: number;
+}) {
+  return (
+    <section className="lg:sticky lg:top-20">
+      <div className="rounded-lg border border-rule bg-paper p-4 shadow-[var(--shadow-1)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="ps-display flex-1 text-xl text-ink">Ingredients</h2>
+          {visibleIngredientCount > 0 && (
+            <span className="ps-mono text-xs text-ink-4">
+              {checkedCount}/{visibleIngredientCount}
+            </span>
+          )}
+        </div>
+
+        {hasScalable && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <SegmentedControl
+              label="Scale ingredients"
+              value={String(scaleFactor)}
+              onChange={(value) => applyScale(Number(value))}
+              options={[
+                { value: "0.5", label: "1/2x" },
+                { value: "1", label: "1x" },
+                { value: "2", label: "2x" },
+              ]}
+            />
+            <label>
+              <span className="sr-only">Custom scale</span>
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                placeholder="custom"
+                value={customScale}
+                onChange={(event) => {
+                  setCustomScale(event.target.value);
+                  const next = parseFloat(event.target.value);
+                  if (next > 0) setScaleFactor(next);
+                }}
+                className="ps-control w-20 border border-rule bg-paper-2 px-2 text-xs text-ink focus-visible:ps-focus-ring"
+              />
+            </label>
+            {customScale && !scaleActive(scaleFactor) && (
+              <span className="text-xs text-ink-4">{scaleFactor}x</span>
+            )}
           </div>
         )}
 
-        {/* Notes */}
-        {recipe.notes && (
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Notes</h2>
-            <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-              {recipe.notes}
-            </p>
-          </div>
-        )}
+        <ul className="mt-4 space-y-1.5">
+          {ingredients.map((ing) => {
+            if (ing.isGroupHeader) {
+              return (
+                <li key={ing.id} className="pt-3 first:pt-0">
+                  <span className="ps-mono text-xs font-semibold uppercase text-ink-3">
+                    {ing.name}
+                  </span>
+                </li>
+              );
+            }
 
-        {/* Source link */}
-        {recipe.sourceUrl && (
-          <p className="text-xs text-muted-foreground">
-            Source:{" "}
+            const rawQty =
+              ing.quantityDecimal != null
+                ? formatQuantity(ing.quantityDecimal * scaleFactor)
+                : (ing.quantityRaw ?? "");
+            const qtyUnit = [rawQty, ing.unitRaw ?? ""].filter(Boolean).join("\u00a0");
+            const checked = checkedIngredients[ing.id] ?? false;
+
+            return (
+              <li key={ing.id}>
+                <label
+                  className={`grid cursor-pointer grid-cols-[1.25rem_4.5rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-1.5 text-sm leading-snug hover:bg-paper-3 ${
+                    checked ? "text-ink-4 line-through" : "text-ink"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      setCheckedIngredients((current) => ({
+                        ...current,
+                        [ing.id]: !checked,
+                      }))
+                    }
+                    className="mt-0.5 accent-ink"
+                    aria-label={`Check ingredient ${ing.name}`}
+                  />
+                  <span className="ps-mono text-right text-xs tabular-nums text-ink-3">
+                    {qtyUnit}
+                  </span>
+                  <span>
+                    {ing.name}
+                    {ing.notes && <span className="text-ink-3">, {ing.notes}</span>}
+                    {ing.weightG && <span className="ml-1 text-xs text-ink-4">({ing.weightG}g)</span>}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function RecipeMetaRail({
+  recipe,
+  isOwner,
+  sourceLabel,
+  canPublicShare,
+  cookCount,
+}: {
+  recipe: Recipe;
+  isOwner: boolean;
+  sourceLabel: string;
+  canPublicShare: boolean;
+  cookCount: number;
+}) {
+  return (
+    <aside className="border-t border-rule bg-paper p-5 xl:border-l xl:border-t-0">
+      <div className="xl:sticky xl:top-20">
+        <div className="grid gap-2">
+          <LinkButton to={`/recipes/${recipe.id}/cook`} variant="primary">Start cooking</LinkButton>
+          <div className="grid grid-cols-2 gap-2">
+            <LinkButton to={`/logs/new?recipeId=${recipe.id}`}>I made this</LinkButton>
+            <LinkButton to={`/shopping-lists?recipeId=${recipe.id}`}>Add to list</LinkButton>
+          </div>
+          {isOwner && (
+            <LinkButton to={`/recipes/${recipe.id}/improve`} variant="accent">Improve</LinkButton>
+          )}
+        </div>
+
+        <dl className="mt-6 grid grid-cols-2 gap-3 text-sm xl:grid-cols-1">
+          <MetaItem label="Prep" value={formatTime(recipe.prepTimeMin)} />
+          <MetaItem label="Active" value={formatTime(recipe.activeTimeMin)} />
+          <MetaItem label="Total" value={formatTime(recipe.totalTimeMin)} />
+          <MetaItem
+            label="Serves"
+            value={
+              recipe.servings
+                ? `${recipe.servings}${recipe.servingsUnit ? ` ${recipe.servingsUnit}` : ""}`
+                : ""
+            }
+          />
+          <MetaItem label="Difficulty" value={recipe.difficulty ?? ""} />
+          <MetaItem label="Made" value={cookCount ? `${cookCount}x` : "Not yet"} />
+        </dl>
+
+        <section className="mt-6 space-y-2 border-t border-rule pt-4">
+          <h2 className="ps-mono text-xs font-semibold uppercase text-ink-3">Source</h2>
+          <p className="text-sm text-ink">{sourceLabel}</p>
+          {recipe.sourceUrl && (
             <a
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-foreground"
+              className="block break-all text-xs text-ink-3 underline underline-offset-2 hover:text-ink"
             >
               {recipe.sourceUrl}
             </a>
-          </p>
-        )}
-
-        {!canPublicShare && (
-          <p className="text-xs text-muted-foreground border-t pt-4">
-            Public signed-link sharing is unavailable for PDF/EPUB-sourced recipes.
-            Family sharing is allowed.
-          </p>
-        )}
-
-        {/* AI variant version panel */}
-        {variants.length > 0 && (
-          <div className="space-y-2 border-t pt-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              AI Versions
+          )}
+          {!canPublicShare && (
+            <p className="rounded-md bg-paper-3 p-3 text-xs leading-5 text-ink-3">
+              Public signed-link sharing is unavailable for PDF/EPUB-sourced recipes. Family
+              sharing is allowed.
             </p>
-            <ul className="space-y-1">
-              {variants.map((v) => (
-                <li key={v.id} className="flex items-center gap-2 text-sm">
-                  <Link
-                    to={`/recipes/${v.id}`}
-                    className="text-primary underline underline-offset-2 hover:opacity-80 flex-1 truncate"
-                  >
-                    {v.title}
-                  </Link>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {v.createdAt ? new Date(v.createdAt).toLocaleDateString() : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          )}
+        </section>
+
+        {isOwner && (
+          <div className="mt-6 space-y-2 border-t border-rule pt-4">
+            <LinkButton to={`/recipes/${recipe.id}/edit`}>Edit recipe</LinkButton>
+            <Form method="post">
+              <input type="hidden" name="_intent" value="delete" />
+              <input type="hidden" name="recipeTitle" value={recipe.title} />
+              <Button className="w-full" variant="danger" type="submit">
+                Delete recipe
+              </Button>
+            </Form>
           </div>
         )}
-      </main>
+      </div>
+    </aside>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-md border border-rule bg-paper-2 p-3">
+      <dt className="ps-mono text-xs uppercase text-ink-4">{label}</dt>
+      <dd className="mt-1 font-medium text-ink">{value}</dd>
     </div>
+  );
+}
+
+function LinkButton({
+  to,
+  children,
+  variant = "secondary",
+}: {
+  to: string;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "accent";
+}) {
+  return (
+    <Link
+      to={to}
+      className={`ps-control inline-flex w-full items-center justify-center border px-4 text-sm font-medium focus-visible:ps-focus-ring ${
+        variant === "primary"
+          ? "border-transparent bg-primary text-primary-foreground hover:opacity-90"
+          : variant === "accent"
+            ? "border-rule bg-paper-3 text-ink hover:bg-paper-2"
+            : "border-rule bg-paper-2 text-ink hover:bg-paper-3"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function VariantPanel({ variants }: { variants: Variant[] }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="ps-display text-xl text-ink">Saved variants</h2>
+      <div className="grid gap-2">
+        {variants.map((variant) => (
+          <Link
+            key={variant.id}
+            to={`/recipes/${variant.id}`}
+            className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-rule bg-paper-2 p-3 hover:bg-paper-3"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-paper-3 text-primary">
+              *
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-ink">{variant.title}</span>
+              <span className="text-xs text-ink-3">
+                Saved {variant.createdAt ? new Date(variant.createdAt).toLocaleDateString() : ""}
+              </span>
+            </span>
+            <span className="text-xs font-medium text-ink-3">Open</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
