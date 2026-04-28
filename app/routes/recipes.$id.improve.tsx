@@ -1,15 +1,17 @@
 /**
  * AI Recipe Improvement — /recipes/:id/improve
  *
- * Shows profile picker, triggers SSE improvement, displays field-level diff,
- * allows accept/reject per field, and applies the result as a copy.
+ * Shows profile and lens controls, triggers SSE improvement, displays field-level
+ * diff, and saves the accepted result as either a variant or original replace.
  */
 
-import { useState } from "react";
-import { Link, useLoaderData, useFetcher } from "react-router";
+import { useMemo, useState } from "react";
+import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { data, redirect } from "react-router";
-import { and, eq, isNull, asc, desc } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id.improve";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import {
@@ -22,16 +24,31 @@ import {
   type RecipeDiff,
   type RecipeInput,
 } from "~/lib/ai-improve.shared";
+import {
+  AI_LENSES,
+  aiLensPrompt,
+  aiLensSummary,
+  isAiLensActive,
+  parseAiLensSearchParams,
+  type AiLensId,
+  type AiLensState,
+} from "~/lib/ai-lens.shared";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
+
+type AcceptState = {
+  title: boolean;
+  description: boolean;
+  ingredients: boolean;
+  directions: boolean;
+  notes: boolean;
+};
+
+type SaveMode = "variant" | "replace" | null;
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
-  return [{ title: `Improve: ${title} — ProjectSpice` }];
+  return [{ title: `Improve: ${title} - ProjectSpice` }];
 }
-
-// ---------------------------------------------------------------------------
-// Loader
-// ---------------------------------------------------------------------------
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
@@ -60,7 +77,6 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
         .from(schema.aiProfiles)
         .where(eq(schema.aiProfiles.userId, user.id))
         .orderBy(schema.aiProfiles.name),
-      // Load AI-improved variants of this recipe
       db
         .select({
           id: schema.recipes.id,
@@ -83,11 +99,11 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   const recipe = recipeRows[0];
   if (!recipe) throw data(null, { status: 404 });
 
-  const kv = context.cloudflare.env.SESSIONS;
   const day = new Date().toISOString().slice(0, 10);
-  const quotaUsed = await getQuotaUsed(kv, user.id, day);
+  const quotaUsed = await getQuotaUsed(context.cloudflare.env.SESSIONS, user.id, day);
 
   return {
+    user: { name: user.name, email: user.email },
     recipe,
     ingredients: ingredientRows,
     profiles: profileRows,
@@ -97,16 +113,12 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Action — apply improved recipe as a copy
-// ---------------------------------------------------------------------------
-
 export async function action({ params, request, context }: Route.ActionArgs) {
   const user = await requireUser(request, context);
   const fd = await request.formData();
   const intent = String(fd.get("_intent") ?? "");
 
-  if (intent !== "apply") {
+  if (intent !== "apply" && intent !== "replace") {
     throw data(null, { status: 400 });
   }
 
@@ -121,27 +133,44 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   const ingredientLines = ingredientsRaw
     .split("\n")
-    .map((l) => l.trim())
+    .map((line) => line.trim())
     .filter(Boolean);
 
   const { db } = createDb(context.cloudflare.env.DB);
-
-  // Generate a unique slug for the variant
-  const slugBase = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 100);
-  const existingRecipes = await db
-    .select({ slug: schema.recipes.slug })
+  const [existing] = await db
+    .select({
+      id: schema.recipes.id,
+    })
     .from(schema.recipes)
-    .where(and(eq(schema.recipes.userId, user.id), isNull(schema.recipes.deletedAt)));
-  const slugSet = new Set(existingRecipes.map((r) => r.slug));
-  let slug = slugBase;
-  let n = 2;
-  while (slugSet.has(slug)) slug = `${slugBase}-${n++}`;
+    .where(
+      and(
+        eq(schema.recipes.id, params.id),
+        eq(schema.recipes.userId, user.id),
+        isNull(schema.recipes.deletedAt)
+      )
+    )
+    .limit(1);
+
+  if (!existing) throw data({ error: "Recipe not found" }, { status: 404 });
+
+  if (intent === "replace") {
+    await db
+      .update(schema.recipes)
+      .set({
+        title,
+        description: description || null,
+        directionsText,
+        notes: notes || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.recipes.id, params.id));
+    await db.delete(schema.ingredients).where(eq(schema.ingredients.recipeId, params.id));
+    await insertIngredientLines(db, params.id, ingredientLines);
+    return redirect(`/recipes/${params.id}`);
+  }
 
   const newId = crypto.randomUUID();
+  const slug = await uniqueSlug(db, user.id, title);
 
   await db.insert(schema.recipes).values({
     id: newId,
@@ -158,12 +187,38 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     visibility: "private",
   });
 
-  // Insert ingredients
+  await insertIngredientLines(db, newId, ingredientLines);
+  return redirect(`/recipes/${newId}`);
+}
+
+async function uniqueSlug(db: ReturnType<typeof createDb>["db"], userId: string, title: string) {
+  const slugBase =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 100) || "recipe";
+  const existingRecipes = await db
+    .select({ slug: schema.recipes.slug })
+    .from(schema.recipes)
+    .where(and(eq(schema.recipes.userId, userId), isNull(schema.recipes.deletedAt)));
+  const slugSet = new Set(existingRecipes.map((recipe) => recipe.slug));
+  let slug = slugBase;
+  let n = 2;
+  while (slugSet.has(slug)) slug = `${slugBase}-${n++}`;
+  return slug;
+}
+
+async function insertIngredientLines(
+  db: ReturnType<typeof createDb>["db"],
+  recipeId: string,
+  ingredientLines: string[]
+) {
   for (let i = 0; i < ingredientLines.length; i++) {
     const parsed = parseIngredientLine(ingredientLines[i], null);
     if (parsed.is_group_header) {
       await db.insert(schema.ingredients).values({
-        recipeId: newId,
+        recipeId,
         sortOrder: i,
         groupName: ingredientLines[i],
         name: ingredientLines[i],
@@ -171,7 +226,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       });
     } else {
       await db.insert(schema.ingredients).values({
-        recipeId: newId,
+        recipeId,
         sortOrder: i,
         groupName: null,
         quantityRaw: parsed.quantity_raw || null,
@@ -186,159 +241,26 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       });
     }
   }
-
-  return redirect(`/recipes/${newId}`);
 }
-
-// ---------------------------------------------------------------------------
-// Component helpers
-// ---------------------------------------------------------------------------
-
-function DiffField({
-  label,
-  diff,
-  accepted,
-  onToggle,
-}: {
-  label: string;
-  diff: { changed: boolean; original: string; improved: string };
-  accepted: boolean;
-  onToggle: () => void;
-}) {
-  if (!diff.changed) {
-    return (
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          {label} — unchanged
-        </p>
-        <p className="text-sm whitespace-pre-line">{diff.original || "(empty)"}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 border rounded-md p-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          {label}
-        </p>
-        <button
-          type="button"
-          onClick={onToggle}
-          className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
-            accepted
-              ? "bg-green-100 text-green-700 hover:bg-green-200"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          {accepted ? "✓ Accepted" : "Accept"}
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <p className="text-xs text-red-500 font-medium mb-1">Original</p>
-          <p className="whitespace-pre-line text-muted-foreground line-through decoration-red-300">
-            {diff.original || "(empty)"}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-green-600 font-medium mb-1">Improved</p>
-          <p className="whitespace-pre-line">{diff.improved || "(empty)"}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DiffIngredients({
-  diff,
-  accepted,
-  onToggle,
-}: {
-  diff: RecipeDiff["ingredients"];
-  accepted: boolean;
-  onToggle: () => void;
-}) {
-  if (!diff.changed) {
-    return (
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Ingredients — unchanged
-        </p>
-        <ul className="text-sm list-disc list-inside space-y-0.5">
-          {diff.original.map((l, i) => (
-            <li key={i}>{l}</li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 border rounded-md p-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Ingredients
-        </p>
-        <button
-          type="button"
-          onClick={onToggle}
-          className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
-            accepted
-              ? "bg-green-100 text-green-700 hover:bg-green-200"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          {accepted ? "✓ Accepted" : "Accept"}
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <p className="text-xs text-red-500 font-medium mb-1">Original</p>
-          <ul className="list-disc list-inside space-y-0.5 text-muted-foreground line-through decoration-red-300">
-            {diff.original.map((l, i) => (
-              <li key={i}>{l}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs text-green-600 font-medium mb-1">Improved</p>
-          <ul className="list-disc list-inside space-y-0.5">
-            {diff.improved.map((l, i) => (
-              <li key={i}>{l}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
-
-type AcceptState = {
-  title: boolean;
-  description: boolean;
-  ingredients: boolean;
-  directions: boolean;
-  notes: boolean;
-};
 
 export default function RecipeImprovePage() {
-  const { recipe, ingredients, profiles, variants, quotaUsed, quotaLimit } =
+  const { user, recipe, ingredients, profiles, variants, quotaUsed, quotaLimit } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedProfile, setSelectedProfile] = useState<string>(
-    profiles[0]?.id ?? ""
+  const initialLens = useMemo(
+    () => parseAiLensSearchParams(searchParams),
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
+  const [aiLens, setAiLens] = useState<AiLensState>(initialLens);
+  const [selectedProfile, setSelectedProfile] = useState<string>(profiles[0]?.id ?? "");
   const [improved, setImproved] = useState<ImprovedRecipe | null>(null);
   const [diff, setDiff] = useState<RecipeDiff | null>(null);
   const [provider, setProvider] = useState<string>("");
   const [fromCache, setFromCache] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [saveMode, setSaveMode] = useState<SaveMode>(null);
   const [error, setError] = useState<{
     message: string;
     tosError?: boolean;
@@ -352,23 +274,84 @@ export default function RecipeImprovePage() {
     notes: true,
   });
 
-  const recipeInput: RecipeInput = {
-    id: recipe.id,
-    title: recipe.title,
-    description: recipe.description ?? null,
-    directionsText: recipe.directionsText ?? null,
-    notes: recipe.notes ?? null,
-    contentHash: recipe.contentHash ?? null,
-    ingredients: ingredients.map((i) => ({
-      sortOrder: i.sortOrder,
-      groupName: i.groupName ?? null,
-      quantityRaw: i.quantityRaw ?? null,
-      unitRaw: i.unitRaw ?? null,
-      name: i.name,
-      notes: i.notes ?? null,
-      isGroupHeader: i.isGroupHeader,
-    })),
-  };
+  const originalIngredients = useMemo(
+    () =>
+      ingredients
+        .filter((ingredient) => !ingredient.isGroupHeader)
+        .map((ingredient) =>
+          [ingredient.quantityRaw, ingredient.unitRaw, ingredient.name, ingredient.notes]
+            .filter(Boolean)
+            .join(" ")
+        ),
+    [ingredients]
+  );
+
+  const recipeInput: RecipeInput = useMemo(
+    () => ({
+      id: recipe.id,
+      title: recipe.title,
+      description: recipe.description ?? null,
+      directionsText: recipe.directionsText ?? null,
+      notes: recipe.notes ?? null,
+      contentHash: recipe.contentHash ?? null,
+      ingredients: ingredients.map((ingredient) => ({
+        sortOrder: ingredient.sortOrder,
+        groupName: ingredient.groupName ?? null,
+        quantityRaw: ingredient.quantityRaw ?? null,
+        unitRaw: ingredient.unitRaw ?? null,
+        name: ingredient.name,
+        notes: ingredient.notes ?? null,
+        isGroupHeader: ingredient.isGroupHeader,
+      })),
+    }),
+    [ingredients, recipe]
+  );
+
+  const lensPrompt = aiLensPrompt(aiLens);
+  const lensActive = isAiLensActive(aiLens);
+  const quotaRemaining = Math.max(0, quotaLimit - quotaUsed);
+  const selectedProfileName =
+    profiles.find((profile) => profile.id === selectedProfile)?.name ?? "AI profile";
+  const acceptedChangedCount = diff
+    ? (Object.keys(accepts) as Array<keyof AcceptState>).filter(
+        (field) => diff[field].changed && accepts[field]
+      ).length
+    : 0;
+  const finalTitle = improved
+    ? resolvedField(accepts, "title", recipe.title, improved.title)
+    : recipe.title;
+  const finalDescription = improved
+    ? resolvedField(accepts, "description", recipe.description ?? "", improved.description)
+    : (recipe.description ?? "");
+  const finalIngredients = improved
+    ? resolvedField(accepts, "ingredients", originalIngredients, improved.ingredients)
+    : originalIngredients;
+  const finalDirections = improved
+    ? resolvedField(accepts, "directions", recipe.directionsText ?? "", improved.directions)
+    : (recipe.directionsText ?? "");
+  const finalNotes = improved
+    ? resolvedField(accepts, "notes", recipe.notes ?? "", improved.notes)
+    : (recipe.notes ?? "");
+
+  function updateLens(next: AiLensState) {
+    setAiLens(next);
+    const params = new URLSearchParams(searchParams);
+    if (next.lenses.length > 0) {
+      params.set("lens", next.lenses.join(","));
+      params.set("strength", String(Math.round(next.strength * 100)));
+    } else {
+      params.delete("lens");
+      params.delete("strength");
+    }
+    setSearchParams(params, { replace: true });
+  }
+
+  function toggleLens(id: AiLensId) {
+    const lenses = aiLens.lenses.includes(id)
+      ? aiLens.lenses.filter((lens) => lens !== id)
+      : [...aiLens.lenses, id];
+    updateLens({ ...aiLens, lenses });
+  }
 
   function handleImprove(profileIdOverride?: string) {
     const profileId = profileIdOverride ?? selectedProfile;
@@ -377,13 +360,18 @@ export default function RecipeImprovePage() {
     setImproved(null);
     setDiff(null);
     setError(null);
+    setSaveMode(null);
     setIsStreaming(true);
 
     fetch(`/api/recipes/${recipe.id}/improve`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profileId }),
+      body: JSON.stringify({
+        profileId,
+        lensPrompt: lensActive ? lensPrompt : "",
+        lensStrength: aiLens.strength,
+      }),
     })
       .then(async (resp) => {
         if (!resp.ok) {
@@ -392,7 +380,12 @@ export default function RecipeImprovePage() {
           setIsStreaming(false);
           return;
         }
-        const reader = resp.body!.getReader();
+        const reader = resp.body?.getReader();
+        if (!reader) {
+          setError({ message: "AI response stream was unavailable" });
+          setIsStreaming(false);
+          return;
+        }
         const decoder = new TextDecoder();
         let buffer = "";
 
@@ -407,23 +400,20 @@ export default function RecipeImprovePage() {
             const line = chunk.trim();
             if (!line.startsWith("data:")) continue;
             try {
-              const payload = JSON.parse(line.slice(5).trim()) as Record<
-                string,
-                unknown
-              >;
+              const payload = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
               if (payload.type === "result") {
-                const imp = payload.improved as ImprovedRecipe;
-                setImproved(imp);
+                const nextImproved = payload.improved as ImprovedRecipe;
+                const nextDiff = computeDiff(recipeInput, nextImproved);
+                setImproved(nextImproved);
                 setProvider(String(payload.provider ?? ""));
                 setFromCache(Boolean(payload.fromCache));
-                const d = computeDiff(recipeInput, imp);
-                setDiff(d);
+                setDiff(nextDiff);
                 setAccepts({
-                  title: d.title.changed,
-                  description: d.description.changed,
-                  ingredients: d.ingredients.changed,
-                  directions: d.directions.changed,
-                  notes: d.notes.changed,
+                  title: nextDiff.title.changed,
+                  description: nextDiff.description.changed,
+                  ingredients: nextDiff.ingredients.changed,
+                  directions: nextDiff.directions.changed,
+                  notes: nextDiff.notes.changed,
                 });
               } else if (payload.type === "error") {
                 setError({
@@ -435,7 +425,7 @@ export default function RecipeImprovePage() {
                 setIsStreaming(false);
               }
             } catch {
-              // malformed SSE chunk — ignore
+              // Ignore malformed SSE chunks and keep reading the stream.
             }
           }
         }
@@ -447,283 +437,657 @@ export default function RecipeImprovePage() {
       });
   }
 
-  function resolvedField<T>(
-    field: keyof AcceptState,
-    original: T,
-    imp: T
-  ): T {
-    return accepts[field] ? imp : original;
+  function discardDraft() {
+    setImproved(null);
+    setDiff(null);
+    setProvider("");
+    setFromCache(false);
+    setSaveMode(null);
+    setAccepts({
+      title: true,
+      description: true,
+      ingredients: true,
+      directions: true,
+      notes: true,
+    });
   }
 
-  const finalTitle = improved
-    ? resolvedField("title", recipe.title, improved.title)
-    : recipe.title;
-  const finalDescription = improved
-    ? resolvedField("description", recipe.description ?? "", improved.description)
-    : (recipe.description ?? "");
-  const finalIngredients = improved
-    ? resolvedField(
-        "ingredients",
-        ingredients
-          .filter((i) => !i.isGroupHeader)
-          .map((i) =>
-            [i.quantityRaw, i.unitRaw, i.name, i.notes].filter(Boolean).join(" ")
-          ),
-        improved.ingredients
-      )
-    : ingredients
-        .filter((i) => !i.isGroupHeader)
-        .map((i) =>
-          [i.quantityRaw, i.unitRaw, i.name, i.notes].filter(Boolean).join(" ")
-        );
-  const finalDirections = improved
-    ? resolvedField("directions", recipe.directionsText ?? "", improved.directions)
-    : (recipe.directionsText ?? "");
-  const finalNotes = improved
-    ? resolvedField("notes", recipe.notes ?? "", improved.notes)
-    : (recipe.notes ?? "");
-
-  const quotaRemaining = quotaLimit - quotaUsed;
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link
-            to={`/recipes/${recipe.id}`}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            ← Back
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm truncate flex-1">
-            AI Improve: {recipe.title}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {quotaRemaining}/{quotaLimit} today
-          </span>
-        </div>
-      </header>
+    <AppShell user={user} lensSummary={aiLensSummary(aiLens)}>
+      <div className="space-y-5">
+        <Link to={`/recipes/${recipe.id}`} className="text-sm font-medium text-ink-3 hover:text-ink">
+          Back to recipe
+        </Link>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-8">
-        {/* Profile picker + trigger */}
-        <section className="space-y-4">
-          <h1 className="text-xl font-semibold">Improve Recipe</h1>
-
-          {profiles.length === 0 ? (
-            <div className="rounded-md border p-4 text-sm text-muted-foreground space-y-2">
-              <p>No AI profiles yet.</p>
-              <Link
-                to="/settings/ai-profiles"
-                className="text-primary underline underline-offset-2 hover:opacity-80"
-              >
-                Create a profile →
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <select
-                value={selectedProfile}
-                onChange={(e) => setSelectedProfile(e.target.value)}
-                className="border rounded-md px-3 py-2 text-sm bg-background flex-1"
-                disabled={isStreaming}
-              >
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => handleImprove()}
-                disabled={isStreaming || quotaRemaining <= 0 || !selectedProfile}
-                className="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-md disabled:opacity-50 whitespace-nowrap"
-              >
-                {isStreaming ? "Improving…" : "Improve Recipe"}
-              </button>
-            </div>
-          )}
-
-          {quotaRemaining <= 0 && (
-            <p className="text-sm text-amber-600">
-              Daily quota reached ({quotaLimit}/day). Try again tomorrow.
-            </p>
-          )}
-        </section>
-
-        {/* Error state */}
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700 space-y-2">
-            <p className="font-medium">Improvement failed</p>
-            <p>{error.message}</p>
-            {error.tosError && (
-              <p className="text-xs text-red-600">
-                AI provider returned an auth error. If this persists, the app
-                may need to switch to metered API billing — contact the admin.
-              </p>
-            )}
-            {error.quotaExceeded && (
-              <p className="text-xs text-red-600">
-                Daily quota of {quotaLimit} improvements reached.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Loading state */}
-        {isStreaming && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="animate-spin">⟳</span>
-            <span>Contacting AI… this may take a few seconds.</span>
-          </div>
-        )}
-
-        {/* Diff view */}
-        {diff && improved && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Review Changes</h2>
-              <span className="text-xs text-muted-foreground">
-                via {provider}
-                {fromCache ? " (cached)" : ""}
+        <SectionHeader
+          eyebrow="AI Improve"
+          title={recipe.title}
+          description="Build a reversible variant from lens choices and profile guidance, then decide field by field what earns a place in the recipe."
+          actions={
+            <div className="flex items-center gap-2 rounded-full border border-rule bg-paper-2 px-3 py-1.5">
+              <span className="ps-mono text-xs text-ink-4">Quota</span>
+              <span className="text-sm font-semibold text-ink">
+                {quotaRemaining}/{quotaLimit}
               </span>
             </div>
+          }
+        />
 
-            <p className="text-xs text-muted-foreground">
-              Click <strong>Accept</strong> on each field to include it in the
-              copy. Unchanged fields are carried over automatically.
-            </p>
-
-            <div className="space-y-4">
-              <DiffField
-                label="Title"
-                diff={diff.title}
-                accepted={accepts.title}
-                onToggle={() =>
-                  setAccepts((a) => ({ ...a, title: !a.title }))
-                }
-              />
-              <DiffField
-                label="Description"
-                diff={diff.description}
-                accepted={accepts.description}
-                onToggle={() =>
-                  setAccepts((a) => ({ ...a, description: !a.description }))
-                }
-              />
-              <DiffIngredients
-                diff={diff.ingredients}
-                accepted={accepts.ingredients}
-                onToggle={() =>
-                  setAccepts((a) => ({
-                    ...a,
-                    ingredients: !a.ingredients,
-                  }))
-                }
-              />
-              <DiffField
-                label="Directions"
-                diff={diff.directions}
-                accepted={accepts.directions}
-                onToggle={() =>
-                  setAccepts((a) => ({ ...a, directions: !a.directions }))
-                }
-              />
-              <DiffField
-                label="Notes"
-                diff={diff.notes}
-                accepted={accepts.notes}
-                onToggle={() =>
-                  setAccepts((a) => ({ ...a, notes: !a.notes }))
-                }
-              />
-            </div>
-
-            {/* Apply as copy */}
-            <fetcher.Form method="post">
-              <input type="hidden" name="_intent" value="apply" />
-              <input type="hidden" name="profileId" value={selectedProfile} />
-              <input type="hidden" name="title" value={finalTitle} />
-              <input
-                type="hidden"
-                name="description"
-                value={finalDescription}
-              />
-              <input
-                type="hidden"
-                name="ingredients"
-                value={finalIngredients.join("\n")}
-              />
-              <input
-                type="hidden"
-                name="directions"
-                value={finalDirections}
-              />
-              <input type="hidden" name="notes" value={finalNotes} />
-              <button
-                type="submit"
-                disabled={fetcher.state !== "idle"}
-                className="w-full sm:w-auto bg-green-600 text-white text-sm font-medium px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-              >
-                {fetcher.state !== "idle"
-                  ? "Saving…"
-                  : "Apply as Copy"}
-              </button>
-            </fetcher.Form>
-          </section>
-        )}
-
-        {/* Version history panel */}
-        {variants.length > 0 && (
-          <section className="space-y-3 border-t pt-6">
-            <h2 className="text-base font-semibold">Previous AI Versions</h2>
-            <ul className="space-y-2">
-              {variants.map((v) => (
-                <li key={v.id} className="flex items-center gap-2 text-sm">
-                  <Link
-                    to={`/recipes/${v.id}`}
-                    className="text-primary underline underline-offset-2 hover:opacity-80 flex-1 truncate"
-                  >
-                    {v.title}
-                  </Link>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {v.createdAt
-                      ? new Date(v.createdAt).toLocaleDateString()
-                      : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Side-by-side profile compare (when multiple profiles exist) */}
-        {profiles.length > 1 && !improved && !isStreaming && (
-          <section className="space-y-3 border-t pt-6">
-            <h2 className="text-base font-semibold">Your AI Profiles</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {profiles.map((p) => (
-                <div key={p.id} className="border rounded-md p-3 space-y-1">
-                  <p className="font-medium text-sm">{p.name}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-3">
-                    {p.systemPrompt}
-                  </p>
-                  <button
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="space-y-5">
+            <section className="overflow-hidden rounded-lg border border-rule bg-paper-2 shadow-[var(--shadow-1)]">
+              <div className="border-b border-rule bg-paper p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="ps-mono text-xs font-semibold uppercase text-ink-3">
+                      Improve stack
+                    </p>
+                    <h2 className="mt-1 text-lg font-semibold text-ink">
+                      {selectedProfileName} {lensActive ? `+ ${aiLensSummary(aiLens)}` : ""}
+                    </h2>
+                  </div>
+                  <Button
                     type="button"
-                    onClick={() => handleImprove(p.id)}
-                    disabled={isStreaming || quotaRemaining <= 0}
-                    className="text-xs text-primary underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
+                    variant="primary"
+                    onClick={() => handleImprove()}
+                    disabled={isStreaming || quotaRemaining <= 0 || !selectedProfile}
                   >
-                    Improve with this profile
-                  </button>
+                    {isStreaming ? "Improving..." : improved ? "Run again" : "Improve recipe"}
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
+              </div>
+
+              <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[16rem_minmax(0,1fr)]">
+                {profiles.length === 0 ? (
+                  <NoProfilesPanel />
+                ) : (
+                  <ProfilePicker
+                    profiles={profiles}
+                    selectedProfile={selectedProfile}
+                    setSelectedProfile={setSelectedProfile}
+                    disabled={isStreaming}
+                    quotaRemaining={quotaRemaining}
+                    onRun={handleImprove}
+                  />
+                )}
+                <LensPicker
+                  state={aiLens}
+                  onToggle={toggleLens}
+                  onStrength={(strength) => updateLens({ ...aiLens, strength })}
+                />
+              </div>
+
+              {quotaRemaining <= 0 && (
+                <div className="border-t border-rule bg-warn/10 px-5 py-3 text-sm text-warn">
+                  Daily quota reached ({quotaLimit}/day). Try again tomorrow.
+                </div>
+              )}
+            </section>
+
+            {error && <ErrorPanel error={error} quotaLimit={quotaLimit} />}
+            {isStreaming && <StreamingPanel lensActive={lensActive} />}
+
+            {diff && improved ? (
+              <section className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="ps-mono text-xs font-semibold uppercase text-ink-3">
+                      Field-level diff
+                    </p>
+                    <h2 className="ps-display text-2xl text-ink">
+                      {acceptedChangedCount} accepted change
+                      {acceptedChangedCount === 1 ? "" : "s"}
+                    </h2>
+                  </div>
+                  <span className="text-xs text-ink-4">
+                    via {provider || "AI"}
+                    {fromCache ? " (cached)" : ""}
+                  </span>
+                </div>
+
+                <div className="grid gap-3">
+                  <DiffField
+                    label="Title"
+                    diff={diff.title}
+                    accepted={accepts.title}
+                    onToggle={() => setAccepts((current) => ({ ...current, title: !current.title }))}
+                  />
+                  <DiffField
+                    label="Description"
+                    diff={diff.description}
+                    accepted={accepts.description}
+                    onToggle={() =>
+                      setAccepts((current) => ({
+                        ...current,
+                        description: !current.description,
+                      }))
+                    }
+                  />
+                  <DiffIngredients
+                    diff={diff.ingredients}
+                    accepted={accepts.ingredients}
+                    onToggle={() =>
+                      setAccepts((current) => ({
+                        ...current,
+                        ingredients: !current.ingredients,
+                      }))
+                    }
+                  />
+                  <DiffField
+                    label="Directions"
+                    diff={diff.directions}
+                    accepted={accepts.directions}
+                    onToggle={() =>
+                      setAccepts((current) => ({
+                        ...current,
+                        directions: !current.directions,
+                      }))
+                    }
+                  />
+                  <DiffField
+                    label="Notes"
+                    diff={diff.notes}
+                    accepted={accepts.notes}
+                    onToggle={() => setAccepts((current) => ({ ...current, notes: !current.notes }))}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 rounded-lg border border-rule bg-paper-2 p-3">
+                  <Button type="button" variant="primary" onClick={() => setSaveMode("variant")}>
+                    Save as variant
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setSaveMode("replace")}>
+                    Replace original
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={discardDraft}>
+                    Discard
+                  </Button>
+                </div>
+              </section>
+            ) : (
+              !isStreaming && <OriginalPreview recipe={recipe} ingredients={originalIngredients} />
+            )}
+          </div>
+
+          <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+            <DecisionPanel
+              lensActive={lensActive}
+              lensSummary={aiLensSummary(aiLens)}
+              lensPrompt={lensPrompt}
+              finalTitle={finalTitle}
+              finalIngredients={finalIngredients}
+              changedCount={acceptedChangedCount}
+            />
+            {variants.length > 0 && <VariantPanel variants={variants} />}
+          </aside>
+        </div>
+      </div>
+
+      {saveMode && improved && (
+        <SaveModal
+          mode={saveMode}
+          fetcher={fetcher}
+          onClose={() => setSaveMode(null)}
+          selectedProfile={selectedProfile}
+          recipeTitle={recipe.title}
+          finalTitle={finalTitle}
+          finalDescription={finalDescription}
+          finalIngredients={finalIngredients}
+          finalDirections={finalDirections}
+          finalNotes={finalNotes}
+        />
+      )}
+    </AppShell>
+  );
+}
+
+function resolvedField<T>(accepts: AcceptState, field: keyof AcceptState, original: T, improved: T): T {
+  return accepts[field] ? improved : original;
+}
+
+function ProfilePicker({
+  profiles,
+  selectedProfile,
+  setSelectedProfile,
+  disabled,
+  quotaRemaining,
+  onRun,
+}: {
+  profiles: Array<{ id: string; name: string; systemPrompt: string }>;
+  selectedProfile: string;
+  setSelectedProfile: (value: string) => void;
+  disabled: boolean;
+  quotaRemaining: number;
+  onRun: (profileId?: string) => void;
+}) {
+  return (
+    <section className="space-y-3">
+      <label className="block space-y-2">
+        <span className="ps-mono text-xs font-semibold uppercase text-ink-3">Profile</span>
+        <select
+          value={selectedProfile}
+          onChange={(event) => setSelectedProfile(event.target.value)}
+          className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
+          disabled={disabled}
+        >
+          {profiles.map((profile) => (
+            <option key={profile.id} value={profile.id}>
+              {profile.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="grid gap-2">
+        {profiles.map((profile) => (
+          <button
+            key={profile.id}
+            type="button"
+            onClick={() => onRun(profile.id)}
+            disabled={disabled || quotaRemaining <= 0}
+            className={`rounded-lg border p-3 text-left transition focus-visible:ps-focus-ring disabled:opacity-50 ${
+              selectedProfile === profile.id
+                ? "border-primary bg-primary/10"
+                : "border-rule bg-paper hover:bg-paper-3"
+            }`}
+          >
+            <span className="block text-sm font-semibold text-ink">{profile.name}</span>
+            <span className="mt-1 line-clamp-3 block text-xs leading-5 text-ink-3">
+              {profile.systemPrompt}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NoProfilesPanel() {
+  return (
+    <section className="rounded-lg border border-rule bg-paper p-4 text-sm text-ink-3">
+      <p className="font-medium text-ink">No AI profiles yet.</p>
+      <p className="mt-1 text-xs leading-5">
+        Create a profile to run improvements. Lens choices can still be staged from this page.
+      </p>
+      <Link
+        to="/settings/ai-profiles"
+        className="mt-3 inline-flex font-medium text-ink underline underline-offset-4"
+      >
+        Create a profile
+      </Link>
+    </section>
+  );
+}
+
+function LensPicker({
+  state,
+  onToggle,
+  onStrength,
+}: {
+  state: AiLensState;
+  onToggle: (id: AiLensId) => void;
+  onStrength: (value: number) => void;
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <p className="ps-mono text-xs font-semibold uppercase text-ink-3">AI Lens</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {AI_LENSES.map((lens) => (
+            <button key={lens.id} type="button" onClick={() => onToggle(lens.id)}>
+              <Chip selected={state.lenses.includes(lens.id)}>{lens.label}</Chip>
+            </button>
+          ))}
+        </div>
+      </div>
+      <label className="block space-y-2">
+        <span className="flex items-center justify-between text-xs text-ink-3">
+          <span>Strength</span>
+          <span>{Math.round(state.strength * 100)}%</span>
+        </span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={Math.round(state.strength * 100)}
+          onChange={(event) => onStrength(Number(event.target.value) / 100)}
+          className="w-full accent-ink"
+        />
+        <span className="grid grid-cols-3 text-[0.7rem] uppercase text-ink-4">
+          <span>Subtle</span>
+          <span className="text-center">Balanced</span>
+          <span className="text-right">Bold</span>
+        </span>
+      </label>
+      <p className="rounded-lg border border-rule bg-paper p-3 text-xs leading-5 text-ink-3">
+        Lens changes are sent as extra instructions for this run. The original remains unchanged
+        until you explicitly replace it.
+      </p>
+    </section>
+  );
+}
+
+function ErrorPanel({
+  error,
+  quotaLimit,
+}: {
+  error: { message: string; tosError?: boolean; quotaExceeded?: boolean };
+  quotaLimit: number;
+}) {
+  return (
+    <section className="rounded-lg border border-err/30 bg-err/10 p-4 text-sm text-err">
+      <p className="font-semibold">Improvement failed</p>
+      <p className="mt-1">{error.message}</p>
+      {error.tosError && (
+        <p className="mt-2 text-xs leading-5">
+          AI provider authentication failed. The app may need a billing-backed provider token.
+        </p>
+      )}
+      {error.quotaExceeded && (
+        <p className="mt-2 text-xs leading-5">
+          Daily quota of {quotaLimit} improvements reached.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function StreamingPanel({ lensActive }: { lensActive: boolean }) {
+  return (
+    <section className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <div className="flex items-center gap-3 text-sm text-ink-3">
+        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary" />
+        <span>
+          Contacting AI{lensActive ? " with the selected lens stack" : ""}. This can take a few
+          seconds.
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function OriginalPreview({
+  recipe,
+  ingredients,
+}: {
+  recipe: { description?: string | null; directionsText?: string | null; notes?: string | null };
+  ingredients: string[];
+}) {
+  return (
+    <section className="rounded-lg border border-dashed border-rule bg-paper-2 p-5">
+      <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Original recipe</p>
+      <div className="mt-3 grid gap-4 lg:grid-cols-2">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Ingredients</h2>
+          <ul className="mt-2 space-y-1 text-sm text-ink-3">
+            {ingredients.slice(0, 8).map((ingredient, index) => (
+              <li key={`${ingredient}-${index}`}>{ingredient}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Directions</h2>
+          <p className="mt-2 line-clamp-6 whitespace-pre-line text-sm leading-6 text-ink-3">
+            {recipe.directionsText || recipe.description || recipe.notes || "No directions yet."}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DiffField({
+  label,
+  diff,
+  accepted,
+  onToggle,
+}: {
+  label: string;
+  diff: { changed: boolean; original: string; improved: string };
+  accepted: boolean;
+  onToggle: () => void;
+}) {
+  if (!diff.changed) {
+    return (
+      <section className="rounded-lg border border-rule bg-paper-2 p-4">
+        <p className="ps-mono text-xs font-semibold uppercase text-ink-3">{label} unchanged</p>
+        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-ink-2">
+          {diff.original || "(empty)"}
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="ps-mono text-xs font-semibold uppercase text-ink-3">{label}</p>
+        <Button type="button" size="sm" variant={accepted ? "primary" : "secondary"} onClick={onToggle}>
+          {accepted ? "Accepted" : "Accept"}
+        </Button>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <DiffPane title="Original" tone="old" value={diff.original} />
+        <DiffPane title="Improved" tone="new" value={diff.improved} />
+      </div>
+    </section>
+  );
+}
+
+function DiffIngredients({
+  diff,
+  accepted,
+  onToggle,
+}: {
+  diff: RecipeDiff["ingredients"];
+  accepted: boolean;
+  onToggle: () => void;
+}) {
+  if (!diff.changed) {
+    return (
+      <section className="rounded-lg border border-rule bg-paper-2 p-4">
+        <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Ingredients unchanged</p>
+        <ul className="mt-2 space-y-1 text-sm text-ink-2">
+          {diff.original.map((line, index) => (
+            <li key={`${line}-${index}`}>{line}</li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Ingredients</p>
+        <Button type="button" size="sm" variant={accepted ? "primary" : "secondary"} onClick={onToggle}>
+          {accepted ? "Accepted" : "Accept"}
+        </Button>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <IngredientDiffPane title="Original" tone="old" lines={diff.original} />
+        <IngredientDiffPane title="Improved" tone="new" lines={diff.improved} />
+      </div>
+    </section>
+  );
+}
+
+function DiffPane({ title, value, tone }: { title: string; value: string; tone: "old" | "new" }) {
+  return (
+    <div className="rounded-md border border-rule bg-paper p-3">
+      <p className={`text-xs font-semibold ${tone === "old" ? "text-err" : "text-ok"}`}>{title}</p>
+      <p
+        className={`mt-2 whitespace-pre-line text-sm leading-6 ${
+          tone === "old" ? "text-ink-4 line-through decoration-err/40" : "text-ink-2"
+        }`}
+      >
+        {value || "(empty)"}
+      </p>
+    </div>
+  );
+}
+
+function IngredientDiffPane({
+  title,
+  lines,
+  tone,
+}: {
+  title: string;
+  lines: string[];
+  tone: "old" | "new";
+}) {
+  return (
+    <div className="rounded-md border border-rule bg-paper p-3">
+      <p className={`text-xs font-semibold ${tone === "old" ? "text-err" : "text-ok"}`}>{title}</p>
+      <ul
+        className={`mt-2 space-y-1 text-sm leading-6 ${
+          tone === "old" ? "text-ink-4 line-through decoration-err/40" : "text-ink-2"
+        }`}
+      >
+        {lines.map((line, index) => (
+          <li key={`${line}-${index}`}>{line}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DecisionPanel({
+  lensActive,
+  lensSummary,
+  lensPrompt,
+  finalTitle,
+  finalIngredients,
+  changedCount,
+}: {
+  lensActive: boolean;
+  lensSummary: string;
+  lensPrompt: string;
+  finalTitle: string;
+  finalIngredients: string[];
+  changedCount: number;
+}) {
+  return (
+    <section className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Decision preview</p>
+      <h2 className="mt-2 text-lg font-semibold text-ink">{finalTitle}</h2>
+      <p className="mt-1 text-sm text-ink-3">
+        {changedCount > 0
+          ? `${changedCount} changed field${changedCount === 1 ? "" : "s"} accepted`
+          : "No generated changes accepted yet"}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <Chip selected={lensActive}>{lensSummary}</Chip>
+        <Chip tone="neutral">{finalIngredients.length} ingredients</Chip>
+      </div>
+      {lensPrompt && (
+        <p className="mt-3 rounded-md bg-paper p-3 text-xs leading-5 text-ink-3">{lensPrompt}</p>
+      )}
+    </section>
+  );
+}
+
+type Variant = Route.ComponentProps["loaderData"]["variants"][number];
+
+function VariantPanel({ variants }: { variants: Variant[] }) {
+  return (
+    <section className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <h2 className="text-sm font-semibold text-ink">Saved variants</h2>
+      <div className="mt-3 grid gap-2">
+        {variants.map((variant) => (
+          <Link
+            key={variant.id}
+            to={`/recipes/${variant.id}`}
+            className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-md border border-rule bg-paper p-3 hover:bg-paper-3"
+          >
+            <span className="truncate text-sm font-semibold text-ink">{variant.title}</span>
+            <span className="text-xs text-ink-4">
+              {variant.createdAt ? new Date(variant.createdAt).toLocaleDateString() : ""}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SaveModal({
+  mode,
+  fetcher,
+  onClose,
+  selectedProfile,
+  recipeTitle,
+  finalTitle,
+  finalDescription,
+  finalIngredients,
+  finalDirections,
+  finalNotes,
+}: {
+  mode: Exclude<SaveMode, null>;
+  fetcher: ReturnType<typeof useFetcher>;
+  onClose: () => void;
+  selectedProfile: string;
+  recipeTitle: string;
+  finalTitle: string;
+  finalDescription: string;
+  finalIngredients: string[];
+  finalDirections: string;
+  finalNotes: string;
+}) {
+  const saving = fetcher.state !== "idle";
+  const title = mode === "variant" ? "Save as variant" : "Replace original";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 px-4 py-8">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="save-improvement-title"
+        className="w-full max-w-lg rounded-lg border border-rule bg-paper p-5 text-ink shadow-[var(--shadow-3)]"
+      >
+        <div className="space-y-2">
+          <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Final decision</p>
+          <h2 id="save-improvement-title" className="ps-display text-2xl text-ink">
+            {title}
+          </h2>
+          <p className="text-sm leading-6 text-ink-3">
+            {mode === "variant"
+              ? `Create a separate recipe linked back to "${recipeTitle}".`
+              : `Overwrite "${recipeTitle}" with the accepted fields. Existing variants remain linked.`}
+          </p>
+        </div>
+
+        <fetcher.Form method="post" className="mt-5 space-y-4">
+          <input type="hidden" name="_intent" value={mode === "variant" ? "apply" : "replace"} />
+          <input type="hidden" name="profileId" value={selectedProfile} />
+          <input type="hidden" name="description" value={finalDescription} />
+          <input type="hidden" name="ingredients" value={finalIngredients.join("\n")} />
+          <input type="hidden" name="directions" value={finalDirections} />
+          <input type="hidden" name="notes" value={finalNotes} />
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-ink">Recipe title</span>
+            <input
+              name="title"
+              defaultValue={finalTitle}
+              className="ps-control w-full border border-rule bg-paper-2 px-3 text-sm text-ink focus-visible:ps-focus-ring"
+              required
+            />
+          </label>
+          {mode === "replace" && (
+            <p className="rounded-md border border-err/30 bg-err/10 p-3 text-xs leading-5 text-err">
+              This changes the original recipe. Use Save as variant when you want a reversible copy.
+            </p>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant={mode === "replace" ? "danger" : "primary"} disabled={saving}>
+              {saving ? "Saving..." : title}
+            </Button>
+          </div>
+        </fetcher.Form>
+      </section>
     </div>
   );
 }

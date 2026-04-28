@@ -1,7 +1,7 @@
 /**
  * SSE endpoint: POST /api/recipes/:id/improve
  *
- * Body (JSON): { profileId: string }
+ * Body (JSON): { profileId: string, lensPrompt?: string, lensStrength?: number }
  *
  * Streams SSE events:
  *   data: {"type":"start"}
@@ -34,9 +34,20 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
 
   let profileId: string;
+  let lensPrompt = "";
+  let lensStrength = 0.5;
   try {
-    const body = (await request.json()) as { profileId?: string };
+    const body = (await request.json()) as {
+      profileId?: string;
+      lensPrompt?: string;
+      lensStrength?: number;
+    };
     profileId = String(body.profileId ?? "").trim();
+    lensPrompt = String(body.lensPrompt ?? "").trim();
+    lensStrength =
+      typeof body.lensStrength === "number" && Number.isFinite(body.lensStrength)
+        ? Math.min(1, Math.max(0, body.lensStrength))
+        : 0.5;
   } catch {
     throw data({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -126,9 +137,15 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     try {
       await write({ type: "start" });
 
+      const lensInstruction = lensPrompt
+        ? `\n\nAI Lens directives (${Math.round(lensStrength * 100)}% strength): ${lensPrompt}\nKeep the original recipe intact unless the requested lens directly calls for a change.`
+        : "";
       const result = await improveRecipe(
         recipeInput,
-        { id: profile.id, systemPrompt: profile.systemPrompt },
+        {
+          id: lensPrompt ? `${profile.id}:${hashLens(lensPrompt, lensStrength)}` : profile.id,
+          systemPrompt: `${profile.systemPrompt}${lensInstruction}`,
+        },
         improvementEnv,
         user.id,
         today()
@@ -178,4 +195,13 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       Connection: "keep-alive",
     },
   });
+}
+
+function hashLens(prompt: string, strength: number): string {
+  let hash = 0;
+  const value = `${Math.round(strength * 100)}:${prompt}`;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
 }
