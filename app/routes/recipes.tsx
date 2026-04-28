@@ -9,7 +9,7 @@ import { AppShell } from "~/components/app-shell";
 import { Button, Chip, FilterGroup, ImageFallback, SectionHeader, SegmentedControl } from "~/components/ui";
 import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 
-const PAGE_SIZE = 24;
+const LOAD_INCREMENT = 30;
 
 type SortOption = "recent" | "alpha" | "most-made";
 type ViewOption = "grid" | "list";
@@ -118,8 +118,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const sort: SortOption = ["recent", "alpha", "most-made"].includes(rawSort)
     ? (rawSort as SortOption)
     : "recent";
-  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
-  const offset = (page - 1) * PAGE_SIZE;
+  const requestedLimit = parseInt(url.searchParams.get("limit") ?? String(LOAD_INCREMENT), 10);
+  const limit = Math.max(
+    LOAD_INCREMENT,
+    Number.isFinite(requestedLimit) ? requestedLimit : LOAD_INCREMENT
+  );
   const rawTags = url.searchParams.get("tags") ?? "";
   const selectedTags = rawTags
     ? rawTags
@@ -180,9 +183,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
              AND r.deleted_at IS NULL
              ${filterSql}
            ORDER BY ${orderBy}
-           LIMIT ? OFFSET ?`
+           LIMIT ?`
         )
-        .bind(user.id, safeQ, ...accessParams, ...filterParams, PAGE_SIZE, offset)
+        .bind(user.id, safeQ, ...accessParams, ...filterParams, limit)
         .all<{
           id: string;
           title: string;
@@ -237,9 +240,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
              AND r.deleted_at IS NULL
              ${filterSql}
            ORDER BY ${orderBy}
-           LIMIT ? OFFSET ?`
+           LIMIT ?`
         )
-        .bind(user.id, ...accessParams, ...filterParams, PAGE_SIZE, offset)
+        .bind(user.id, ...accessParams, ...filterParams, limit)
         .all<{
           id: string;
           title: string;
@@ -356,8 +359,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     density,
     scope,
     total,
-    page,
-    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    limit,
+    loadIncrement: LOAD_INCREMENT,
     sort,
     q,
   };
@@ -385,8 +388,8 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     density,
     scope,
     total,
-    page,
-    pageCount,
+    limit,
+    loadIncrement,
     sort,
     q,
   } = loaderData;
@@ -404,7 +407,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     const base: Record<string, string | null> = {
       q: q || null,
       sort: sort === "recent" ? null : sort,
-      page: String(page),
+      limit: limit > loadIncrement ? String(limit) : null,
       tags: selectedTags.length > 0 ? selectedTags.join(",") : null,
       cookbook: selectedCookbookId,
       archived: showArchived ? "1" : null,
@@ -414,7 +417,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     };
     const merged = { ...base, ...overrides };
     for (const [k, v] of Object.entries(merged)) {
-      if (v !== null && v !== "" && !(k === "page" && v === "1")) {
+      if (v !== null && v !== "") {
         params.set(k, v);
       }
     }
@@ -425,13 +428,13 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     setInputValue(value);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      const qs = buildParams({ q: value.trim() || null, page: "1" });
+      const qs = buildParams({ q: value.trim() || null, limit: null });
       navigate(`/recipes${qs ? `?${qs}` : ""}`, { replace: true });
     }, 300);
   }
 
   function handleSortChange(newSort: SortOption) {
-    const qs = buildParams({ sort: newSort, page: "1" });
+    const qs = buildParams({ sort: newSort, limit: null });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
@@ -451,24 +454,24 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
       : [...selectedTags, tagName];
     const qs = buildParams({
       tags: newTags.length > 0 ? newTags.join(",") : null,
-      page: "1",
+      limit: null,
     });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
   function toggleArchived() {
-    const qs = buildParams({ archived: showArchived ? null : "1", page: "1" });
+    const qs = buildParams({ archived: showArchived ? null : "1", limit: null });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
   function selectCookbook(cookbookId: string | null) {
-    const qs = buildParams({ cookbook: cookbookId, page: "1" });
+    const qs = buildParams({ cookbook: cookbookId, limit: null });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
     setFilterOpen(false);
   }
 
   function clearFilters() {
-    const qs = buildParams({ tags: null, archived: null, cookbook: null, page: "1" });
+    const qs = buildParams({ tags: null, archived: null, cookbook: null, limit: null });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
     setFilterOpen(false);
   }
@@ -478,10 +481,13 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     setFilterOpen(false);
   }
 
-  function buildPageUrl(targetPage: number) {
-    const qs = buildParams({ page: String(targetPage) });
+  const nextLimit = Math.min(limit + loadIncrement, total);
+  const visibleCount = Math.min(recipes.length, total);
+  const hasMoreRecipes = visibleCount < total;
+  const loadMoreUrl = (() => {
+    const qs = buildParams({ limit: String(nextLimit) });
     return `/recipes${qs ? `?${qs}` : ""}`;
-  }
+  })();
 
   const hasRecipes = recipes.length > 0;
   const selectedCookbook = selectedCookbookId
@@ -643,8 +649,14 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
               />
             )}
 
-            {pageCount > 1 && (
-              <Pagination page={page} pageCount={pageCount} buildPageUrl={buildPageUrl} />
+            {hasRecipes && (
+              <LoadMoreStatus
+                visibleCount={visibleCount}
+                total={total}
+                hasMore={hasMoreRecipes}
+                loadMoreUrl={loadMoreUrl}
+                loadIncrement={loadIncrement}
+              />
             )}
           </div>
         </div>
@@ -707,7 +719,7 @@ function FilterRail({
         {(["mine", "family", "shared"] as const).map((option) => {
           const qs = buildParams({
             scope: option === "mine" ? null : option,
-            page: "1",
+            limit: null,
           });
           return (
             <Link
@@ -1093,42 +1105,36 @@ function EmptyState({
   );
 }
 
-function Pagination({
-  page,
-  pageCount,
-  buildPageUrl,
+function LoadMoreStatus({
+  visibleCount,
+  total,
+  hasMore,
+  loadMoreUrl,
+  loadIncrement,
 }: {
-  page: number;
-  pageCount: number;
-  buildPageUrl: (targetPage: number) => string;
+  visibleCount: number;
+  total: number;
+  hasMore: boolean;
+  loadMoreUrl: string;
+  loadIncrement: number;
 }) {
   return (
-    <div className="flex items-center justify-center gap-3 pt-2">
-      {page > 1 ? (
+    <div className="rounded-lg border border-rule bg-paper-2 px-4 py-4 text-center shadow-[var(--shadow-1)]">
+      <p className="text-sm text-ink-3">
+        Showing <span className="font-semibold text-ink">{visibleCount}</span> of{" "}
+        <span className="font-semibold text-ink">{total}</span> recipes
+      </p>
+      {hasMore ? (
         <Link
-          to={buildPageUrl(page - 1)}
-          className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+          to={loadMoreUrl}
+          preventScrollReset
+          className="ps-control mt-3 inline-flex items-center justify-center border border-rule bg-paper px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
         >
-          Previous
+          Load {Math.min(loadIncrement, total - visibleCount)} more
         </Link>
       ) : (
-        <span className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink-4 opacity-60">
-          Previous
-        </span>
-      )}
-      <span className="text-sm text-ink-3">
-        Page {page} of {pageCount}
-      </span>
-      {page < pageCount ? (
-        <Link
-          to={buildPageUrl(page + 1)}
-          className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
-        >
-          Next
-        </Link>
-      ) : (
-        <span className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink-4 opacity-60">
-          Next
+        <span className="mt-2 block text-xs font-medium uppercase text-ink-4">
+          End of library
         </span>
       )}
     </div>
