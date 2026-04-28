@@ -13,6 +13,8 @@ import {
   submitLogDraft,
   type LogDraft,
 } from "~/lib/offline-log-sync";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta() {
   return [{ title: "Log a Cook — ProjectSpice" }];
@@ -23,7 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const recipeId = url.searchParams.get("recipeId");
 
-  if (!recipeId) return { recipe: null };
+  if (!recipeId) return { user, recipe: null };
 
   const { db } = createDb(context.cloudflare.env.DB);
   const [recipe] = await db
@@ -41,7 +43,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     )
     .limit(1);
 
-  return { recipe: recipe ?? null };
+  return { user, recipe: recipe ?? null };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -65,8 +67,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 const INPUT =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
-const LABEL = "text-sm font-medium";
+  "ps-control w-full border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring";
+const LABEL = "text-sm font-medium text-ink";
 const FIELD = "flex flex-col gap-1";
 
 function todayLocalDate(): string {
@@ -78,38 +80,40 @@ function todayLocalDate(): string {
 }
 
 export default function NewLog({ loaderData, actionData }: Route.ComponentProps) {
-  const { recipe } = loaderData;
+  const { user, recipe } = loaderData;
   const navigate = useNavigate();
   const [rating, setRating] = useState(0);
   const [clientRequestId, setClientRequestId] = useState("");
   const [offlineStatus, setOfflineStatus] = useState<string | null>(null);
 
   const backHref = recipe ? `/recipes/${recipe.id}` : "/recipes";
-  const backLabel = recipe ? `← ${recipe.title}` : "← Recipes";
+  const backLabel = recipe ? recipe.title : "Recipes";
 
   useEffect(() => {
     setClientRequestId(createLogClientId());
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link
-            to={backHref}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            {backLabel}
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm">Log a Cook</span>
-        </div>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-2xl space-y-6">
+        <SectionHeader
+          eyebrow="Cooking memory"
+          title="Log a Cook"
+          description={
+            recipe
+              ? `Record what happened when you cooked ${recipe.title}.`
+              : "Record a free-form cooking session without linking it to a recipe."
+          }
+          actions={
+            <Link to={backHref} className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+              {backLabel}
+            </Link>
+          }
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
         <Form
           method="post"
-          className="space-y-6"
+          className="ps-surface space-y-6 p-5"
           onSubmit={async (event) => {
             const form = event.currentTarget;
             event.preventDefault();
@@ -159,19 +163,19 @@ export default function NewLog({ loaderData, actionData }: Route.ComponentProps)
           )}
 
           {actionData?.error && (
-            <p className="text-sm text-red-500">{actionData.error}</p>
+            <p className="rounded-md border border-err/30 bg-err/10 px-3 py-2 text-sm text-err">{actionData.error}</p>
           )}
           {offlineStatus && (
-            <p className="text-sm text-amber-600">{offlineStatus}</p>
+            <p className="rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-sm text-warn">{offlineStatus}</p>
           )}
 
           {recipe ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-2 text-sm text-ink-3">
               Logging a cook for{" "}
-              <span className="font-medium text-foreground">{recipe.title}</span>
+              <Chip>{recipe.title}</Chip>
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ink-3">
               Recording a free-form cooking session (no specific recipe).
             </p>
           )}
@@ -198,10 +202,10 @@ export default function NewLog({ loaderData, actionData }: Route.ComponentProps)
                   key={star}
                   type="button"
                   onClick={() => setRating(rating === star ? 0 : star)}
-                  className={`text-2xl leading-none transition-colors ${
+                  className={`text-2xl leading-none transition-colors focus-visible:ps-focus-ring ${
                     star <= rating
-                      ? "text-yellow-400"
-                      : "text-muted-foreground/40 hover:text-yellow-300"
+                      ? "text-warn"
+                      : "text-ink-4/40 hover:text-warn/70"
                   }`}
                   aria-label={`${star} star${star > 1 ? "s" : ""}`}
                   aria-pressed={star <= rating}
@@ -222,7 +226,7 @@ export default function NewLog({ loaderData, actionData }: Route.ComponentProps)
               name="notes"
               rows={3}
               placeholder="How did it turn out?"
-              className={`${INPUT} resize-y`}
+              className={`${INPUT} min-h-28 resize-y py-2`}
             />
           </div>
 
@@ -235,26 +239,23 @@ export default function NewLog({ loaderData, actionData }: Route.ComponentProps)
               name="modifications"
               rows={3}
               placeholder="What did you change or substitute?"
-              className={`${INPUT} resize-y`}
+              className={`${INPUT} min-h-28 resize-y py-2`}
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              className="flex-1 rounded-md bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
-            >
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+            <Button type="submit" variant="primary" className="flex-1">
               Save Log
-            </button>
+            </Button>
             <Link
               to={backHref}
-              className="rounded-md border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors text-center"
+              className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
             >
               Cancel
             </Link>
           </div>
         </Form>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

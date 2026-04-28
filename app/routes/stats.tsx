@@ -7,6 +7,8 @@ import {
   getDormantRecipes,
   type DormantRecipeInput,
 } from "~/lib/cooking-stats";
+import { AppShell } from "~/components/app-shell";
+import { Chip, SectionHeader } from "~/components/ui";
 
 type SummaryRow = {
   total_logs: number;
@@ -153,6 +155,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }));
 
   return {
+    user,
     summary: summary ?? {
       total_logs: 0,
       linked_logs: 0,
@@ -171,6 +174,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function Stats({ loaderData }: Route.ComponentProps) {
   const {
+    user,
     summary,
     years,
     weeklyCadence,
@@ -185,47 +189,39 @@ export default function Stats({ loaderData }: Route.ComponentProps) {
   const hasLogs = summary.total_logs > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link to="/recipes" className="text-gray-500 hover:text-gray-700 text-sm">
-            ← Recipes
-          </Link>
-          <span className="text-gray-300">/</span>
-          <h1 className="font-semibold text-gray-900">Cooking Stats</h1>
-          <Link
-            to="/logs/new"
-            className="ml-auto rounded-md bg-gray-900 text-white px-3 py-1.5 text-sm font-medium hover:bg-gray-700 transition-colors"
-          >
-            Log Cook
-          </Link>
-        </div>
-      </header>
+    <AppShell user={user}>
+      <div className="space-y-6">
+        <SectionHeader
+          eyebrow="Cooking history"
+          title="Cooking Stats"
+          description="Track cadence, favorite repeats, and recipes that deserve another turn."
+          actions={
+            <Link to="/logs/new" className="ps-control inline-flex items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring">
+              Log Cook
+            </Link>
+          }
+        />
 
-      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {!hasLogs ? (
-          <section className="bg-white rounded-lg border px-5 py-12 text-center">
-            <p className="text-sm font-medium text-gray-900">No cooking stats yet</p>
-            <p className="text-sm text-gray-500 mt-1">
+          <section className="ps-surface px-5 py-12 text-center">
+            <p className="text-sm font-semibold text-ink">No cooking stats yet</p>
+            <p className="mt-1 text-sm text-ink-3">
               Log a cook from any recipe and this page will start tracking cadence.
             </p>
-            <Link
-              to="/logs/new"
-              className="inline-flex mt-4 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-700 transition-colors"
-            >
+            <Link to="/logs/new" className="ps-control mt-4 inline-flex items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring">
               Log a Cook
             </Link>
           </section>
         ) : (
           <>
-            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatTile label="Total cooks" value={summary.total_logs} />
               <StatTile label="Recipes cooked" value={summary.distinct_recipes} />
               <StatTile label="Per week" value={formatAverage(averageCooksPerWeek)} />
               <StatTile label="Last cooked" value={formatDate(summary.last_cooked_at)} />
             </section>
 
-            <section className="grid lg:grid-cols-[1fr_1.2fr] gap-6">
+            <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
               <Panel title="Recipes Cooked Per Year">
                 <div className="space-y-3">
                   {years.map((row) => (
@@ -240,24 +236,24 @@ export default function Stats({ loaderData }: Route.ComponentProps) {
               </Panel>
 
               <Panel title="Weekly Cadence">
-                <div className="flex items-end gap-1.5 h-36" aria-label="Weekly cadence chart">
+                <div className="flex h-36 items-end gap-1.5" aria-label="Weekly cadence chart">
                   {weeklyCadence.map((week) => (
-                    <div key={week.weekStart} className="flex-1 min-w-0 flex flex-col items-center gap-2">
-                      <div className="w-full h-28 flex items-end">
+                    <div key={week.weekStart} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                      <div className="flex h-28 w-full items-end">
                         <div
-                          className="w-full rounded-t bg-gray-900 min-h-[3px]"
+                          className="min-h-[3px] w-full rounded-t bg-primary"
                           style={{ height: `${Math.max(3, (week.cookCount / maxWeekCount) * 100)}%` }}
                           title={`${week.cookCount} cook${week.cookCount === 1 ? "" : "s"} week of ${week.weekStart}`}
                         />
                       </div>
-                      <span className="text-[10px] text-gray-500 truncate">{week.label}</span>
+                      <span className="truncate text-[10px] text-ink-3">{week.label}</span>
                     </div>
                   ))}
                 </div>
               </Panel>
             </section>
 
-            <section className="grid lg:grid-cols-2 gap-6">
+            <section className="grid gap-6 lg:grid-cols-2">
               <Panel title="Most-Made Recipes">
                 <div className="space-y-3">
                   {mostMade.map((recipe) => (
@@ -274,7 +270,7 @@ export default function Stats({ loaderData }: Route.ComponentProps) {
               </Panel>
 
               <Panel title="Last-Cooked Dates">
-                <div className="divide-y">
+                <div className="divide-y divide-rule">
                   {lastCooked.map((recipe) => (
                     <RecipeDateRow
                       key={recipe.id}
@@ -290,46 +286,49 @@ export default function Stats({ loaderData }: Route.ComponentProps) {
 
             <Panel title="Haven't Cooked In A While">
               {dormant.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {dormant.map((recipe) => (
                     <Link
                       key={recipe.id}
                       to={`/recipes/${recipe.id}`}
-                      className="rounded-lg border bg-gray-50 p-3 hover:bg-gray-100 transition-colors"
+                      className="rounded-lg border border-rule bg-paper-3 p-3 transition-colors hover:bg-paper-4"
                     >
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2">{recipe.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="line-clamp-2 text-sm font-medium text-ink">{recipe.title}</p>
+                      <p className="mt-1 text-xs text-ink-3">
                         {recipe.daysSinceCooked} days since last cook · {recipe.cookCount} total
                       </p>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-ink-3">
                   Nothing stale yet. Your recently cooked favorites are still in rotation.
                 </p>
               )}
             </Panel>
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-white rounded-lg border p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{label}</p>
-      <p className="text-2xl font-semibold text-gray-900 mt-2">{value}</p>
+    <div className="ps-surface p-4">
+      <p className="text-xs font-semibold uppercase text-ink-3">{label}</p>
+      <p className="ps-display mt-2 text-2xl text-ink">{value}</p>
     </div>
   );
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-lg border p-4">
-      <h2 className="text-sm font-semibold text-gray-900 mb-4">{title}</h2>
+    <section className="ps-surface p-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        <Chip>History</Chip>
+      </div>
       {children}
     </section>
   );
@@ -351,21 +350,21 @@ function BarRow({
   const content = (
     <>
       <div className="flex justify-between gap-3 text-sm">
-        <span className="font-medium text-gray-900 truncate">{label}</span>
-        <span className="text-gray-500 tabular-nums">{value}</span>
+        <span className="truncate font-medium text-ink">{label}</span>
+        <span className="tabular-nums text-ink-3">{value}</span>
       </div>
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden mt-1.5">
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-paper-3">
         <div
-          className="h-full rounded-full bg-gray-900"
+          className="h-full rounded-full bg-primary"
           style={{ width: `${Math.max(4, (value / max) * 100)}%` }}
         />
       </div>
-      {sublabel && <p className="text-xs text-gray-500 mt-1">{sublabel}</p>}
+      {sublabel && <p className="mt-1 text-xs text-ink-3">{sublabel}</p>}
     </>
   );
 
   return href ? (
-    <Link to={href} className="block hover:opacity-80 transition-opacity">
+    <Link to={href} className="block transition-opacity hover:opacity-80">
       {content}
     </Link>
   ) : (
@@ -385,12 +384,12 @@ function RecipeDateRow({
   date: string;
 }) {
   return (
-    <Link to={href} className="flex items-center justify-between gap-3 py-3 hover:bg-gray-50 transition-colors">
+    <Link to={href} className="flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-paper-3">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
-        <p className="text-xs text-gray-500">{detail}</p>
+        <p className="truncate text-sm font-medium text-ink">{title}</p>
+        <p className="text-xs text-ink-3">{detail}</p>
       </div>
-      <span className="text-xs text-gray-500 shrink-0">{date}</span>
+      <span className="shrink-0 text-xs text-ink-3">{date}</span>
     </Link>
   );
 }
