@@ -15,6 +15,7 @@
     "test": "vitest run --passWithNoTests",
     "smoke:setup": "tsx scripts/smoke-setup.ts",
     "smoke:e2e": "playwright test",
+    "perf:audit": "tsx scripts/performance-audit.ts",
     "test:watch": "vitest",
     "paprika:truth": "tsx scripts/paprika-truth-test.ts",
     "cf:check": "tsx scripts/cloudflare-readiness.ts",
@@ -29,6 +30,7 @@
     "postinstall": "pnpm cf-typegen || true"
   },
   "dependencies": {
+    "@cf-wasm/photon": "0.3.4",
     "drizzle-orm": "^0.45.2",
     "fflate": "^0.8.2",
     "idb": "^8.0.3",

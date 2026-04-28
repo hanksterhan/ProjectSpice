@@ -5,7 +5,7 @@ import { and, asc, eq, isNull, notInArray } from "drizzle-orm";
 import type { Route } from "./+types/collections.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
-import { appImageUrl } from "~/lib/image-url";
+import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 
 export function meta({ data }: Route.MetaArgs) {
   const name =
@@ -336,10 +336,13 @@ export default function CollectionDetail({
               <li key={r.id} className="flex items-center gap-3 px-4 py-3">
                 {appImageUrl(r.imageKey) ? (
                   <img
-                    src={appImageUrl(r.imageKey) ?? undefined}
+                    src={appImageUrl(r.imageKey, { width: 128, format: "webp" }) ?? undefined}
+                    srcSet={appImageSrcSet(r.imageKey, [96, 128, 192])}
+                    sizes="48px"
                     alt=""
                     className="w-12 h-12 rounded object-cover shrink-0"
                     loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
@@ -348,6 +351,7 @@ export default function CollectionDetail({
                 <div className="flex-1 min-w-0">
                   <Link
                     to={`/recipes/${r.id}`}
+                    prefetch="intent"
                     className="font-medium text-sm text-gray-900 hover:text-blue-600 truncate block"
                   >
                     {r.title}

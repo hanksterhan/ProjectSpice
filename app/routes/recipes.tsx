@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
-import { appImageUrl } from "~/lib/image-url";
+import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 
 const PAGE_SIZE = 24;
 
@@ -568,14 +568,18 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
                 <Link
                   key={recipe.id}
                   to={`/recipes/${recipe.id}`}
+                  prefetch="intent"
                   className="group flex flex-col overflow-hidden rounded-lg border bg-card hover:border-primary/50 hover:shadow-sm transition-all"
                 >
                   {appImageUrl(recipe.imageKey) ? (
                     <img
-                      src={appImageUrl(recipe.imageKey) ?? undefined}
+                      src={appImageUrl(recipe.imageKey, { width: 384, format: "webp" }) ?? undefined}
+                      srcSet={appImageSrcSet(recipe.imageKey, [192, 384, 768])}
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       alt=""
                       className="h-36 w-full object-cover bg-muted"
                       loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="h-36 w-full bg-muted" />

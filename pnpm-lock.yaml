@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@cf-wasm/photon':
+        specifier: 0.3.4
+        version: 0.3.4
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)
@@ -221,6 +224,12 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@cf-wasm/internals@0.1.1':
+    resolution: {integrity: sha512-zyl5ThQx3XJhGXbBI6DVsw9dSb7edAHB71goURMg1grGeIso9d0V9oa6HtOd7/9ggYGqTmLvBS/EYJByCrs3Yw==}
+
+  '@cf-wasm/photon@0.3.4':
+    resolution: {integrity: sha512-yCYykIZKU+3Q1Vi/QlBOa7RRF2+w/qaHpjrRcnLJ0WHkkILJt71nDNCVb4hHRwZVGVpqOJX3gORWIQ4/XuzXPQ==}
 
   '@cloudflare/kv-asset-handler@0.4.2':
     resolution: {integrity: sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ==}
@@ -2785,6 +2794,12 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@cf-wasm/internals@0.1.1': {}
+
+  '@cf-wasm/photon@0.3.4':
+    dependencies:
+      '@cf-wasm/internals': 0.1.1
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
 
