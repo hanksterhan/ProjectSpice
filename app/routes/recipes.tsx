@@ -1,15 +1,19 @@
 import { Link, useNavigate } from "react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { eq, inArray } from "drizzle-orm";
 import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
-import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, FilterGroup, ImageFallback, SectionHeader, SegmentedControl } from "~/components/ui";
+import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 
 const PAGE_SIZE = 24;
 
 type SortOption = "recent" | "alpha" | "most-made";
+type ViewOption = "grid" | "list";
+type DensityOption = "compact" | "regular" | "comfy";
 
 type RecipeCard = {
   id: string;
@@ -26,6 +30,14 @@ type RecipeCard = {
 type TagCount = {
   id: string;
   name: string;
+  recipeCount: number;
+};
+
+type CookbookCount = {
+  id: string;
+  name: string;
+  description: string | null;
+  archived: boolean;
   recipeCount: number;
 };
 
@@ -56,7 +68,8 @@ function orderByClause(sort: SortOption): string {
 // Returns a SQL fragment starting with AND (if non-empty) and the corresponding params.
 function buildFilterFragments(
   selectedTags: string[],
-  showArchived: boolean
+  showArchived: boolean,
+  selectedCookbookId: string | null
 ): { sql: string; params: unknown[] } {
   const parts: string[] = [];
   const params: unknown[] = [];
@@ -83,6 +96,14 @@ function buildFilterFragments(
     params.push(tag);
   }
 
+  if (selectedCookbookId) {
+    parts.push(`EXISTS (
+      SELECT 1 FROM cookbook_recipes cr
+      WHERE cr.recipe_id = r.id AND cr.cookbook_id = ?
+    )`);
+    params.push(selectedCookbookId);
+  }
+
   return {
     sql: parts.length > 0 ? " AND " + parts.join(" AND ") : "",
     params,
@@ -107,6 +128,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         .filter(Boolean)
     : [];
   const showArchived = url.searchParams.get("archived") === "1";
+  const selectedCookbookId = url.searchParams.get("cookbook")?.trim() || null;
+  const rawView = url.searchParams.get("view") ?? "grid";
+  const view: ViewOption = rawView === "list" ? "list" : "grid";
+  const rawDensity = url.searchParams.get("density") ?? "regular";
+  const density: DensityOption =
+    rawDensity === "compact" || rawDensity === "comfy" ? rawDensity : "regular";
   const rawScope = url.searchParams.get("scope") ?? "mine";
   const scope: "mine" | "family" | "shared" =
     rawScope === "family" || rawScope === "shared" ? rawScope : "mine";
@@ -126,7 +153,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const orderBy = orderByClause(sort);
   const { sql: filterSql, params: filterParams } = buildFilterFragments(
     selectedTags,
-    showArchived
+    showArchived,
+    selectedCookbookId
   );
 
   let rows: RecipeCard[];
@@ -268,6 +296,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     recipeCount: r.recipe_count,
   }));
 
+  const allCookbooksResult = await d1
+    .prepare(
+      `SELECT cb.id, cb.name, cb.description, cb.archived, COUNT(DISTINCT r.id) as recipe_count
+       FROM cookbooks cb
+       LEFT JOIN cookbook_recipes cr ON cr.cookbook_id = cb.id
+       LEFT JOIN recipes r ON r.id = cr.recipe_id
+        AND r.deleted_at IS NULL
+        AND ${accessSql}
+       WHERE cb.user_id = ?
+       GROUP BY cb.id, cb.name, cb.description, cb.archived
+       ORDER BY cb.archived ASC, cb.name ASC`
+    )
+    .bind(...accessParams, user.id)
+    .all<{
+      id: string;
+      name: string;
+      description: string | null;
+      archived: number;
+      recipe_count: number;
+    }>();
+
+  const allCookbooks: CookbookCount[] = (allCookbooksResult.results ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    archived: r.archived === 1,
+    recipeCount: r.recipe_count,
+  }));
+
   // Batch-load tags for result recipes
   const tagsByRecipe: Record<string, string[]> = {};
   if (rows.length > 0) {
@@ -287,11 +344,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   return {
+    user: { name: user.name, email: user.email },
     recipes: rows,
     tagsByRecipe,
     allTags,
+    allCookbooks,
     selectedTags,
+    selectedCookbookId,
     showArchived,
+    view,
+    density,
     scope,
     total,
     page,
@@ -309,19 +371,18 @@ function formatTime(minutes: number | null | undefined): string {
   return m > 0 ? `${h} hr ${m} min` : `${h} hr`;
 }
 
-const SORT_LABELS: Record<SortOption, string> = {
-  recent: "Recent",
-  alpha: "A–Z",
-  "most-made": "Most Made",
-};
-
 export default function RecipeList({ loaderData }: Route.ComponentProps) {
   const {
+    user,
     recipes,
     tagsByRecipe,
     allTags,
+    allCookbooks,
     selectedTags,
+    selectedCookbookId,
     showArchived,
+    view,
+    density,
     scope,
     total,
     page,
@@ -342,11 +403,14 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     const params = new URLSearchParams();
     const base: Record<string, string | null> = {
       q: q || null,
-      sort,
+      sort: sort === "recent" ? null : sort,
       page: String(page),
       tags: selectedTags.length > 0 ? selectedTags.join(",") : null,
+      cookbook: selectedCookbookId,
       archived: showArchived ? "1" : null,
       scope: scope === "mine" ? null : scope,
+      view: view === "grid" ? null : view,
+      density: density === "regular" ? null : density,
     };
     const merged = { ...base, ...overrides };
     for (const [k, v] of Object.entries(merged)) {
@@ -371,6 +435,16 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
+  function handleViewChange(newView: ViewOption) {
+    const qs = buildParams({ view: newView === "grid" ? null : newView });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`, { replace: true });
+  }
+
+  function handleDensityChange(newDensity: DensityOption) {
+    const qs = buildParams({ density: newDensity === "regular" ? null : newDensity });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`, { replace: true });
+  }
+
   function toggleTag(tagName: string) {
     const newTags = selectedTags.includes(tagName)
       ? selectedTags.filter((t) => t !== tagName)
@@ -387,9 +461,20 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
   }
 
-  function clearFilters() {
-    const qs = buildParams({ tags: null, archived: null, page: "1" });
+  function selectCookbook(cookbookId: string | null) {
+    const qs = buildParams({ cookbook: cookbookId, page: "1" });
     navigate(`/recipes${qs ? `?${qs}` : ""}`);
+    setFilterOpen(false);
+  }
+
+  function clearFilters() {
+    const qs = buildParams({ tags: null, archived: null, cookbook: null, page: "1" });
+    navigate(`/recipes${qs ? `?${qs}` : ""}`);
+    setFilterOpen(false);
+  }
+
+  function clearAll() {
+    navigate("/recipes");
     setFilterOpen(false);
   }
 
@@ -399,329 +484,679 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
   }
 
   const hasRecipes = recipes.length > 0;
-  const hasActiveFilters = selectedTags.length > 0 || showArchived;
+  const selectedCookbook = selectedCookbookId
+    ? allCookbooks.find((cookbook) => cookbook.id === selectedCookbookId) ?? null
+    : null;
+  const activeFilterCount =
+    selectedTags.length + (showArchived ? 1 : 0) + (selectedCookbook ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
+  const activeCookbooks = allCookbooks.filter((cookbook) => !cookbook.archived);
+  const archivedCookbooks = allCookbooks.filter((cookbook) => cookbook.archived);
+  const shellCookbooks = activeCookbooks.slice(0, 6).map((cookbook) => ({
+    id: cookbook.id,
+    name: cookbook.name,
+    href: `/cookbooks/${cookbook.id}`,
+    count: cookbook.recipeCount,
+  }));
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
-          <span className="font-semibold text-sm flex-1">My Recipes</span>
-          {total > 0 && (
-            <span className="text-xs text-muted-foreground hidden sm:block">
-              {total} recipe{total !== 1 ? "s" : ""}
-              {selectedTags.length > 0 && (
-                <span className="ml-1">· {selectedTags.join(", ")}</span>
-              )}
-              {showArchived && (
-                <span className="ml-1">· incl. archived</span>
-              )}
-            </span>
-          )}
-          <Link
-            to="/settings"
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-            title="Settings"
-          >
-            ⚙
-          </Link>
-          <Link
-            to="/stats"
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            Stats
-          </Link>
-          <Link
-            to="/meal-planner"
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            Plan
-          </Link>
-          <Link
-            to="/recipes/new"
-            className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
-          >
-            + New Recipe
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              { value: "mine", label: "Mine" },
-              { value: "family", label: "Family" },
-              { value: "shared", label: "Shared with You" },
-            ] as const
-          ).map((option) => {
-            const active = scope === option.value;
-            const qs = buildParams({
-              scope: option.value === "mine" ? null : option.value,
-              page: "1",
-            });
-            return (
-              <Link
-                key={option.value}
-                to={`/recipes${qs ? `?${qs}` : ""}`}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-foreground border-input hover:bg-muted"
-                }`}
+    <AppShell user={user} cookbooks={shellCookbooks}>
+      <div className="space-y-5">
+        <SectionHeader
+          eyebrow="Library"
+          title="Recipes"
+          description={`${total} recipe${total === 1 ? "" : "s"} found across ${SCOPE_LABELS[scope].toLowerCase()} recipes.`}
+          actions={
+            <>
+              <Button
+                className="lg:hidden"
+                variant={filterOpen ? "primary" : "secondary"}
+                onClick={() => setFilterOpen((open) => !open)}
               >
-                {option.label}
-              </Link>
-            );
-          })}
-        </div>
+                Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
+              </Button>
+              <LinkButton to="/recipes/new">New recipe</LinkButton>
+            </>
+          }
+        />
 
-        {/* Search + Sort bar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="search"
-            value={inputValue}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search recipes…"
-            className="flex-1 h-9 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <div className="flex gap-1 shrink-0">
-            {(["recent", "alpha", "most-made"] as SortOption[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => handleSortChange(s)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                  sort === s
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-foreground border-input hover:bg-muted"
-                }`}
-              >
-                {SORT_LABELS[s]}
-              </button>
-            ))}
+        <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
+          <aside className="hidden lg:block">
+            <FilterRail
+              scope={scope}
+              allTags={allTags}
+              selectedTags={selectedTags}
+              allCookbooks={allCookbooks}
+              selectedCookbookId={selectedCookbookId}
+              showArchived={showArchived}
+              buildParams={buildParams}
+              toggleTag={toggleTag}
+              toggleArchived={toggleArchived}
+              selectCookbook={selectCookbook}
+              clearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters}
+              activeCookbooks={activeCookbooks}
+              archivedCookbooks={archivedCookbooks}
+            />
+          </aside>
+
+          <div className="min-w-0 space-y-4">
+            {filterOpen && (
+              <div className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-2)] lg:hidden">
+                <FilterRail
+                  scope={scope}
+                  allTags={allTags}
+                  selectedTags={selectedTags}
+                  allCookbooks={allCookbooks}
+                  selectedCookbookId={selectedCookbookId}
+                  showArchived={showArchived}
+                  buildParams={buildParams}
+                  toggleTag={toggleTag}
+                  toggleArchived={toggleArchived}
+                  selectCookbook={selectCookbook}
+                  clearFilters={clearFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  activeCookbooks={activeCookbooks}
+                  archivedCookbooks={archivedCookbooks}
+                />
+              </div>
+            )}
+
+            <div className="rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                <label className="min-w-0 flex-1">
+                  <span className="sr-only">Search recipes</span>
+                  <input
+                    type="search"
+                    value={inputValue}
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    placeholder="Search title, ingredient, or note"
+                    className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+                  />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <SegmentedControl
+                    label="Sort recipes"
+                    value={sort}
+                    onChange={handleSortChange}
+                    options={[
+                      { value: "recent", label: "Recent" },
+                      { value: "alpha", label: "A-Z" },
+                      { value: "most-made", label: "Most cooked" },
+                    ]}
+                  />
+                  <SegmentedControl
+                    label="Recipe view"
+                    value={view}
+                    onChange={handleViewChange}
+                    options={[
+                      { value: "grid", label: "Grid" },
+                      { value: "list", label: "List" },
+                    ]}
+                  />
+                  <SegmentedControl
+                    label="Density"
+                    value={density}
+                    onChange={handleDensityChange}
+                    options={[
+                      { value: "compact", label: "Compact" },
+                      { value: "regular", label: "Regular" },
+                      { value: "comfy", label: "Comfy" },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {(q || hasActiveFilters) && (
+                <ActiveFilters
+                  q={q}
+                  selectedTags={selectedTags}
+                  selectedCookbook={selectedCookbook}
+                  showArchived={showArchived}
+                  toggleTag={toggleTag}
+                  selectCookbook={selectCookbook}
+                  toggleArchived={toggleArchived}
+                  clearAll={clearAll}
+                />
+              )}
+            </div>
+
+            {!hasRecipes ? (
+              <EmptyState
+                q={q}
+                hasActiveFilters={hasActiveFilters}
+                selectedTags={selectedTags}
+                selectedCookbook={selectedCookbook}
+                clearAll={clearAll}
+              />
+            ) : view === "grid" ? (
+              <RecipeGrid
+                recipes={recipes}
+                tagsByRecipe={tagsByRecipe}
+                density={density}
+              />
+            ) : (
+              <RecipeTable
+                recipes={recipes}
+                tagsByRecipe={tagsByRecipe}
+                density={density}
+              />
+            )}
+
+            {pageCount > 1 && (
+              <Pagination page={page} pageCount={pageCount} buildPageUrl={buildPageUrl} />
+            )}
           </div>
         </div>
+      </div>
+    </AppShell>
+  );
+}
 
-        {/* Filter bar */}
-        <div className="flex flex-wrap gap-2 items-center">
-          {allTags.length > 0 && (
-            <button
-              onClick={() => setFilterOpen(!filterOpen)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                filterOpen || selectedTags.length > 0
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-foreground border-input hover:bg-muted"
+const SCOPE_LABELS: Record<"mine" | "family" | "shared", string> = {
+  mine: "Mine",
+  family: "Family",
+  shared: "Shared with You",
+};
+
+function LinkButton({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="ps-control inline-flex items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function FilterRail({
+  scope,
+  allTags,
+  selectedTags,
+  allCookbooks,
+  selectedCookbookId,
+  showArchived,
+  buildParams,
+  toggleTag,
+  toggleArchived,
+  selectCookbook,
+  clearFilters,
+  hasActiveFilters,
+  activeCookbooks,
+  archivedCookbooks,
+}: {
+  scope: "mine" | "family" | "shared";
+  allTags: TagCount[];
+  selectedTags: string[];
+  allCookbooks: CookbookCount[];
+  selectedCookbookId: string | null;
+  showArchived: boolean;
+  buildParams: (overrides: Record<string, string | null>) => string;
+  toggleTag: (tagName: string) => void;
+  toggleArchived: () => void;
+  selectCookbook: (cookbookId: string | null) => void;
+  clearFilters: () => void;
+  hasActiveFilters: boolean;
+  activeCookbooks: CookbookCount[];
+  archivedCookbooks: CookbookCount[];
+}) {
+  return (
+    <div className="space-y-6 rounded-lg border border-rule bg-paper-2 p-4 shadow-[var(--shadow-1)]">
+      <FilterGroup title="Scope">
+        {(["mine", "family", "shared"] as const).map((option) => {
+          const qs = buildParams({
+            scope: option === "mine" ? null : option,
+            page: "1",
+          });
+          return (
+            <Link
+              key={option}
+              to={`/recipes${qs ? `?${qs}` : ""}`}
+              className={`ps-control inline-flex min-h-8 items-center justify-center border px-3 text-xs font-medium focus-visible:ps-focus-ring ${
+                scope === option
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-rule bg-paper text-ink hover:bg-paper-3"
               }`}
             >
-              Tags
-              {selectedTags.length > 0 && (
-                <span className="rounded-full bg-primary-foreground/20 w-4 h-4 flex items-center justify-center text-[10px] font-bold">
-                  {selectedTags.length}
-                </span>
-              )}
-              <span className="text-[10px] opacity-60">{filterOpen ? "▲" : "▼"}</span>
-            </button>
-          )}
+              {SCOPE_LABELS[option]}
+            </Link>
+          );
+        })}
+      </FilterGroup>
 
-          <button
-            onClick={toggleArchived}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-              showArchived
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-foreground border-input hover:bg-muted"
-            }`}
-          >
-            {showArchived ? "Hide archived" : "Show archived"}
-          </button>
-
-          {/* Active tag chips */}
-          {selectedTags.map((tag) => (
+      <FilterGroup
+        title="Tags"
+        actions={
+          selectedTags.length > 0 ? (
             <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium hover:bg-primary/20 transition-colors"
-            >
-              {tag}
-              <span className="opacity-60">×</span>
-            </button>
-          ))}
-
-          {hasActiveFilters && (
-            <button
+              type="button"
               onClick={clearFilters}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+              className="text-xs font-medium text-ink-3 hover:text-ink"
             >
               Clear all
             </button>
+          ) : null
+        }
+      >
+        {allTags.length === 0 ? (
+          <p className="text-sm text-ink-3">No tags yet.</p>
+        ) : (
+          allTags.slice(0, 18).map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => toggleTag(tag.name)}
+              className={`inline-flex min-h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium ${
+                selectedTags.includes(tag.name)
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-rule bg-paper text-ink hover:bg-paper-3"
+              }`}
+            >
+              {tag.name}
+              <span className="opacity-70">{tag.recipeCount}</span>
+            </button>
+          ))
+        )}
+      </FilterGroup>
+
+      <FilterGroup
+        title="Cookbooks"
+        actions={
+          allCookbooks.length > 0 ? (
+            <span className="text-xs text-ink-4">{allCookbooks.length}</span>
+          ) : null
+        }
+      >
+        <div className="grid w-full gap-1">
+          <CookbookFilterButton
+            cookbook={null}
+            selected={!selectedCookbookId}
+            onClick={() => selectCookbook(null)}
+          />
+          {activeCookbooks.map((cookbook) => (
+            <CookbookFilterButton
+              key={cookbook.id}
+              cookbook={cookbook}
+              selected={selectedCookbookId === cookbook.id}
+              onClick={() => selectCookbook(cookbook.id)}
+            />
+          ))}
+          {archivedCookbooks.length > 0 && (
+            <div className="mt-2 border-t border-rule pt-2">
+              <button
+                type="button"
+                onClick={toggleArchived}
+                className={`mb-2 inline-flex min-h-8 w-full items-center justify-between rounded-md border px-2 text-xs font-medium ${
+                  showArchived
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : "border-rule bg-paper text-ink hover:bg-paper-3"
+                }`}
+              >
+                <span>{showArchived ? "Hide archived" : "Show archived"}</span>
+                <span>{archivedCookbooks.length}</span>
+              </button>
+              {showArchived &&
+                archivedCookbooks.map((cookbook) => (
+                  <CookbookFilterButton
+                    key={cookbook.id}
+                    cookbook={cookbook}
+                    selected={selectedCookbookId === cookbook.id}
+                    onClick={() => selectCookbook(cookbook.id)}
+                  />
+                ))}
+            </div>
           )}
         </div>
+      </FilterGroup>
 
-        {/* Collapsible tag panel */}
-        {filterOpen && allTags.length > 0 && (
-          <div className="border rounded-lg p-3 bg-muted/20">
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => {
-                const active = selectedTags.includes(tag.name);
-                return (
-                  <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.name)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-foreground border-input hover:bg-muted"
-                    }`}
-                  >
-                    {tag.name}
-                    <span
-                      className={`text-[10px] tabular-nums ${
-                        active ? "text-primary-foreground/70" : "text-muted-foreground"
-                      }`}
-                    >
-                      {tag.recipeCount}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      <FilterGroup title="Visibility">
+        <label className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 text-sm text-ink-2 hover:bg-paper-3">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={toggleArchived}
+            className="accent-ink"
+          />
+          Include recipes only found in archived cookbooks
+        </label>
+      </FilterGroup>
 
-        {/* Results */}
-        {!hasRecipes ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-            {q || hasActiveFilters ? (
-              <>
-                <p className="text-lg font-medium">No recipes match your filters</p>
-                <p className="text-sm text-muted-foreground">
-                  {q && `Search: "${q}"`}
-                  {q && hasActiveFilters && " · "}
-                  {selectedTags.length > 0 && `Tags: ${selectedTags.join(", ")}`}
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-1 text-sm text-primary hover:underline"
-                >
-                  Clear filters
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-lg font-medium">No recipes yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Add your first recipe to get started.
-                </p>
-                <Link
-                  to="/recipes/new"
-                  className="mt-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  Add a Recipe
-                </Link>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recipes.map((recipe) => {
-              const tags = tagsByRecipe[recipe.id] ?? [];
-              const visibleTags = tags.slice(0, 2);
-              const extraTags = tags.length - visibleTags.length;
-              return (
-                <Link
-                  key={recipe.id}
-                  to={`/recipes/${recipe.id}`}
-                  prefetch="intent"
-                  className="group flex flex-col overflow-hidden rounded-lg border bg-card hover:border-primary/50 hover:shadow-sm transition-all"
-                >
-                  {appImageUrl(recipe.imageKey) ? (
-                    <img
-                      src={appImageUrl(recipe.imageKey, { width: 384, format: "webp" }) ?? undefined}
-                      srcSet={appImageSrcSet(recipe.imageKey, [192, 384, 768])}
-                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      alt=""
-                      className="h-36 w-full object-cover bg-muted"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="h-36 w-full bg-muted" />
-                  )}
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    <h2 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                      {recipe.title}
-                    </h2>
-                    {(!recipe.isOwnedByViewer ||
-                      recipe.visibility === FAMILY_RECIPE_VISIBILITY) && (
-                      <p className="text-[11px] text-muted-foreground -mt-1">
-                        {recipe.isOwnedByViewer
-                          ? "Shared with family"
-                          : `From ${recipe.ownerName}`}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
-                      {recipe.totalTimeMin ? (
-                        <span>{formatTime(recipe.totalTimeMin)}</span>
-                      ) : null}
-                      {recipe.cookCount > 0 ? (
-                        <span className="ml-auto">Cooked {recipe.cookCount}×</span>
-                      ) : null}
-                    </div>
-                    {visibleTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {visibleTags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {extraTags > 0 && (
-                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                            +{extraTags}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pageCount > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            {page > 1 ? (
-              <Link
-                to={buildPageUrl(page - 1)}
-                className="px-3 py-1.5 rounded-md border text-sm hover:bg-muted transition-colors"
-              >
-                ← Prev
-              </Link>
-            ) : (
-              <span className="px-3 py-1.5 rounded-md border text-sm text-muted-foreground opacity-50 cursor-not-allowed">
-                ← Prev
-              </span>
-            )}
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {pageCount}
-            </span>
-            {page < pageCount ? (
-              <Link
-                to={buildPageUrl(page + 1)}
-                className="px-3 py-1.5 rounded-md border text-sm hover:bg-muted transition-colors"
-              >
-                Next →
-              </Link>
-            ) : (
-              <span className="px-3 py-1.5 rounded-md border text-sm text-muted-foreground opacity-50 cursor-not-allowed">
-                Next →
-              </span>
-            )}
-          </div>
-        )}
-      </main>
+      {hasActiveFilters && (
+        <Button className="w-full" variant="ghost" onClick={clearFilters}>
+          Clear filters
+        </Button>
+      )}
     </div>
+  );
+}
+
+function CookbookFilterButton({
+  cookbook,
+  selected,
+  onClick,
+}: {
+  cookbook: CookbookCount | null;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm ${
+        selected ? "bg-paper-3 text-ink" : "text-ink-2 hover:bg-paper-3 hover:text-ink"
+      }`}
+    >
+      <span
+        className={`h-4 w-1 shrink-0 rounded-full ${
+          cookbook?.archived ? "bg-ink-4" : "bg-primary"
+        }`}
+      />
+      <span className="min-w-0 flex-1 truncate">{cookbook?.name ?? "All cookbooks"}</span>
+      <span className="shrink-0 text-xs text-ink-4">{cookbook?.recipeCount ?? ""}</span>
+    </button>
+  );
+}
+
+function ActiveFilters({
+  q,
+  selectedTags,
+  selectedCookbook,
+  showArchived,
+  toggleTag,
+  selectCookbook,
+  toggleArchived,
+  clearAll,
+}: {
+  q: string;
+  selectedTags: string[];
+  selectedCookbook: CookbookCount | null;
+  showArchived: boolean;
+  toggleTag: (tagName: string) => void;
+  selectCookbook: (cookbookId: string | null) => void;
+  toggleArchived: () => void;
+  clearAll: () => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+      <span className="text-xs font-semibold uppercase text-ink-3">Active</span>
+      {q && <Chip tone="neutral">Search: {q}</Chip>}
+      {selectedTags.map((tag) => (
+        <button key={tag} type="button" onClick={() => toggleTag(tag)}>
+          <Chip selected>{tag} x</Chip>
+        </button>
+      ))}
+      {selectedCookbook && (
+        <button type="button" onClick={() => selectCookbook(null)}>
+          <Chip selected>{selectedCookbook.name} x</Chip>
+        </button>
+      )}
+      {showArchived && (
+        <button type="button" onClick={toggleArchived}>
+          <Chip selected>Archived visible x</Chip>
+        </button>
+      )}
+      <Button size="sm" variant="ghost" onClick={clearAll}>
+        Reset library
+      </Button>
+    </div>
+  );
+}
+
+function RecipeGrid({
+  recipes,
+  tagsByRecipe,
+  density,
+}: {
+  recipes: RecipeCard[];
+  tagsByRecipe: Record<string, string[]>;
+  density: DensityOption;
+}) {
+  const cardClass =
+    density === "compact"
+      ? "sm:grid-cols-2 xl:grid-cols-4"
+      : density === "comfy"
+        ? "sm:grid-cols-2 xl:grid-cols-3"
+        : "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4";
+
+  return (
+    <div className={`grid gap-4 ${cardClass}`}>
+      {recipes.map((recipe) => (
+        <RecipeTile
+          key={recipe.id}
+          recipe={recipe}
+          tags={tagsByRecipe[recipe.id] ?? []}
+          density={density}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RecipeTile({
+  recipe,
+  tags,
+  density,
+}: {
+  recipe: RecipeCard;
+  tags: string[];
+  density: DensityOption;
+}) {
+  const imageClass = density === "compact" ? "aspect-[16/10]" : "aspect-[4/3]";
+
+  return (
+    <Link
+      to={`/recipes/${recipe.id}`}
+      prefetch="intent"
+      className="group overflow-hidden rounded-lg border border-rule bg-paper-2 shadow-[var(--shadow-1)] transition hover:border-ink-4 hover:shadow-[var(--shadow-2)]"
+    >
+      <div className={`${imageClass} overflow-hidden bg-paper-3`}>
+        <ResponsiveRecipeImage imageKey={recipe.imageKey} title={recipe.title} />
+      </div>
+      <div className={density === "compact" ? "space-y-2 p-3" : "space-y-3 p-4"}>
+        <div className="flex items-start gap-2">
+          <h2 className="line-clamp-2 flex-1 text-sm font-semibold leading-snug text-ink group-hover:text-primary">
+            {recipe.title}
+          </h2>
+          {recipe.visibility === FAMILY_RECIPE_VISIBILITY && <Chip>Family</Chip>}
+        </div>
+        <p className="text-xs text-ink-3">
+          {recipe.isOwnedByViewer ? "Yours" : `From ${recipe.ownerName}`}
+          {recipe.totalTimeMin ? ` · ${formatTime(recipe.totalTimeMin)}` : ""}
+          {recipe.cookCount > 0 ? ` · Cooked ${recipe.cookCount}x` : ""}
+        </p>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.slice(0, density === "compact" ? 2 : 3).map((tag) => (
+              <Chip key={tag}>{tag}</Chip>
+            ))}
+            {tags.length > (density === "compact" ? 2 : 3) && (
+              <Chip>+{tags.length - (density === "compact" ? 2 : 3)}</Chip>
+            )}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function RecipeTable({
+  recipes,
+  tagsByRecipe,
+  density,
+}: {
+  recipes: RecipeCard[];
+  tagsByRecipe: Record<string, string[]>;
+  density: DensityOption;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-rule bg-paper-2 shadow-[var(--shadow-1)]">
+      <div className="hidden grid-cols-[3rem_minmax(0,1fr)_12rem_6rem_6rem] gap-3 border-b border-rule bg-paper-3 px-4 py-2 text-xs font-semibold uppercase text-ink-3 md:grid">
+        <span />
+        <span>Recipe</span>
+        <span>Tags</span>
+        <span>Time</span>
+        <span>Made</span>
+      </div>
+      <div>
+        {recipes.map((recipe) => (
+          <RecipeListRow
+            key={recipe.id}
+            recipe={recipe}
+            tags={tagsByRecipe[recipe.id] ?? []}
+            density={density}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecipeListRow({
+  recipe,
+  tags,
+  density,
+}: {
+  recipe: RecipeCard;
+  tags: string[];
+  density: DensityOption;
+}) {
+  const rowPadding = density === "compact" ? "px-3 py-2" : density === "comfy" ? "px-4 py-4" : "px-4 py-3";
+
+  return (
+    <Link
+      to={`/recipes/${recipe.id}`}
+      prefetch="intent"
+      className={`grid gap-3 border-b border-rule last:border-b-0 hover:bg-paper-3 md:grid-cols-[3rem_minmax(0,1fr)_12rem_6rem_6rem] ${rowPadding}`}
+    >
+      <div className="h-12 w-12 overflow-hidden rounded-md bg-paper-3">
+        <ResponsiveRecipeImage imageKey={recipe.imageKey} title={recipe.title} />
+      </div>
+      <div className="min-w-0">
+        <h2 className="truncate text-sm font-semibold text-ink">{recipe.title}</h2>
+        <p className="mt-0.5 truncate text-xs text-ink-3">
+          {recipe.isOwnedByViewer ? "Yours" : `From ${recipe.ownerName}`}
+          {recipe.visibility === FAMILY_RECIPE_VISIBILITY ? " · Family" : ""}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {tags.length > 0 ? tags.slice(0, 2).map((tag) => <Chip key={tag}>{tag}</Chip>) : (
+          <span className="text-xs text-ink-4">No tags</span>
+        )}
+      </div>
+      <span className="text-sm text-ink-3">{formatTime(recipe.totalTimeMin) || "-"}</span>
+      <span className="text-sm text-ink-3">{recipe.cookCount || "-"}</span>
+    </Link>
+  );
+}
+
+function EmptyState({
+  q,
+  hasActiveFilters,
+  selectedTags,
+  selectedCookbook,
+  clearAll,
+}: {
+  q: string;
+  hasActiveFilters: boolean;
+  selectedTags: string[];
+  selectedCookbook: CookbookCount | null;
+  clearAll: () => void;
+}) {
+  const filtered = q || hasActiveFilters;
+
+  return (
+    <div className="rounded-lg border border-dashed border-rule bg-paper-2 px-6 py-16 text-center">
+      <h2 className="ps-display text-2xl text-ink">
+        {filtered ? "No recipes match this shelf" : "No recipes yet"}
+      </h2>
+      <p className="mx-auto mt-2 max-w-md text-sm text-ink-3">
+        {filtered
+          ? [
+              q ? `Search "${q}"` : null,
+              selectedTags.length ? `Tags ${selectedTags.join(", ")}` : null,
+              selectedCookbook ? `Cookbook ${selectedCookbook.name}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Try broadening the current filters."
+          : "Add a recipe or import a cookbook to start building the family library."}
+      </p>
+      <div className="mt-5 flex justify-center gap-2">
+        {filtered ? (
+          <Button variant="primary" onClick={clearAll}>Reset library</Button>
+        ) : (
+          <LinkButton to="/recipes/new">Add recipe</LinkButton>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  pageCount,
+  buildPageUrl,
+}: {
+  page: number;
+  pageCount: number;
+  buildPageUrl: (targetPage: number) => string;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-3 pt-2">
+      {page > 1 ? (
+        <Link
+          to={buildPageUrl(page - 1)}
+          className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+        >
+          Previous
+        </Link>
+      ) : (
+        <span className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink-4 opacity-60">
+          Previous
+        </span>
+      )}
+      <span className="text-sm text-ink-3">
+        Page {page} of {pageCount}
+      </span>
+      {page < pageCount ? (
+        <Link
+          to={buildPageUrl(page + 1)}
+          className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+        >
+          Next
+        </Link>
+      ) : (
+        <span className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink-4 opacity-60">
+          Next
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ResponsiveRecipeImage({
+  imageKey,
+  title,
+}: {
+  imageKey: string | null;
+  title: string;
+}) {
+  const src = appImageUrl(imageKey, { width: 384, format: "webp" });
+
+  if (!src) {
+    return <ImageFallback imageKey={null} alt={title} label="Recipe" />;
+  }
+
+  return (
+    <img
+      src={src}
+      srcSet={appImageSrcSet(imageKey, [192, 384, 768])}
+      sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 100vw"
+      alt={title}
+      className="h-full w-full object-cover"
+      loading="lazy"
+      decoding="async"
+    />
   );
 }
