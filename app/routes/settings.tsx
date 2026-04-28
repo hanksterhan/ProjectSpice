@@ -120,6 +120,22 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </nav>
         </section>
 
+        {/* Cooking */}
+        <section>
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Cooking
+          </h2>
+          <nav className="bg-white rounded-lg border divide-y">
+            <Link
+              to="/stats"
+              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-sm font-medium text-gray-900">Cooking Stats</span>
+              <span className="text-gray-400 text-sm">›</span>
+            </Link>
+          </nav>
+        </section>
+
         {/* Data portability */}
         <section>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
