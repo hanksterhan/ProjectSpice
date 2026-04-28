@@ -39,55 +39,77 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export default function Login({ actionData }: Route.ComponentProps) {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center mb-2">🌶️ ProjectSpice</h1>
-        <p className="text-center text-sm text-muted-foreground mb-8">
-          Your personal recipe manager
-        </p>
-        <Form method="post" className="flex flex-col gap-4">
-          {actionData?.error ? (
-            <p
-              role="alert"
-              className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2"
-            >
-              {actionData.error}
+    <main className="min-h-screen bg-paper px-4 py-10 text-ink">
+      <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center gap-8 lg:grid-cols-[1fr_24rem]">
+        <section className="hidden space-y-5 lg:block">
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary text-lg font-semibold text-primary-foreground">
+            PS
+          </div>
+          <div className="max-w-xl space-y-3">
+            <p className="text-xs font-semibold uppercase text-ink-3">Family cookbook</p>
+            <h1 className="ps-display text-5xl text-ink">ProjectSpice</h1>
+            <p className="text-base text-ink-3">
+              Keep recipes, shopping, imports, and cooking memories organized in one calm kitchen workspace.
             </p>
-          ) : null}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              autoFocus
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
+        </section>
+
+        <section className="ps-surface w-full p-6 shadow-[var(--shadow-2)]">
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-3 lg:hidden">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+                PS
+              </span>
+              <span className="text-lg font-semibold text-ink">ProjectSpice</span>
+            </div>
+            <h2 className="ps-display text-2xl text-ink">Sign in</h2>
+            <p className="text-sm text-ink-3">Return to your recipe library and cooking plan.</p>
           </div>
-          <button
-            type="submit"
-            className="mt-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            Sign In
-          </button>
-        </Form>
+
+          <Form method="post" className="flex flex-col gap-4">
+            {actionData?.error ? (
+              <p
+                role="alert"
+                className="rounded-md border border-err/30 bg-err/10 px-3 py-2 text-sm text-err"
+              >
+                {actionData.error}
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="email" className="text-sm font-medium text-ink">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                autoFocus
+                className="ps-control border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="password" className="text-sm font-medium text-ink">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="ps-control border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+              />
+            </div>
+            <button
+              type="submit"
+              className="ps-control mt-2 border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 focus-visible:ps-focus-ring"
+            >
+              Sign In
+            </button>
+          </Form>
+        </section>
       </div>
     </main>
   );

@@ -5,6 +5,8 @@ import { and, eq } from "drizzle-orm";
 import type { Route } from "./+types/settings.ai-profiles";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta() {
   return [{ title: "AI Profiles — ProjectSpice" }];
@@ -47,7 +49,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .where(eq(schema.aiProfiles.userId, user.id))
     .orderBy(schema.aiProfiles.name);
 
-  return { profiles };
+  return { user, profiles };
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
@@ -243,24 +245,26 @@ function ProfileForm({
   }
 
   return (
-    <Form method="post" className="bg-white border rounded-lg p-4 space-y-4">
+    <Form method="post" className="ps-surface space-y-4 p-4">
       <input type="hidden" name="_intent" value={isEdit ? "update" : "create"} />
       {isEdit && <input type="hidden" name="profileId" value={profile.id} />}
 
-      {/* Template picker — only shown when creating */}
+      {/* Template picker only shown when creating */}
       {!isEdit && (
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Start from a template (optional)</label>
+          <label className="mb-2 block text-xs font-semibold uppercase text-ink-3">
+            Start from a template
+          </label>
           <div className="flex flex-wrap gap-2">
             {PROFILE_TEMPLATES.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => applyTemplate(t.id)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ps-focus-ring ${
                   selectedTemplate === t.id
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : "border-rule bg-paper-2 text-ink-3 hover:bg-paper-3 hover:text-ink"
                 }`}
               >
                 {t.label}
@@ -271,22 +275,22 @@ function ProfileForm({
       )}
 
       <div>
-        <label className="block text-xs text-gray-600 mb-1">
-          Profile name <span className="text-red-500">*</span>
+        <label className="mb-1 block text-xs font-medium text-ink-3">
+          Profile name <span className="text-err">*</span>
         </label>
         <input
           name="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Henry (Balanced)"
-          className="w-full border rounded px-3 py-2 text-sm"
+          className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
           required
         />
       </div>
 
       <div>
-        <label className="block text-xs text-gray-600 mb-1">
-          System prompt <span className="text-red-500">*</span>
+        <label className="mb-1 block text-xs font-medium text-ink-3">
+          System prompt <span className="text-err">*</span>
         </label>
         <textarea
           name="systemPrompt"
@@ -294,15 +298,15 @@ function ProfileForm({
           onChange={(e) => setSystemPrompt(e.target.value)}
           placeholder="Describe how the AI should approach improving recipes for this profile…"
           rows={5}
-          className="w-full border rounded px-3 py-2 text-sm font-mono resize-y"
+          className="ps-control w-full resize-y border border-rule bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring ps-mono"
           required
         />
       </div>
 
       <div>
-        <label className="block text-xs text-gray-600 mb-1">
+        <label className="mb-1 block text-xs font-medium text-ink-3">
           Family member age{" "}
-          <span className="text-gray-400">(optional — informs food-safety rules)</span>
+          <span className="text-ink-4">(optional - informs food-safety rules)</span>
         </label>
         <input
           name="familyMemberAge"
@@ -312,14 +316,14 @@ function ProfileForm({
           value={familyMemberAge}
           onChange={(e) => setFamilyMemberAge(e.target.value)}
           placeholder="e.g. 8"
-          className="w-32 border rounded px-3 py-2 text-sm"
+          className="ps-control w-32 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
         />
       </div>
 
       <div>
-        <label className="block text-xs text-gray-600 mb-1">
+        <label className="mb-1 block text-xs font-medium text-ink-3">
           Preferences JSON{" "}
-          <span className="text-gray-400">(optional extra metadata)</span>
+          <span className="text-ink-4">(optional extra metadata)</span>
         </label>
         <textarea
           name="preferences"
@@ -327,25 +331,21 @@ function ProfileForm({
           onChange={(e) => setPreferences(e.target.value)}
           placeholder={'{"style": "healthy", "difficulty": "beginner"}'}
           rows={3}
-          className="w-full border rounded px-3 py-2 text-sm font-mono resize-y"
+          className="ps-control w-full resize-y border border-rule bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring ps-mono"
         />
       </div>
 
-      <div className="flex gap-3 pt-1">
-        <button
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Button
           type="submit"
+          variant="primary"
           disabled={busy || !name.trim() || !systemPrompt.trim()}
-          className="bg-gray-900 text-white text-sm px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
         >
           {isEdit ? "Save changes" : "Create profile"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-sm text-gray-500 hover:text-gray-700 px-2 py-2"
-        >
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </Form>
   );
@@ -363,19 +363,19 @@ function ProfileCard({ profile }: { profile: AiProfile }) {
   const age = extractAge(profile.preferences);
 
   return (
-    <div className="bg-white border rounded-lg p-4 space-y-2">
+    <div className="ps-surface space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-medium text-gray-900 text-sm">{profile.name}</p>
+          <p className="text-sm font-medium text-ink">{profile.name}</p>
           {age && (
-            <p className="text-xs text-gray-500 mt-0.5">Family member age: {age}</p>
+            <p className="mt-0.5 text-xs text-ink-3">Family member age: {age}</p>
           )}
         </div>
-        <div className="flex gap-3 shrink-0">
+        <div className="flex shrink-0 gap-3">
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-medium text-ink-3 hover:text-ink"
           >
             Edit
           </button>
@@ -390,14 +390,14 @@ function ProfileCard({ profile }: { profile: AiProfile }) {
             <button
               type="submit"
               disabled={busy}
-              className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+              className="text-sm font-medium text-err disabled:opacity-50"
             >
               Delete
             </button>
           </Form>
         </div>
       </div>
-      <p className="text-xs text-gray-600 whitespace-pre-wrap line-clamp-3 font-mono bg-gray-50 rounded p-2">
+      <p className="line-clamp-3 whitespace-pre-wrap rounded-md bg-paper-3 p-3 text-xs text-ink-3 ps-mono">
         {profile.systemPrompt}
       </p>
     </div>
@@ -409,37 +409,36 @@ function ProfileCard({ profile }: { profile: AiProfile }) {
 type ActionData = { error: string } | undefined;
 
 export default function SettingsAiProfiles({ loaderData }: Route.ComponentProps) {
-  const { profiles } = loaderData;
+  const { user, profiles } = loaderData;
   const actionData = useActionData<ActionData>();
   const [creating, setCreating] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link to="/settings" className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Settings
-        </Link>
-        <h1 className="font-semibold text-gray-900">AI Profiles</h1>
-        <span className="ml-auto text-sm text-gray-500">
-          {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
-        </span>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-4xl space-y-5">
+        <SectionHeader
+          eyebrow="AI behavior"
+          title="AI Profiles"
+          description="Profiles control how recipe improvements interpret family needs, skill level, and cooking goals."
+          actions={
+            <Chip>
+              {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
+            </Chip>
+          }
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {actionData?.error && (
-          <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <div className="rounded-md border border-err/30 bg-err/10 p-3 text-sm text-err">
             {actionData.error}
           </div>
         )}
 
-        <p className="text-sm text-gray-600">
-          Profiles control how the AI improves recipes. Each profile has a name, a system
-          prompt, and optional preferences. You can create one per family member or cooking
-          goal.
-        </p>
+        <Link to="/settings" className="inline-flex text-sm font-medium text-ink-3 hover:text-ink">
+          Back to settings
+        </Link>
 
         {profiles.length === 0 && !creating && (
-          <div className="text-center py-12 text-gray-400 text-sm">
+          <div className="ps-surface py-12 text-center text-sm text-ink-3">
             No profiles yet. Create one to get started.
           </div>
         )}
@@ -454,12 +453,12 @@ export default function SettingsAiProfiles({ loaderData }: Route.ComponentProps)
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="w-full rounded-lg border border-dashed border-gray-300 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+            className="ps-control w-full border border-dashed border-rule bg-paper-2 py-3 text-sm font-medium text-ink-3 transition-colors hover:bg-paper-3 hover:text-ink focus-visible:ps-focus-ring"
           >
             + New profile
           </button>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

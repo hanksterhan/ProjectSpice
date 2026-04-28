@@ -1,4 +1,4 @@
-import { Form } from "react-router";
+import { Form, Link } from "react-router";
 import { eq } from "drizzle-orm";
 import type { Route } from "./+types/change-password";
 import { createDb, schema } from "~/db";
@@ -58,83 +58,84 @@ export default function ChangePassword({
   actionData,
 }: Route.ComponentProps) {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-1">Change Password</h1>
-        <p className="text-sm text-muted-foreground mb-8">
-          Hello, {loaderData.name}
-        </p>
-        {actionData && "success" in actionData ? (
-          <p
-            role="status"
-            className="text-sm text-green-700 bg-green-50 rounded-md px-3 py-2 mb-4"
-          >
-            Password updated successfully.
-          </p>
-        ) : null}
-        <Form method="post" className="flex flex-col gap-4">
-          {actionData && "error" in actionData ? (
+    <main className="min-h-screen bg-paper px-4 py-10 text-ink">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
+        <section className="ps-surface w-full p-6 shadow-[var(--shadow-2)]">
+          <div className="mb-6 space-y-2">
+            <Link to="/settings" className="text-sm font-medium text-ink-3 hover:text-ink">
+              Back to settings
+            </Link>
+            <h1 className="ps-display text-2xl text-ink">Change Password</h1>
+            <p className="text-sm text-ink-3">
+              Signed in as {loaderData.name}
+            </p>
+          </div>
+          {actionData && "success" in actionData ? (
             <p
-              role="alert"
-              className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2"
+              role="status"
+              className="mb-4 rounded-md border border-ok/30 bg-ok/10 px-3 py-2 text-sm text-ok"
             >
-              {actionData.error}
+              Password updated successfully.
             </p>
           ) : null}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="currentPassword" className="text-sm font-medium">
-              Current Password
-            </label>
-            <input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="newPassword" className="text-sm font-medium">
-              New Password
-            </label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">
-              Confirm New Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <button
-            type="submit"
-            className="mt-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            Update Password
-          </button>
-          <a
-            href="/"
-            className="text-center text-sm text-muted-foreground hover:underline"
-          >
-            ← Back
-          </a>
-        </Form>
+          <Form method="post" className="flex flex-col gap-4">
+            {actionData && "error" in actionData ? (
+              <p
+                role="alert"
+                className="rounded-md border border-err/30 bg-err/10 px-3 py-2 text-sm text-err"
+              >
+                {actionData.error}
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="currentPassword" className="text-sm font-medium text-ink">
+                Current Password
+              </label>
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="ps-control border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="newPassword" className="text-sm font-medium text-ink">
+                New Password
+              </label>
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                className="ps-control border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-ink">
+                Confirm New Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                className="ps-control border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
+              />
+            </div>
+            <button
+              type="submit"
+              className="ps-control mt-2 border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 focus-visible:ps-focus-ring"
+            >
+              Update Password
+            </button>
+          </Form>
+        </section>
       </div>
     </main>
   );

@@ -1,7 +1,9 @@
 import { Link } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Route } from "./+types/settings";
 import { requireUser } from "~/lib/auth.server";
+import { AppShell } from "~/components/app-shell";
+import { Chip, SectionHeader } from "~/components/ui";
 
 const PAREN_KEY = "spice_parenthetical_mode";
 const CONTRAST_KEY = "spice_contrast_mode";
@@ -27,12 +29,12 @@ function Switch({
       onClick={onToggle}
       aria-label={label}
       aria-pressed={checked}
-      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-        checked ? "bg-gray-900" : "bg-gray-200"
+      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border border-rule transition-colors focus-visible:ps-focus-ring ${
+        checked ? "bg-primary" : "bg-paper-4"
       }`}
     >
       <span
-        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+        className={`inline-block h-5 w-5 rounded-full bg-paper-2 shadow transition-transform ${
           checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
@@ -53,10 +55,10 @@ function ParentheticalToggle() {
     });
   }
   return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <div>
-        <p className="text-sm font-medium text-gray-900">Inline ingredient quantities</p>
-        <p className="text-xs text-gray-500 mt-0.5">
+    <div className="ps-row flex items-center justify-between gap-4 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-ink">Inline ingredient quantities</p>
+        <p className="mt-0.5 text-xs text-ink-3">
           Show ingredient amounts as parentheticals in directions instead of popovers.
         </p>
       </div>
@@ -107,28 +109,28 @@ function AccessibilityPreferences() {
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-gray-900">High contrast</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+      <div className="ps-row flex items-center justify-between gap-4 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink">High contrast</p>
+          <p className="mt-0.5 text-xs text-ink-3">
             Increase text, border, and focus contrast throughout the app.
           </p>
         </div>
         <Switch checked={highContrast} onToggle={toggleContrast} label="Toggle high contrast mode" />
       </div>
-      <div className="flex items-center justify-between px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Large font</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+      <div className="ps-row flex items-center justify-between gap-4 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink">Large font</p>
+          <p className="mt-0.5 text-xs text-ink-3">
             Enlarge the interface for reading recipes at arm's length.
           </p>
         </div>
         <Switch checked={largeFont} onToggle={toggleLargeFont} label="Toggle large font mode" />
       </div>
-      <div className="flex items-center justify-between px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Reduce motion</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+      <div className="ps-row flex items-center justify-between gap-4 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink">Reduce motion</p>
+          <p className="mt-0.5 text-xs text-ink-3">
             Minimize transitions and animations beyond your system setting.
           </p>
         </div>
@@ -144,142 +146,104 @@ export function meta() {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
-  return { userName: user.name };
+  return { user };
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link to="/recipes" className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Recipes
-        </Link>
-        <h1 className="font-semibold text-gray-900">Settings</h1>
-        <span className="ml-auto text-sm text-gray-500">{loaderData.userName}</span>
-      </header>
+    <AppShell user={loaderData.user}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <SectionHeader
+          eyebrow="Account and preferences"
+          title="Settings"
+          description="Tune cooking ergonomics, manage organization, and keep account controls in one quiet workspace."
+          actions={<Chip>{loaderData.user.name}</Chip>}
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Preferences */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Preferences
-          </h2>
-          <div className="bg-white rounded-lg border divide-y">
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase text-ink-3">Preferences</h2>
+          <div className="ps-surface divide-y divide-rule overflow-hidden">
             <ParentheticalToggle />
             <AccessibilityPreferences />
           </div>
         </section>
 
-        {/* Organisation */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Organisation
-          </h2>
-          <nav className="bg-white rounded-lg border divide-y">
-            <Link
-              to="/settings/tags"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Manage Tags</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-            <Link
-              to="/settings/cookbooks"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Manage Cookbooks</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-            <Link
-              to="/settings/collections"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Manage Collections</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-          </nav>
+        <section className="grid gap-4 md:grid-cols-2">
+          <SettingsGroup title="Organization">
+            <SettingsLink to="/settings/tags" title="Manage Tags" description="Clean up lightweight facets." />
+            <SettingsLink to="/settings/cookbooks" title="Manage Cookbooks" description="Archive and maintain source containers." />
+            <SettingsLink to="/settings/collections" title="Manage Collections" description="Curate menu and occasion folders." />
+          </SettingsGroup>
+
+          <SettingsGroup title="AI and cooking">
+            <SettingsLink to="/settings/ai-profiles" title="AI Profiles" description="Personalize improvement behavior by family member or goal." />
+            <SettingsLink to="/stats" title="Cooking Stats" description="Review cadence, ratings, and recent cooking history." />
+            <SettingsLink to="/meal-planner" title="Meal Planner" description="Plan upcoming meals from the same recipe library." />
+          </SettingsGroup>
         </section>
 
-        {/* AI */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            AI
-          </h2>
-          <nav className="bg-white rounded-lg border divide-y">
-            <Link
-              to="/settings/ai-profiles"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">AI Profiles</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-          </nav>
-        </section>
-
-        {/* Cooking */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Cooking
-          </h2>
-          <nav className="bg-white rounded-lg border divide-y">
-            <Link
-              to="/stats"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Cooking Stats</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-            <Link
-              to="/meal-planner"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Meal Planner</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-          </nav>
-        </section>
-
-        {/* Data portability */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Data Portability
-          </h2>
-          <div className="bg-white rounded-lg border p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Export my data</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Downloads a ZIP with all your recipes, cooking logs, and metadata in
-                  JSON, Paprika-compatible HTML, and Schema.org JSON-LD formats.
-                </p>
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase text-ink-3">Data Portability</h2>
+            <div className="ps-surface p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-ink">Export my data</p>
+                  <p className="mt-1 text-xs text-ink-3">
+                    Downloads a ZIP with all your recipes, cooking logs, and metadata in
+                    JSON, Paprika-compatible HTML, and Schema.org JSON-LD formats.
+                  </p>
+                </div>
+                <a
+                  href="/api/export"
+                  download
+                  className="ps-control inline-flex shrink-0 items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring"
+                >
+                  Export
+                </a>
               </div>
-              <a
-                href="/api/export"
-                download
-                className="shrink-0 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-700 transition-colors"
-              >
-                Export
-              </a>
             </div>
           </div>
-        </section>
 
-        {/* Account */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Account
-          </h2>
-          <nav className="bg-white rounded-lg border divide-y">
-            <Link
-              to="/change-password"
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-medium text-gray-900">Change Password</span>
-              <span className="text-gray-400 text-sm">›</span>
-            </Link>
-          </nav>
+          <SettingsGroup title="Account">
+            <SettingsLink to="/change-password" title="Change Password" description="Update the password for this ProjectSpice account." />
+          </SettingsGroup>
         </section>
-      </main>
-    </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase text-ink-3">{title}</h2>
+      <nav className="ps-surface divide-y divide-rule overflow-hidden">{children}</nav>
+    </section>
+  );
+}
+
+function SettingsLink({
+  to,
+  title,
+  description,
+}: {
+  to: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="ps-row flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-paper-3 focus-visible:ps-focus-ring"
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-ink">{title}</span>
+        <span className="mt-0.5 block text-xs text-ink-3">{description}</span>
+      </span>
+      <span className="text-sm text-ink-4" aria-hidden="true">
+        &gt;
+      </span>
+    </Link>
   );
 }
