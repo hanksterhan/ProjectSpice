@@ -149,7 +149,7 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
     setStepIdx((i) => Math.max(0, i - 1));
   }, []);
   const goNext = useCallback(() => {
-    setStepIdx((i) => Math.min(totalSteps - 1, i + 1));
+    setStepIdx((i) => Math.min(Math.max(0, totalSteps - 1), i + 1));
   }, [totalSteps]);
 
   // --- Wake Lock ----------------------------------------------------------
@@ -336,66 +336,60 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
 
   const currentStep = directions[stepIdx] ?? "";
   const nonGroupIngs = ingredients.filter((i) => !i.isGroupHeader);
+  const progressPct = totalSteps > 0 ? ((stepIdx + 1) / totalSteps) * 100 : 0;
 
   return (
     <div
-      className="fixed inset-0 bg-background text-foreground flex flex-col overflow-hidden select-none"
+      className="fixed inset-0 grid overflow-hidden bg-paper text-ink select-none lg:grid-cols-[20rem_minmax(0,1fr)]"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Header */}
-      <header className="shrink-0 border-b px-4 h-12 flex items-center gap-3 bg-background/95 backdrop-blur z-20">
-        <button
-          type="button"
-          onClick={requestExit}
-          className="text-sm text-muted-foreground hover:text-foreground"
-          aria-label="Exit cooking mode"
-        >
-          ✕ Exit
-        </button>
-        <div className="flex-1 text-sm font-medium truncate text-center">
-          {recipe.title}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {wakeLockActive && (
-            <span
-              className="text-[10px] text-muted-foreground"
-              title="Screen will stay on"
-            >
-              ● AWAKE
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              const idx = TEXT_SIZES.indexOf(textSize);
-              setTextSize(TEXT_SIZES[(idx + 1) % TEXT_SIZES.length]);
-            }}
-            className="text-xs px-2 py-1 rounded border border-input hover:bg-muted"
-            aria-label={`Text size ${textSize}, click to cycle`}
-          >
-            A{textSize === "sm" ? "" : textSize === "md" ? "+" : textSize === "lg" ? "++" : "+++"}
-          </button>
-        </div>
-      </header>
-
       {/* Mise-en-place checklist */}
       {nonGroupIngs.length > 0 && (
         <details
-          className="shrink-0 border-b bg-muted/30 z-10"
+          className="z-20 border-b border-rule bg-paper-2 lg:block lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r"
           open={miseOpen}
           onToggle={(e) => setMiseOpen((e.target as HTMLDetailsElement).open)}
         >
-          <summary className="px-4 py-2 text-xs font-semibold uppercase tracking-wide cursor-pointer select-none">
-            Mise en place · {checkedIngs.size}/{nonGroupIngs.length}
+          <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase text-ink-3 lg:list-none lg:px-7 lg:pb-2 lg:pt-7">
+            <span className="lg:hidden">
+              Mise en place · {checkedIngs.size}/{nonGroupIngs.length}
+            </span>
+            <span className="hidden lg:block">
+              <span className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    requestExit();
+                  }}
+                  className="ps-control inline-flex min-h-8 items-center justify-center border border-transparent bg-transparent px-2 text-sm font-medium text-ink-3 hover:bg-paper-3 hover:text-ink focus-visible:ps-focus-ring"
+                  aria-label="Exit cooking mode"
+                >
+                  Exit
+                </button>
+                <span className="flex-1" />
+                {wakeLockActive && (
+                  <span className="ps-mono text-[0.65rem] font-semibold text-ok" title="Screen will stay on">
+                    AWAKE
+                  </span>
+                )}
+              </span>
+              <span className="ps-display mt-5 block text-2xl normal-case text-ink">
+                {recipe.title}
+              </span>
+              <span className="mt-2 block text-xs font-medium normal-case text-ink-3">
+                Mise en place · {checkedIngs.size}/{nonGroupIngs.length}
+              </span>
+            </span>
           </summary>
-          <ul className="max-h-48 overflow-y-auto px-4 py-2 space-y-1.5">
+          <ul className="max-h-48 space-y-1.5 overflow-y-auto px-4 pb-3 lg:max-h-none lg:px-7 lg:pb-8">
             {ingredients.map((ing) => {
               if (ing.isGroupHeader) {
                 return (
                   <li
                     key={ing.id}
-                    className="pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
+                    className="pt-4 text-[0.65rem] font-semibold uppercase text-ink-4 first:pt-2"
                   >
                     {ing.name}
                   </li>
@@ -410,18 +404,18 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
                 .join(" ");
               return (
                 <li key={ing.id}>
-                  <label className="flex items-start gap-2 text-sm cursor-pointer">
+                  <label className="grid min-h-11 cursor-pointer grid-cols-[1.5rem_minmax(0,1fr)] gap-3 border-b border-rule/60 py-2 text-sm leading-snug">
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleIng(ing.id)}
                       aria-label={`${checked ? "Uncheck" : "Check"} ingredient ${ingredientLabel}`}
-                      className="mt-1 shrink-0"
+                      className="mt-0.5 h-5 w-5 rounded-full accent-ink"
                     />
-                    <span className={checked ? "line-through text-muted-foreground" : ""}>
-                      {qtyUnit && <span className="tabular-nums">{qtyUnit} </span>}
+                    <span className={checked ? "text-ink-4 line-through" : "text-ink"}>
+                      {qtyUnit && <span className="ps-mono font-semibold tabular-nums">{qtyUnit} </span>}
                       {ing.name}
-                      {ing.notes ? <span className="text-muted-foreground">, {ing.notes}</span> : null}
+                      {ing.notes ? <span className="text-ink-3">, {ing.notes}</span> : null}
                     </span>
                   </label>
                 </li>
@@ -431,118 +425,229 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
         </details>
       )}
 
-      {/* Step view with tap zones */}
-      <main className="relative flex-1 overflow-y-auto">
-        {/* Tap zones — positioned absolutely, 40% left / 40% right, middle 20% reserved */}
-        <button
-          type="button"
-          aria-label="Previous step"
-          disabled={!canPrev}
-          onClick={() => onZoneClick("prev")}
-          className="absolute top-0 bottom-0 left-0 w-[40%] z-0 disabled:opacity-40"
-        />
-        <button
-          type="button"
-          aria-label="Next step"
-          disabled={!canNext}
-          onClick={() => onZoneClick("next")}
-          className="absolute top-0 bottom-0 right-0 w-[40%] z-0 disabled:opacity-40"
-        />
-
-        <div className="relative z-[1] max-w-3xl mx-auto px-6 py-10 pointer-events-none">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-4">
-            Step {stepIdx + 1} of {totalSteps}
+      <div className={`flex min-h-0 flex-col ${nonGroupIngs.length === 0 ? "lg:col-span-2" : ""}`}>
+        {/* Top bar */}
+        <header className="shrink-0 border-b border-rule bg-paper/95 px-4 py-3 backdrop-blur sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={requestExit}
+              className="ps-control inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring lg:hidden"
+              aria-label="Exit cooking mode"
+            >
+              Exit
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <span className="ps-mono text-xs font-semibold uppercase text-ink-3">Step</span>
+                <span className="ps-display text-2xl italic text-ink">
+                  {Math.min(stepIdx + 1, Math.max(totalSteps, 1))} / {Math.max(totalSteps, 1)}
+                </span>
+                {wakeLockActive && (
+                  <span className="ps-mono rounded-full bg-ok/10 px-2 py-1 text-[0.65rem] font-semibold text-ok lg:hidden">
+                    Awake
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-3">
+                <div
+                  className="h-full rounded-full bg-ink transition-[width]"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const idx = TEXT_SIZES.indexOf(textSize);
+                setTextSize(TEXT_SIZES[(idx + 1) % TEXT_SIZES.length]);
+              }}
+              className="ps-control inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+              aria-label={`Text size ${textSize}, click to cycle`}
+            >
+              A{textSize === "sm" ? "" : textSize === "md" ? "+" : textSize === "lg" ? "++" : "+++"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTimerForm(true)}
+              className="ps-control hidden min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring sm:inline-flex"
+            >
+              Add timer
+            </button>
           </div>
-          <p className={`${STEP_TEXT_CLASS[textSize]} font-medium`}>
-            {currentStep || "No directions."}
-          </p>
-        </div>
-      </main>
+        </header>
 
-      {/* Step nav arrows (below tap zones visually but above them for pointer) */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2 border-t bg-background/95 backdrop-blur text-sm">
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={!canPrev}
-          className="px-3 py-1 rounded border border-input disabled:opacity-40 hover:bg-muted"
-        >
-          ← Prev
-        </button>
-        <div className="flex items-center gap-2">
-          {Array.from({ length: totalSteps }, (_, i) => (
-            <span
-              key={i}
-              className={`inline-block h-1.5 w-1.5 rounded-full ${
-                i === stepIdx ? "bg-primary" : i < stepIdx ? "bg-muted-foreground" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={!canNext}
-          className="px-3 py-1 rounded border border-input disabled:opacity-40 hover:bg-muted"
-        >
-          Next →
-        </button>
-      </div>
-
-      {/* Timer strip */}
-      <div className="shrink-0 border-t bg-background px-3 py-2 flex items-center gap-2 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setShowTimerForm(true)}
-          className="shrink-0 px-2.5 py-1.5 rounded border border-input text-xs hover:bg-muted"
-        >
-          + Timer
-        </button>
-        {timers.length > 0 && (
+        {/* Step view with tap zones */}
+        <main className="relative min-h-0 flex-1 overflow-y-auto">
           <button
             type="button"
-            onClick={pauseAll}
-            className="shrink-0 px-2.5 py-1.5 rounded border border-input text-xs hover:bg-muted"
-            aria-label={anyRunning ? "Pause all timers" : "Resume all timers"}
+            aria-label="Previous step"
+            disabled={!canPrev}
+            onClick={() => onZoneClick("prev")}
+            className="absolute bottom-0 left-0 top-0 z-0 w-[40%] disabled:opacity-40"
+          />
+          <button
+            type="button"
+            aria-label="Next step"
+            disabled={!canNext}
+            onClick={() => onZoneClick("next")}
+            className="absolute bottom-0 right-0 top-0 z-0 w-[40%] disabled:opacity-40"
+          />
+
+          <div className="pointer-events-none relative z-[1] mx-auto flex min-h-full max-w-4xl items-center px-6 py-10 sm:px-12 lg:px-20">
+            <p className={`${STEP_TEXT_CLASS[textSize]} ps-display-editorial font-medium text-ink`}>
+              {currentStep || "No directions."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={!canPrev}
+            className="ps-control absolute left-4 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-rule bg-paper-2 text-xl text-ink shadow-[var(--shadow-1)] disabled:opacity-30 md:inline-flex"
+            aria-label="Previous step"
           >
-            {anyRunning ? "⏸ Pause all" : "▶ Resume all"}
+            ‹
           </button>
-        )}
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {timers.map((t) => {
-            const done = t.remainingMs <= 0;
-            return (
-              <div
-                key={t.id}
-                className={`shrink-0 flex items-center gap-2 rounded-lg border px-2 py-1 text-xs ${
-                  done ? "border-red-400 bg-red-50 dark:bg-red-950 animate-pulse" : "border-input"
-                }`}
-              >
-                <span className="font-medium max-w-[120px] truncate">{t.label}</span>
-                <span className="tabular-nums font-mono">
-                  {formatTimerDisplay(t.remainingMs)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => toggleTimer(t.id)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label={t.running ? "Pause timer" : done ? "Restart timer" : "Resume timer"}
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!canNext}
+            className="ps-control absolute right-4 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-transparent bg-ink text-xl text-paper shadow-[var(--shadow-1)] disabled:opacity-30 md:inline-flex"
+            aria-label="Next step"
+          >
+            ›
+          </button>
+        </main>
+
+        {/* Step nav */}
+        <div className="shrink-0 border-t border-rule bg-paper/95 px-4 py-3 text-sm backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canPrev}
+              className="ps-control inline-flex min-h-10 items-center justify-center border border-rule bg-paper-2 px-4 font-medium text-ink hover:bg-paper-3 disabled:opacity-40 focus-visible:ps-focus-ring"
+            >
+              Prev
+            </button>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
+              {Array.from({ length: totalSteps }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === stepIdx ? "w-7 bg-ink" : i < stepIdx ? "w-2 bg-ink-3" : "w-2 bg-paper-3"
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canNext}
+              className="ps-control inline-flex min-h-10 items-center justify-center border border-transparent bg-ink px-4 font-medium text-paper hover:opacity-90 disabled:opacity-40 focus-visible:ps-focus-ring"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {/* Timer strip */}
+        <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-t border-rule bg-paper-2 px-3 py-3">
+          <span className="ps-mono shrink-0 text-[0.65rem] font-semibold uppercase text-ink-3">
+            Timers
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowTimerForm(true)}
+            className="ps-control inline-flex min-h-8 shrink-0 items-center justify-center border border-rule bg-paper px-3 text-xs font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+          >
+            Add
+          </button>
+          {timers.length > 0 && (
+            <button
+              type="button"
+              onClick={pauseAll}
+              className="ps-control inline-flex min-h-8 shrink-0 items-center justify-center border border-rule bg-paper px-3 text-xs font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+              aria-label={anyRunning ? "Pause all timers" : "Resume all timers"}
+            >
+              {anyRunning ? "Pause all" : "Resume all"}
+            </button>
+          )}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {timers.map((t) => {
+              const done = t.remainingMs <= 0;
+              const pct = t.totalMs > 0 ? (t.remainingMs / t.totalMs) * 100 : 0;
+              return (
+                <div
+                  key={t.id}
+                  className={`relative flex shrink-0 items-center gap-2 overflow-hidden rounded-md border px-3 py-2 text-xs ${
+                    done
+                      ? "animate-pulse border-err/40 bg-err/10"
+                      : "border-rule bg-paper"
+                  }`}
                 >
-                  {t.running ? "⏸" : done ? "↻" : "▶"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeTimer(t.id)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Remove timer"
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
+                  <span
+                    className={`absolute bottom-0 left-0 h-0.5 ${done ? "bg-err" : "bg-ink"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                  <span className="max-w-[8rem] truncate font-medium text-ink-2">{t.label}</span>
+                  <span className={`ps-mono text-base font-semibold tabular-nums ${done ? "text-err" : "text-ink"}`}>
+                    {formatTimerDisplay(t.remainingMs)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleTimer(t.id)}
+                    className="font-medium text-ink-3 hover:text-ink"
+                    aria-label={t.running ? "Pause timer" : done ? "Restart timer" : "Resume timer"}
+                  >
+                    {t.running ? "Pause" : done ? "Restart" : "Resume"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeTimer(t.id)}
+                    className="font-medium text-ink-3 hover:text-ink"
+                    aria-label="Remove timer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {nonGroupIngs.length === 0 && (
+        <button
+          type="button"
+          onClick={requestExit}
+          className="ps-control fixed left-4 top-4 z-30 inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+          aria-label="Exit cooking mode"
+        >
+          Exit
+        </button>
+      )}
+
+      {nonGroupIngs.length === 0 && wakeLockActive && (
+        <span className="ps-mono fixed right-4 top-4 z-30 rounded-full bg-ok/10 px-2 py-1 text-[0.65rem] font-semibold text-ok">
+          Awake
+        </span>
+      )}
+
+      {nonGroupIngs.length === 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            const idx = TEXT_SIZES.indexOf(textSize);
+            setTextSize(TEXT_SIZES[(idx + 1) % TEXT_SIZES.length]);
+          }}
+          className="ps-control fixed right-4 top-14 z-30 inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
+          aria-label={`Text size ${textSize}, click to cycle`}
+        >
+          A{textSize === "sm" ? "" : textSize === "md" ? "+" : textSize === "lg" ? "++" : "+++"}
+        </button>
+      )}
 
       {/* Timer form modal */}
       {showTimerForm && (
@@ -554,17 +659,17 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
 
       {/* Exit confirmation */}
       {showExitDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="exit-dialog-title"
-            className="bg-background rounded-lg shadow-xl max-w-sm w-full p-5 space-y-4"
+            className="w-full max-w-sm space-y-4 rounded-lg border border-rule bg-paper p-5 text-ink shadow-[var(--shadow-3)]"
           >
-            <h2 id="exit-dialog-title" className="font-semibold text-lg">
+            <h2 id="exit-dialog-title" className="ps-display text-2xl text-ink">
               Exit cooking mode?
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm leading-6 text-ink-3">
               {anyRunning
                 ? "Timers are still running and will be lost."
                 : "You can come back to this recipe any time."}
@@ -573,14 +678,14 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={() => setShowExitDialog(false)}
-                className="px-3 py-1.5 rounded border border-input text-sm hover:bg-muted"
+                className="ps-control inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
               >
                 Keep cooking
               </button>
               <button
                 type="button"
                 onClick={confirmExit}
-                className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm hover:opacity-90"
+                className="ps-control inline-flex min-h-9 items-center justify-center border border-transparent bg-ink px-3 text-sm font-medium text-paper hover:opacity-90 focus-visible:ps-focus-ring"
               >
                 Exit
               </button>
@@ -623,51 +728,51 @@ function TimerForm({
   const [seconds, setSeconds] = useState("0");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby="timer-dialog-title"
-        className="bg-background rounded-lg shadow-xl max-w-sm w-full p-5 space-y-4"
+        className="w-full max-w-sm space-y-4 rounded-lg border border-rule bg-paper p-5 text-ink shadow-[var(--shadow-3)]"
         onSubmit={(e) => {
           e.preventDefault();
           onAdd(label, parseInt(minutes) || 0, parseInt(seconds) || 0);
         }}
       >
-        <h2 id="timer-dialog-title" className="font-semibold text-lg">
+        <h2 id="timer-dialog-title" className="ps-display text-2xl text-ink">
           New timer
         </h2>
         <label className="block space-y-1">
-          <span className="text-xs font-medium">Label (optional)</span>
+          <span className="text-xs font-medium text-ink-3">Label (optional)</span>
           <input
             type="text"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Simmer sauce"
             autoFocus
-            className="w-full px-3 py-2 border border-input rounded text-sm bg-background"
+            className="ps-control w-full border border-rule bg-paper-2 px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
           />
         </label>
         <div className="flex gap-2">
           <label className="flex-1 space-y-1">
-            <span className="text-xs font-medium">Minutes</span>
+            <span className="text-xs font-medium text-ink-3">Minutes</span>
             <input
               type="number"
               min="0"
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded text-sm bg-background tabular-nums"
+              className="ps-control w-full border border-rule bg-paper-2 px-3 text-sm tabular-nums text-ink focus-visible:ps-focus-ring"
             />
           </label>
           <label className="flex-1 space-y-1">
-            <span className="text-xs font-medium">Seconds</span>
+            <span className="text-xs font-medium text-ink-3">Seconds</span>
             <input
               type="number"
               min="0"
               max="59"
               value={seconds}
               onChange={(e) => setSeconds(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded text-sm bg-background tabular-nums"
+              className="ps-control w-full border border-rule bg-paper-2 px-3 text-sm tabular-nums text-ink focus-visible:ps-focus-ring"
             />
           </label>
         </div>
@@ -675,13 +780,13 @@ function TimerForm({
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded border border-input text-sm hover:bg-muted"
+            className="ps-control inline-flex min-h-9 items-center justify-center border border-rule bg-paper-2 px-3 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm hover:opacity-90"
+            className="ps-control inline-flex min-h-9 items-center justify-center border border-transparent bg-ink px-3 text-sm font-medium text-paper hover:opacity-90 focus-visible:ps-focus-ring"
           >
             Start
           </button>
@@ -730,7 +835,7 @@ function QuickLogSheet({
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-ink/50"
         aria-hidden="true"
         onClick={onSkip}
       />
@@ -738,23 +843,23 @@ function QuickLogSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="quicklog-title"
-        className={`relative bg-background rounded-t-2xl shadow-2xl px-5 pt-5 pb-10 space-y-6 transition-transform duration-300 ease-out ${
+        className={`relative space-y-6 rounded-t-2xl border border-rule bg-paper px-5 pb-10 pt-5 text-ink shadow-[var(--shadow-3)] transition-transform duration-300 ease-out ${
           visible ? "translate-y-0" : "translate-y-full"
         }`}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="quicklog-title" className="font-semibold text-lg leading-snug">
+            <h2 id="quicklog-title" className="ps-display text-2xl leading-snug text-ink">
               How did it go?
             </h2>
-            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+            <p className="mt-0.5 line-clamp-1 text-sm text-ink-3">
               {recipeTitle}
             </p>
           </div>
           <button
             type="button"
             onClick={onSkip}
-            className="shrink-0 text-sm text-muted-foreground hover:text-foreground pt-0.5"
+            className="shrink-0 pt-0.5 text-sm font-medium text-ink-3 hover:text-ink"
           >
             Skip
           </button>
@@ -807,8 +912,8 @@ function QuickLogSheet({
                 onClick={() => setRating(rating === star ? 0 : star)}
                 className={`text-5xl leading-none touch-manipulation transition-colors ${
                   star <= rating
-                    ? "text-yellow-400"
-                    : "text-muted-foreground/30 hover:text-yellow-300"
+                    ? "text-warn"
+                    : "text-ink-4 hover:text-warn/70"
                 }`}
                 aria-label={`${star} star${star > 1 ? "s" : ""}`}
                 aria-pressed={star <= rating}
@@ -819,13 +924,13 @@ function QuickLogSheet({
           </div>
 
           {status && (
-            <p className="text-center text-sm text-amber-600">{status}</p>
+            <p className="text-center text-sm text-warn">{status}</p>
           )}
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-3 text-base font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="ps-control w-full border border-transparent bg-ink px-4 py-3 text-base font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50 focus-visible:ps-focus-ring"
           >
             {saving ? "Saving…" : "Save Log"}
           </button>
