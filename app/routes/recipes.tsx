@@ -399,6 +399,12 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
             Stats
           </Link>
           <Link
+            to="/meal-planner"
+            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+          >
+            Plan
+          </Link>
+          <Link
             to="/recipes/new"
             className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
           >

@@ -14,6 +14,7 @@ export default [
   route("logs/new", "routes/logs.new.tsx"),
   route("logs/:id", "routes/logs.$id.tsx"),
   route("stats", "routes/stats.tsx"),
+  route("meal-planner", "routes/meal-planner.tsx"),
   // CDN image serving (R2 → browser with immutable cache headers)
   route("cdn/images/*", "routes/cdn.images.$.ts"),
   // Onboarding

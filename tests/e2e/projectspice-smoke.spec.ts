@@ -63,6 +63,13 @@ test("P1 readiness path works for seeded family account", async ({ page, request
   await expect(page.getByRole("heading", { name: "Classic Roast Chicken" })).toBeVisible();
   await expect(page.getByText(/Cooked [1-9]\d*×/)).toBeVisible();
 
+  await page.goto("/meal-planner");
+  await expect(page.getByRole("heading", { name: "Meal Planner" })).toBeVisible();
+  await page.getByRole("button", { name: /Add meal on/ }).first().click();
+  await page.getByRole("combobox").first().selectOption({ label: "Classic Roast Chicken" });
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText("Classic Roast Chicken").first()).toBeVisible();
+
   await page.goto(`/shopping-lists?recipeId=${recipeId}`);
   await page.getByPlaceholder("New list name…").fill(shoppingListName);
   await page.getByRole("button", { name: "Create" }).click();

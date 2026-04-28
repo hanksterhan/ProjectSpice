@@ -55,6 +55,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 Shopping Lists
               </a>
               <a
+                href="/meal-planner"
+                className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                Meal Planner
+              </a>
+              <a
                 href="/imports/paprika"
                 className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
               >

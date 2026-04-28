@@ -133,6 +133,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               <span className="text-sm font-medium text-gray-900">Cooking Stats</span>
               <span className="text-gray-400 text-sm">›</span>
             </Link>
+            <Link
+              to="/meal-planner"
+              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-sm font-medium text-gray-900">Meal Planner</span>
+              <span className="text-gray-400 text-sm">›</span>
+            </Link>
           </nav>
         </section>
 
