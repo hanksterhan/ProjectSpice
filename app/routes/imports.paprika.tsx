@@ -15,7 +15,15 @@ import type { Route } from "./+types/imports.paprika";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { AppShell } from "~/components/app-shell";
-import { Button, Chip, ImageFallback, SectionHeader } from "~/components/ui";
+import {
+  Alert,
+  Button,
+  Chip,
+  ImageFallback,
+  LoadingState,
+  ProgressBar,
+  SectionHeader,
+} from "~/components/ui";
 import {
   parsePaprikaArchive,
   toTextPayload,
@@ -250,14 +258,14 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
 
   return (
     <AppShell user={user} forceBare={inOnboarding}>
-      <div className={inOnboarding ? "min-h-screen bg-background" : ""}>
+      <div className={inOnboarding ? "min-h-screen bg-paper text-ink" : ""}>
         {inOnboarding && (
-          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+          <header className="sticky top-0 z-10 border-b border-rule bg-paper/95 backdrop-blur">
             <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link to="/recipes" className="text-muted-foreground hover:text-foreground text-sm">
+          <Link to="/recipes" className="text-ink-3 hover:text-ink text-sm">
             ← Recipes
           </Link>
-          <span className="text-muted-foreground">/</span>
+          <span className="text-ink-3">/</span>
           <span className="font-medium text-sm">Import from Paprika</span>
             </div>
           </header>
@@ -288,35 +296,32 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
               type="file"
               accept=".paprikarecipes"
               onChange={handleFileChange}
-              className="block w-full text-sm text-muted-foreground
+              className="block w-full text-sm text-ink-3
                 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0
                 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground
                 hover:file:bg-primary/90 cursor-pointer"
             />
             {step === "error" && progress.errors.length > 0 && (
-              <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 space-y-1">
+              <Alert tone="danger" title="Import could not start">
                 {progress.errors.map((e, i) => (
                   <p key={i}>{e}</p>
                 ))}
-              </div>
+              </Alert>
             )}
           </div>
         )}
 
         {/* Parsing spinner */}
         {step === "parsing" && (
-          <div className="flex items-center gap-3 py-6">
-            <Spinner />
-            <span className="text-sm text-muted-foreground">Parsing archive in browser…</span>
-          </div>
+          <LoadingState label="Parsing archive in browser..." className="py-6" />
         )}
 
         {/* Parsed — show preview + import button */}
         {step === "parsed" && (
           <div className="space-y-4">
-            <div className="rounded-lg border bg-card px-5 py-4 space-y-1">
+            <div className="ps-surface space-y-1 px-5 py-4">
               <p className="text-sm font-medium">Archive parsed successfully</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-ink-3">
                 <strong>{progress.total.toLocaleString()}</strong> recipes found
                 {" · "}
                 <strong>{photosAvailable.toLocaleString()}</strong> have photos
@@ -334,10 +339,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
         {/* Importing progress */}
         {step === "importing" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Spinner />
-              <span className="text-sm text-muted-foreground">Importing recipes…</span>
-            </div>
+            <LoadingState label="Importing recipes..." />
             <ProgressBar
               current={progress.imported + progress.skipped}
               total={progress.total}
@@ -359,10 +361,10 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
             {/* Errors summary */}
             {progress.errors.length > 0 && (
               <details className="rounded-md border px-4 py-3 text-sm">
-                <summary className="cursor-pointer font-medium text-amber-700">
+                <summary className="cursor-pointer font-medium text-warn">
                   {progress.errors.length} warning{progress.errors.length !== 1 ? "s" : ""}
                 </summary>
-                <ul className="mt-2 space-y-1 text-muted-foreground text-xs list-disc pl-4">
+                <ul className="mt-2 space-y-1 text-ink-3 text-xs list-disc pl-4">
                   {progress.errors.slice(0, 20).map((e, i) => (
                     <li key={i}>{e}</li>
                   ))}
@@ -391,7 +393,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
                   setProgress({ imported: 0, skipped: 0, total: 0, photosUploaded: 0, photosTotal: 0, errors: [], jobId: "" });
                   if (inputRef.current) inputRef.current.value = "";
                 }}
-                className="rounded-md border px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                className="rounded-md border border-rule bg-paper-2 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-paper-3"
               >
                 Import Another File
               </button>
@@ -402,10 +404,7 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
         {/* Photo upload in progress */}
         {step === "uploading-photos" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Spinner />
-              <span className="text-sm text-muted-foreground">Uploading photos to app image storage…</span>
-            </div>
+            <LoadingState label="Uploading photos to app image storage..." />
             <ProgressBar
               current={progress.photosUploaded}
               total={progress.photosTotal}
@@ -416,8 +415,8 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
 
         {/* How-to instructions */}
         {step === "idle" && (
-          <div className="rounded-lg border bg-muted/30 px-5 py-4 space-y-2 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">How to export from Paprika 3</p>
+          <div className="rounded-lg border border-rule bg-paper-2 px-5 py-4 space-y-2 text-sm text-ink-3">
+            <p className="font-medium text-ink">How to export from Paprika 3</p>
             <ol className="list-decimal pl-4 space-y-1">
               <li>Open Paprika 3 on Mac or iOS</li>
               <li>Go to <strong>File → Export…</strong> (Mac) or <strong>Settings → Export</strong> (iOS)</li>
@@ -429,41 +428,6 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
     </AppShell>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Spinner() {
-  return (
-    <svg
-      className="animate-spin h-5 w-5 text-primary"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
-  );
-}
-
-function ProgressBar({ current, total, label }: { current: number; total: number; label: string }) {
-  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{label}</span>
-        <span>{pct}%</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
   );
 }
 

@@ -11,7 +11,7 @@ import { data, redirect } from "react-router";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id.improve";
 import { AppShell } from "~/components/app-shell";
-import { Button, Chip, SectionHeader } from "~/components/ui";
+import { Button, Chip, ModalFrame, SectionHeader } from "~/components/ui";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import {
@@ -1036,27 +1036,13 @@ function SaveModal({
 }) {
   const saving = fetcher.state !== "idle";
   const title = mode === "variant" ? "Save as variant" : "Replace original";
+  const description =
+    mode === "variant"
+      ? `Create a separate recipe linked back to "${recipeTitle}".`
+      : `Overwrite "${recipeTitle}" with the accepted fields. Existing variants remain linked.`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 px-4 py-8">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="save-improvement-title"
-        className="w-full max-w-lg rounded-lg border border-rule bg-paper p-5 text-ink shadow-[var(--shadow-3)]"
-      >
-        <div className="space-y-2">
-          <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Final decision</p>
-          <h2 id="save-improvement-title" className="ps-display text-2xl text-ink">
-            {title}
-          </h2>
-          <p className="text-sm leading-6 text-ink-3">
-            {mode === "variant"
-              ? `Create a separate recipe linked back to "${recipeTitle}".`
-              : `Overwrite "${recipeTitle}" with the accepted fields. Existing variants remain linked.`}
-          </p>
-        </div>
-
+    <ModalFrame title={title} description={description} role={mode === "replace" ? "alertdialog" : "dialog"}>
         <fetcher.Form method="post" className="mt-5 space-y-4">
           <input type="hidden" name="_intent" value={mode === "variant" ? "apply" : "replace"} />
           <input type="hidden" name="profileId" value={selectedProfile} />
@@ -1087,7 +1073,6 @@ function SaveModal({
             </Button>
           </div>
         </fetcher.Form>
-      </section>
-    </div>
+    </ModalFrame>
   );
 }

@@ -13,6 +13,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { OfflineIndicator } from "~/components/offline-indicator";
 import { OfflineLogSync } from "~/components/offline-log-sync";
+import { Alert, Button } from "~/components/ui";
 
 const DISPLAY_PREF_KEYS = {
   contrast: "spice_contrast_mode",
@@ -101,12 +102,12 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
+  let message = "Something went wrong";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "Page not found" : `Error ${error.status}`;
     details =
       error.status === 404
         ? "The requested page could not be found."
@@ -117,14 +118,35 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="container mx-auto p-4 pt-16">
-      <h1 className="text-2xl font-bold mb-2">{message}</h1>
-      <p className="text-muted-foreground">{details}</p>
-      {stack && (
-        <pre className="w-full p-4 mt-4 overflow-x-auto rounded bg-muted text-sm">
-          <code>{stack}</code>
-        </pre>
-      )}
+    <main className="min-h-screen bg-paper px-4 py-16 text-ink">
+      <div className="mx-auto max-w-2xl space-y-5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+            PS
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-ink">ProjectSpice</p>
+            <p className="text-xs text-ink-3">System feedback</p>
+          </div>
+        </div>
+
+        <Alert
+          tone={isRouteErrorResponse(error) && error.status === 404 ? "warning" : "danger"}
+          title={message}
+        >
+          <p>{details}</p>
+        </Alert>
+
+        <Button type="button" onClick={() => window.history.back()}>
+          Go back
+        </Button>
+
+        {stack && (
+          <pre className="w-full overflow-x-auto rounded-md border border-rule bg-paper-3 p-4 text-sm text-ink-2">
+            <code>{stack}</code>
+          </pre>
+        )}
+      </div>
     </main>
   );
 }

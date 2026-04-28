@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FeedbackToast } from "~/components/ui";
 
 export function OfflineIndicator() {
   const [offline, setOffline] = useState(false);
@@ -18,13 +19,8 @@ export function OfflineIndicator() {
   if (!offline) return null;
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="pointer-events-none fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-1.5 bg-amber-500 text-amber-950 py-1.5 text-sm font-medium"
-    >
-      <span aria-hidden="true">⚡</span>
-      Offline — cached recipes available
-    </div>
+    <FeedbackToast tone="warning" className="pointer-events-none fixed left-1/2 top-3 z-50 -translate-x-1/2">
+      Offline. Cached recipes are available.
+    </FeedbackToast>
   );
 }

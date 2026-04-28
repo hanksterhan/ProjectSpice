@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { Link } from "react-router";
 import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
 
@@ -14,6 +14,14 @@ const toneClass: Record<Tone, string> = {
   success: "border-transparent bg-ok text-white",
   warning: "border-transparent bg-warn text-white",
   danger: "border-transparent bg-err text-white",
+};
+
+const feedbackToneClass: Record<Tone, string> = {
+  neutral: "border-rule bg-paper-2 text-ink",
+  accent: "border-info/30 bg-info/10 text-info",
+  success: "border-ok/30 bg-ok/10 text-ok",
+  warning: "border-warn/30 bg-warn/10 text-warn",
+  danger: "border-err/30 bg-err/10 text-err",
 };
 
 type ButtonProps = ComponentPropsWithoutRef<"button"> & {
@@ -129,16 +137,18 @@ export function ImageFallback({
   widths = [192, 384, 768],
   ...props
 }: ImageFallbackProps) {
+  const [failed, setFailed] = useState(false);
   const imageSrc = src ?? appImageUrl(imageKey, { width: widths[1] ?? widths[0], format: "webp" });
   const srcSet = src ? undefined : appImageSrcSet(imageKey, widths);
 
-  if (imageSrc) {
+  if (imageSrc && !failed) {
     return (
       <img
         src={imageSrc}
         srcSet={srcSet}
         alt={alt}
         loading="lazy"
+        onError={() => setFailed(true)}
         className={cx("h-full w-full object-cover", className)}
       />
     );
@@ -154,6 +164,148 @@ export function ImageFallback({
       {...props}
     >
       {label}
+    </div>
+  );
+}
+
+type AlertProps = ComponentPropsWithoutRef<"div"> & {
+  tone?: Tone;
+  title?: ReactNode;
+};
+
+export function Alert({ className, tone = "neutral", title, children, ...props }: AlertProps) {
+  const role = tone === "danger" ? "alert" : "status";
+  return (
+    <div
+      role={props.role ?? role}
+      className={cx("rounded-md border px-4 py-3 text-sm", feedbackToneClass[tone], className)}
+      {...props}
+    >
+      {title && <p className="font-semibold">{title}</p>}
+      {children && <div className={title ? "mt-1" : undefined}>{children}</div>}
+    </div>
+  );
+}
+
+export function LoadingState({
+  label = "Loading",
+  className,
+}: {
+  label?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("flex items-center gap-3 text-sm text-ink-3", className)} role="status">
+      <span
+        aria-hidden="true"
+        className="h-5 w-5 animate-spin rounded-full border-2 border-rule border-t-primary"
+      />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+export function ProgressBar({
+  current,
+  total,
+  label,
+  className,
+}: {
+  current: number;
+  total: number;
+  label?: ReactNode;
+  className?: string;
+}) {
+  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  return (
+    <div className={cx("space-y-1", className)}>
+      <div className="flex justify-between gap-3 text-xs text-ink-3">
+        <span>{label ?? `${current} / ${total}`}</span>
+        <span>{pct}%</span>
+      </div>
+      <div
+        className="h-2 overflow-hidden rounded-full bg-paper-3"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+  className,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("ps-surface px-5 py-10 text-center", className)}>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      {description && <p className="mx-auto mt-1 max-w-md text-sm text-ink-3">{description}</p>}
+      {action && <div className="mt-4 flex justify-center">{action}</div>}
+    </div>
+  );
+}
+
+export function FeedbackToast({
+  tone = "neutral",
+  children,
+  className,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cx(
+        "rounded-md border px-3 py-2 text-xs font-medium shadow-[var(--shadow-2)]",
+        feedbackToneClass[tone],
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function ModalFrame({
+  title,
+  description,
+  children,
+  className,
+  role = "dialog",
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  role?: "dialog" | "alertdialog";
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+      <section
+        role={role}
+        aria-modal="true"
+        className={cx("ps-surface w-full max-w-lg p-5 shadow-[var(--shadow-3)]", className)}
+      >
+        <div className="space-y-1">
+          <h2 className="ps-display text-xl text-ink">{title}</h2>
+          {description && <p className="text-sm text-ink-3">{description}</p>}
+        </div>
+        <div className="mt-4">{children}</div>
+      </section>
     </div>
   );
 }

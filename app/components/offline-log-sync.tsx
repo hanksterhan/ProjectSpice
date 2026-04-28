@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPendingLogs } from "~/lib/offline-db";
 import { replayPendingLogs } from "~/lib/offline-log-sync";
+import { FeedbackToast } from "~/components/ui";
 
 type SyncState = {
   pending: number;
@@ -70,8 +71,11 @@ export function OfflineLogSync() {
       : "Cooking logs synced";
 
   return (
-    <div className="fixed bottom-3 left-3 z-50 rounded-md bg-stone-900 text-white px-3 py-2 text-xs shadow-lg">
+    <FeedbackToast
+      tone={state.failed > 0 ? "danger" : state.pending > 0 ? "warning" : "success"}
+      className="fixed bottom-3 left-3 z-50"
+    >
       {message}
-    </div>
+    </FeedbackToast>
   );
 }
