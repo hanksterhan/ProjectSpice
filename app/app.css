@@ -33,6 +33,7 @@
 
 :root {
   --radius: 0.5rem;
+  --app-font-size: 16px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -52,6 +53,18 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+}
+
+html {
+  font-size: var(--app-font-size);
+}
+
+html[data-font-size="large"] {
+  --app-font-size: 18px;
+}
+
+html[data-font-size="extra-large"] {
+  --app-font-size: 20px;
 }
 
 .dark {
@@ -76,6 +89,70 @@
   --ring: oklch(0.439 0 0);
 }
 
+html[data-contrast="high"] {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.28 0 0);
+  --accent: oklch(0.9 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.45 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.35 0 0);
+  --input: oklch(0.35 0 0);
+  --ring: oklch(0 0 0);
+}
+
+html[data-contrast="high"] .text-gray-400,
+html[data-contrast="high"] .text-gray-500,
+html[data-contrast="high"] .text-gray-600 {
+  color: var(--muted-foreground) !important;
+}
+
+html[data-contrast="high"] .text-gray-700,
+html[data-contrast="high"] .text-gray-800,
+html[data-contrast="high"] .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+html[data-contrast="high"] .bg-gray-50,
+html[data-contrast="high"] .bg-white {
+  background-color: var(--background) !important;
+}
+
+html[data-contrast="high"] .bg-gray-900 {
+  background-color: var(--primary) !important;
+}
+
+html[data-contrast="high"] .border,
+html[data-contrast="high"] .border-b,
+html[data-contrast="high"] .border-t {
+  border-color: var(--border) !important;
+}
+
+html[data-contrast="high"] :focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="standard"]) {
+    --foreground: oklch(0 0 0);
+    --muted-foreground: oklch(0.28 0 0);
+    --border: oklch(0.35 0 0);
+    --input: oklch(0.35 0 0);
+    --ring: oklch(0 0 0);
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -92,4 +169,11 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+html[data-reduced-motion="true"] *, html[data-reduced-motion="true"] *::before, html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

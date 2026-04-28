@@ -14,6 +14,37 @@ import "./app.css";
 import { OfflineIndicator } from "~/components/offline-indicator";
 import { OfflineLogSync } from "~/components/offline-log-sync";
 
+const DISPLAY_PREF_KEYS = {
+  contrast: "spice_contrast_mode",
+  fontSize: "spice_font_size",
+  reducedMotion: "spice_reduced_motion",
+} as const;
+
+function applyDisplayPreferences() {
+  const root = document.documentElement;
+  const contrast = localStorage.getItem(DISPLAY_PREF_KEYS.contrast);
+  const fontSize = localStorage.getItem(DISPLAY_PREF_KEYS.fontSize);
+  const reducedMotion = localStorage.getItem(DISPLAY_PREF_KEYS.reducedMotion);
+
+  if (contrast === "high" || contrast === "standard") {
+    root.dataset.contrast = contrast;
+  } else {
+    delete root.dataset.contrast;
+  }
+
+  if (fontSize === "large" || fontSize === "extra-large") {
+    root.dataset.fontSize = fontSize;
+  } else {
+    delete root.dataset.fontSize;
+  }
+
+  if (reducedMotion === "true") {
+    root.dataset.reducedMotion = "true";
+  } else {
+    delete root.dataset.reducedMotion;
+  }
+}
+
 export function meta(_args: Route.MetaArgs) {
   return [
     { title: "ProjectSpice" },
@@ -28,6 +59,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
     }
+  }, []);
+
+  useEffect(() => {
+    applyDisplayPreferences();
+    window.addEventListener("storage", applyDisplayPreferences);
+    window.addEventListener("spice:display-preferences", applyDisplayPreferences);
+    return () => {
+      window.removeEventListener("storage", applyDisplayPreferences);
+      window.removeEventListener("spice:display-preferences", applyDisplayPreferences);
+    };
   }, []);
 
   useEffect(() => {

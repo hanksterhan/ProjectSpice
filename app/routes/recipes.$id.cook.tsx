@@ -401,6 +401,9 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
               const unit = ing.unitRaw ?? "";
               const qtyUnit = [qty, unit].filter(Boolean).join("\u00a0");
               const checked = checkedIngs.has(ing.id);
+              const ingredientLabel = [qtyUnit, ing.name, ing.notes]
+                .filter(Boolean)
+                .join(" ");
               return (
                 <li key={ing.id}>
                   <label className="flex items-start gap-2 text-sm cursor-pointer">
@@ -408,6 +411,7 @@ export default function CookingMode({ loaderData }: Route.ComponentProps) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleIng(ing.id)}
+                      aria-label={`${checked ? "Uncheck" : "Check"} ingredient ${ingredientLabel}`}
                       className="mt-1 shrink-0"
                     />
                     <span className={checked ? "line-through text-muted-foreground" : ""}>

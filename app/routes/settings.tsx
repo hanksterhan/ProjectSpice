@@ -4,6 +4,41 @@ import type { Route } from "./+types/settings";
 import { requireUser } from "~/lib/auth.server";
 
 const PAREN_KEY = "spice_parenthetical_mode";
+const CONTRAST_KEY = "spice_contrast_mode";
+const FONT_SIZE_KEY = "spice_font_size";
+const REDUCED_MOTION_KEY = "spice_reduced_motion";
+
+function notifyDisplayPreferenceChange() {
+  window.dispatchEvent(new Event("spice:display-preferences"));
+}
+
+function Switch({
+  checked,
+  onToggle,
+  label,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={checked}
+      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        checked ? "bg-gray-900" : "bg-gray-200"
+      }`}
+    >
+      <span
+        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+          checked ? "translate-x-5" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
 
 function ParentheticalToggle() {
   const [on, setOn] = useState(false);
@@ -25,21 +60,81 @@ function ParentheticalToggle() {
           Show ingredient amounts as parentheticals in directions instead of popovers.
         </p>
       </div>
-      <button
-        type="button"
-        onClick={toggle}
-        aria-pressed={on}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-          on ? "bg-gray-900" : "bg-gray-200"
-        }`}
-      >
-        <span
-          className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            on ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
+      <Switch checked={on} onToggle={toggle} label="Toggle inline ingredient quantities" />
     </div>
+  );
+}
+
+function AccessibilityPreferences() {
+  const [highContrast, setHighContrast] = useState(false);
+  const [largeFont, setLargeFont] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    setHighContrast(localStorage.getItem(CONTRAST_KEY) === "high");
+    setLargeFont(localStorage.getItem(FONT_SIZE_KEY) === "large");
+    setReducedMotion(localStorage.getItem(REDUCED_MOTION_KEY) === "true");
+  }, []);
+
+  function toggleContrast() {
+    setHighContrast((prev) => {
+      const next = !prev;
+      localStorage.setItem(CONTRAST_KEY, next ? "high" : "standard");
+      notifyDisplayPreferenceChange();
+      return next;
+    });
+  }
+
+  function toggleLargeFont() {
+    setLargeFont((prev) => {
+      const next = !prev;
+      if (next) localStorage.setItem(FONT_SIZE_KEY, "large");
+      else localStorage.removeItem(FONT_SIZE_KEY);
+      notifyDisplayPreferenceChange();
+      return next;
+    });
+  }
+
+  function toggleReducedMotion() {
+    setReducedMotion((prev) => {
+      const next = !prev;
+      if (next) localStorage.setItem(REDUCED_MOTION_KEY, "true");
+      else localStorage.removeItem(REDUCED_MOTION_KEY);
+      notifyDisplayPreferenceChange();
+      return next;
+    });
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">High contrast</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Increase text, border, and focus contrast throughout the app.
+          </p>
+        </div>
+        <Switch checked={highContrast} onToggle={toggleContrast} label="Toggle high contrast mode" />
+      </div>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Large font</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Enlarge the interface for reading recipes at arm's length.
+          </p>
+        </div>
+        <Switch checked={largeFont} onToggle={toggleLargeFont} label="Toggle large font mode" />
+      </div>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Reduce motion</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Minimize transitions and animations beyond your system setting.
+          </p>
+        </div>
+        <Switch checked={reducedMotion} onToggle={toggleReducedMotion} label="Toggle reduced motion mode" />
+      </div>
+    </>
   );
 }
 
@@ -71,6 +166,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </h2>
           <div className="bg-white rounded-lg border divide-y">
             <ParentheticalToggle />
+            <AccessibilityPreferences />
           </div>
         </section>
 

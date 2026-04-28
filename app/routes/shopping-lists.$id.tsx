@@ -463,6 +463,7 @@ export default function ShoppingListDetail({
                         className="rounded"
                         checked={allSelected}
                         onChange={(e) => setAllSelected(e.target.checked)}
+                        aria-label={allSelected ? "Deselect all ingredients" : "Select all ingredients"}
                       />
                       <span className="text-xs font-medium text-muted-foreground">
                         Select all
@@ -470,25 +471,27 @@ export default function ShoppingListDetail({
                     </label>
                     {addFromIngredients
                       .filter((ing) => !ing.isGroupHeader)
-                      .map((ing) => (
-                        <label
-                          key={ing.id}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            name="ingredientId"
-                            value={ing.id}
-                            className="rounded"
-                            checked={allSelected || undefined}
-                          />
-                          <span className="text-sm">
-                            {[ing.quantityRaw, ing.unitRaw, ing.name]
-                              .filter(Boolean)
-                              .join(" ")}
-                          </span>
-                        </label>
-                      ))}
+                      .map((ing) => {
+                        const label = [ing.quantityRaw, ing.unitRaw, ing.name]
+                          .filter(Boolean)
+                          .join(" ");
+                        return (
+                          <label
+                            key={ing.id}
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              name="ingredientId"
+                              value={ing.id}
+                              className="rounded"
+                              checked={allSelected || undefined}
+                              aria-label={`Add ingredient ${label} to shopping list`}
+                            />
+                            <span className="text-sm">{label}</span>
+                          </label>
+                        );
+                      })}
                   </div>
 
                   {actionData && "error" in actionData && (
