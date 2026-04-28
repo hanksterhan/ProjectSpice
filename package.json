@@ -15,6 +15,7 @@
     "test": "vitest run --passWithNoTests",
     "smoke:setup": "tsx scripts/smoke-setup.ts",
     "smoke:e2e": "playwright test",
+    "visual:debt": "tsx scripts/visual-debt-scan.ts",
     "perf:audit": "tsx scripts/performance-audit.ts",
     "test:watch": "vitest",
     "paprika:truth": "tsx scripts/paprika-truth-test.ts",
