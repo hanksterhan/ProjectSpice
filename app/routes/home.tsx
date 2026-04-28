@@ -67,6 +67,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 Import EPUB
               </a>
               <a
+                href="/imports/pdf"
+                className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                Import PDF
+              </a>
+              <a
                 href="/change-password"
                 className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
               >

@@ -27,6 +27,8 @@ export default [
   route("imports/url", "routes/imports.url.tsx"),
   // Guided EPUB import
   route("imports/epub", "routes/imports.epub.tsx"),
+  // PDF OCR import
+  route("imports/pdf", "routes/imports.pdf.tsx"),
   // Settings
   route("settings", "routes/settings.tsx"),
   route("settings/tags", "routes/settings.tags.tsx"),
@@ -45,6 +47,8 @@ export default [
   route("api/imports/paprika-html", "routes/api.imports.paprika-html.ts"),
   route("api/imports/paprika/photos", "routes/api.imports.paprika.photos.ts"),
   route("api/imports/epub", "routes/api.imports.epub.ts"),
+  route("api/imports/pdf", "routes/api.imports.pdf.ts"),
+  route("api/imports/pdf/:id", "routes/api.imports.pdf.$id.ts"),
   route("api/imports/:id", "routes/api.imports.$id.ts"),
   route("api/logs", "routes/api.logs.ts"),
   // Export

@@ -1,4 +1,5 @@
 import { createRequestHandler } from "react-router";
+import { processPdfImportJob, type PdfImportMessage } from "../app/lib/pdf-import.server";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -19,5 +20,11 @@ export default {
     return requestHandler(request, {
       cloudflare: { env, ctx },
     });
+  },
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      await processPdfImportJob(env, message.body as PdfImportMessage);
+      message.ack();
+    }
   },
 } satisfies ExportedHandler<Env>;

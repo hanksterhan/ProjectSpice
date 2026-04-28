@@ -13,6 +13,7 @@ import type { EpubRecipeCandidate } from "~/lib/epub-parser";
 
 type Payload = {
   cookbookName?: string;
+  sourceType?: "epub" | "pdf";
   recipes: EpubRecipeCandidate[];
 };
 
@@ -56,12 +57,13 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     return Response.json({ error: "Select at least one recipe to import." }, { status: 400 });
   }
 
+  const sourceType = payload.sourceType === "pdf" ? "pdf" : "epub";
   const jobId = crypto.randomUUID();
   await db.insert(schema.importJobs).values({
     id: jobId,
     userId: user.id,
     status: "processing",
-    sourceType: "epub",
+    sourceType,
     recipeCountExpected: recipes.length,
     startedAt: new Date(),
   });
@@ -117,9 +119,9 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     try {
       const recipeId = crypto.randomUUID();
       const base = generateSlug(recipe.title);
-      let slug = base || `epub-recipe-${imported + 1}`;
+      let slug = base || `${sourceType}-recipe-${imported + 1}`;
       let n = 2;
-      while (usedSlugs.has(slug)) slug = `${base}-${n++}`;
+      while (usedSlugs.has(slug)) slug = `${base || `${sourceType}-recipe`}-${n++}`;
       usedSlugs.add(slug);
 
       const ingredients = recipe.ingredients.map((line) => line.trim()).filter(Boolean);
@@ -130,7 +132,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
         userId: user.id,
         title: recipe.title.trim(),
         slug,
-        sourceType: "epub",
+        sourceType,
         sourceHash: await sha256(recipe.sourcePath || recipe.title),
         contentHash,
         directionsText: recipe.directions?.trim() ?? "",

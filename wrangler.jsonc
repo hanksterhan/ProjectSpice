@@ -27,6 +27,19 @@
 			"bucket_name": "projectspice-images-dev"
 		}
 	],
+	"queues": {
+		"producers": [
+			{
+				"binding": "PDF_IMPORT_QUEUE",
+				"queue": "projectspice-pdf-import-dev"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "projectspice-pdf-import-dev"
+			}
+		]
+	},
 	"vars": {
 		"ENVIRONMENT": "development"
 	},
@@ -61,7 +74,20 @@
 					"binding": "IMAGES",
 					"bucket_name": "projectspice-images-staging"
 				}
-			]
+			],
+			"queues": {
+				"producers": [
+					{
+						"binding": "PDF_IMPORT_QUEUE",
+						"queue": "projectspice-pdf-import-staging"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "projectspice-pdf-import-staging"
+					}
+				]
+			}
 		},
 		// -----------------------------------------------------------------
 		// Production — deploy with: pnpm deploy:prod
@@ -102,7 +128,20 @@
 					"binding": "IMAGES",
 					"bucket_name": "projectspice-images-prod"
 				}
-			]
+			],
+			"queues": {
+				"producers": [
+					{
+						"binding": "PDF_IMPORT_QUEUE",
+						"queue": "projectspice-pdf-import-prod"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "projectspice-pdf-import-prod"
+					}
+				]
+			}
 		}
 	}
 }
