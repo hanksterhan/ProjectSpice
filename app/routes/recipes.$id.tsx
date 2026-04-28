@@ -1,4 +1,4 @@
-import { data, Form, Link, useNavigate } from "react-router";
+import { data, Form, Link, useNavigate, useSearchParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { eq, and, isNull, asc, count, desc, or } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id";
@@ -13,6 +13,19 @@ import {
 } from "~/lib/family-sharing";
 import { AppShell } from "~/components/app-shell";
 import { Button, Chip, ImageFallback, SegmentedControl } from "~/components/ui";
+import {
+  AI_LENSES,
+  AI_LENS_STORAGE_KEY,
+  DEFAULT_AI_LENS_STATE,
+  aiLensPrompt,
+  aiLensSummary,
+  applyAiLensSearchParams,
+  isAiLensActive,
+  normalizeAiLensState,
+  parseAiLensSearchParams,
+  type AiLensId,
+  type AiLensState,
+} from "~/lib/ai-lens.shared";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -213,6 +226,41 @@ function useParentheticalMode(): [boolean, () => void] {
   return [on, toggle];
 }
 
+function useAiLensUrlState(): [AiLensState, (next: AiLensState) => void] {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [state, setState] = useState(() => parseAiLensSearchParams(searchParams));
+
+  useEffect(() => {
+    const fromUrl = parseAiLensSearchParams(searchParams);
+    if (fromUrl.lenses.length > 0) {
+      setState(fromUrl);
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(AI_LENS_STORAGE_KEY);
+      if (stored) setState(normalizeAiLensState(JSON.parse(stored) as Partial<AiLensState>));
+    } catch {
+      setState(DEFAULT_AI_LENS_STATE);
+    }
+  }, [searchParams]);
+
+  function update(nextState: AiLensState) {
+    const normalized = normalizeAiLensState(nextState);
+    setState(normalized);
+    try {
+      localStorage.setItem(AI_LENS_STORAGE_KEY, JSON.stringify(normalized));
+    } catch {
+      // Persistence is a convenience; URL state remains authoritative when storage is unavailable.
+    }
+    const nextParams = new URLSearchParams(searchParams);
+    applyAiLensSearchParams(nextParams, normalized);
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
+  }
+
+  return [state, update];
+}
+
 function IngredientPopover({
   text,
   label,
@@ -266,6 +314,7 @@ export default function RecipeDetail({
   const [customScale, setCustomScale] = useState("");
   const [parenthetical, toggleParenthetical] = useParentheticalMode();
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
+  const [aiLens, setAiLens] = useAiLensUrlState();
 
   const isDeleted = actionData != null && "deleted" in actionData && actionData.deleted;
   const deletedTitle = isDeleted && "title" in actionData ? actionData.title : "";
@@ -322,9 +371,11 @@ export default function RecipeDetail({
   const ownerLabel = isOwner ? "Your recipe" : `From ${recipe.ownerName}`;
   const visibleIngredientCount = ingredients.filter((i) => !i.isGroupHeader).length;
   const checkedCount = Object.values(checkedIngredients).filter(Boolean).length;
+  const lensActive = isAiLensActive(aiLens);
+  const lensPrompt = aiLensPrompt(aiLens);
 
   return (
-    <AppShell user={user}>
+    <AppShell user={user} lensSummary={aiLensSummary(aiLens)}>
       {/* Undo toast */}
       {isDeleted && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-ink px-4 py-3 text-sm text-paper shadow-[var(--shadow-3)]">
@@ -376,6 +427,15 @@ export default function RecipeDetail({
 
           <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="space-y-6 p-5 sm:p-8">
+              {lensActive && (
+                <AiLensPreviewBanner
+                  state={aiLens}
+                  recipeId={recipe.id}
+                  prompt={lensPrompt}
+                  onClear={() => setAiLens(DEFAULT_AI_LENS_STATE)}
+                />
+              )}
+
               {recipe.description && (
                 <p className="max-w-2xl text-sm leading-6 text-ink-2">{recipe.description}</p>
               )}
@@ -484,6 +544,8 @@ export default function RecipeDetail({
               sourceLabel={sourceLabel}
               canPublicShare={canPublicShare}
               cookCount={cookCount}
+              aiLens={aiLens}
+              setAiLens={setAiLens}
             />
           </div>
         </section>
@@ -646,12 +708,16 @@ function RecipeMetaRail({
   sourceLabel,
   canPublicShare,
   cookCount,
+  aiLens,
+  setAiLens,
 }: {
   recipe: Recipe;
   isOwner: boolean;
   sourceLabel: string;
   canPublicShare: boolean;
   cookCount: number;
+  aiLens: AiLensState;
+  setAiLens: (state: AiLensState) => void;
 }) {
   return (
     <aside className="border-t border-rule bg-paper p-5 xl:border-l xl:border-t-0">
@@ -666,6 +732,8 @@ function RecipeMetaRail({
             <LinkButton to={`/recipes/${recipe.id}/improve`} variant="accent">Improve</LinkButton>
           )}
         </div>
+
+        <AiLensControls state={aiLens} onChange={setAiLens} />
 
         <dl className="mt-6 grid grid-cols-2 gap-3 text-sm xl:grid-cols-1">
           <MetaItem label="Prep" value={formatTime(recipe.prepTimeMin)} />
@@ -718,6 +786,112 @@ function RecipeMetaRail({
         )}
       </div>
     </aside>
+  );
+}
+
+function AiLensControls({
+  state,
+  onChange,
+}: {
+  state: AiLensState;
+  onChange: (state: AiLensState) => void;
+}) {
+  function toggleLens(id: AiLensId) {
+    const lenses = state.lenses.includes(id)
+      ? state.lenses.filter((lens) => lens !== id)
+      : [...state.lenses, id];
+    onChange({ ...state, lenses });
+  }
+
+  return (
+    <section className="mt-6 space-y-3 border-t border-rule pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="ps-mono text-xs font-semibold uppercase text-ink-3">AI Lens</h2>
+        {state.lenses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange(DEFAULT_AI_LENS_STATE)}
+            className="text-xs font-medium text-ink-3 hover:text-ink"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {AI_LENSES.map((lens) => (
+          <button key={lens.id} type="button" onClick={() => toggleLens(lens.id)}>
+            <Chip selected={state.lenses.includes(lens.id)}>{lens.label}</Chip>
+          </button>
+        ))}
+      </div>
+      <label className="block space-y-2">
+        <span className="flex items-center justify-between text-xs text-ink-3">
+          <span>Strength</span>
+          <span>{Math.round(state.strength * 100)}%</span>
+        </span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={Math.round(state.strength * 100)}
+          onChange={(event) =>
+            onChange({ ...state, strength: Number(event.target.value) / 100 })
+          }
+          className="w-full accent-ink"
+        />
+      </label>
+      <p className="text-xs leading-5 text-ink-3">
+        Preview only. The original recipe stays unchanged unless you save a new variant.
+      </p>
+    </section>
+  );
+}
+
+function AiLensPreviewBanner({
+  state,
+  recipeId,
+  prompt,
+  onClear,
+}: {
+  state: AiLensState;
+  recipeId: string;
+  prompt: string;
+  onClear: () => void;
+}) {
+  const params = new URLSearchParams();
+  applyAiLensSearchParams(params, state);
+  if (prompt) params.set("prompt", prompt);
+
+  return (
+    <section className="rounded-lg border border-rule bg-paper p-4 shadow-[var(--shadow-1)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          <p className="ps-mono text-xs font-semibold uppercase text-ink-3">Viewing through AI Lens</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {state.lenses.map((id) => {
+              const lens = AI_LENSES.find((entry) => entry.id === id);
+              return lens ? <Chip key={id} selected>{lens.label}</Chip> : null;
+            })}
+            <Chip tone="neutral">{Math.round(state.strength * 100)}%</Chip>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-ink-2">
+            Previewing {AI_LENSES.filter((lens) => state.lenses.includes(lens.id))
+              .map((lens) => lens.preview)
+              .join(", ")}
+            . Nothing has been changed or saved.
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <LinkButton to={`/recipes/${recipeId}/improve?${params.toString()}`} variant="accent">
+            Save variant
+          </LinkButton>
+          <Button type="button" variant="ghost" onClick={onClear}>
+            Clear
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
 
