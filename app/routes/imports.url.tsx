@@ -18,6 +18,7 @@ import { parseIngredientLine } from "~/lib/ingredient-parser";
 import { parseDuration, parseTimeString } from "~/lib/time-parser";
 import { parseServings } from "~/lib/paprika-binary-parser";
 import { scrapeHtml, detectPaywall } from "~/lib/url-scraper";
+import { buildImportTagNames } from "~/lib/import-tag-suggestions";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,21 @@ async function saveScrapedRecipe(opts: {
     .where(and(eq(schema.recipes.userId, userId), isNull(schema.recipes.deletedAt)));
   const usedSlugs = new Set(existingSlugs.map((s) => s.slug));
 
+  const existingTagRows = await db
+    .select({ name: schema.tags.name })
+    .from(schema.tags)
+    .where(eq(schema.tags.userId, userId));
+  const importTagNames = buildImportTagNames({
+    title: r.title,
+    description: r.description,
+    ingredients: r.ingredients,
+    directions: r.directionsText,
+    notes: r.notes,
+    sourceTags: r.tags,
+    existingTags: existingTagRows.map((row) => row.name),
+    limit: 20,
+  });
+
   const base = generateSlug(r.title);
   let slug = base;
   let n = 2;
@@ -184,8 +200,8 @@ async function saveScrapedRecipe(opts: {
     await db.insert(schema.ingredients).values(rows);
   }
 
-  if (r.tags.length > 0) {
-    const tagInserts = r.tags.slice(0, 20).map((name) => ({
+  if (importTagNames.length > 0) {
+    const tagInserts = importTagNames.map((name) => ({
       id: crypto.randomUUID(),
       userId,
       name,
@@ -195,11 +211,11 @@ async function saveScrapedRecipe(opts: {
     const tagRows = await db
       .select({ id: schema.tags.id, name: schema.tags.name })
       .from(schema.tags)
-      .where(and(eq(schema.tags.userId, userId), inArray(schema.tags.name, r.tags.slice(0, 20))));
+      .where(and(eq(schema.tags.userId, userId), inArray(schema.tags.name, importTagNames)));
     const tagIdMap = new Map(tagRows.map((row) => [row.name, row.id]));
 
     const recipeTagRows: { recipeId: string; tagId: string }[] = [];
-    for (const name of r.tags.slice(0, 20)) {
+    for (const name of importTagNames) {
       const tagId = tagIdMap.get(name);
       if (tagId) recipeTagRows.push({ recipeId, tagId });
     }

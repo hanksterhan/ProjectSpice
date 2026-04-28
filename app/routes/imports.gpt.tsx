@@ -15,6 +15,7 @@ import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
 import { parseGptRecipe } from "~/lib/gpt-recipe-parser";
+import { buildImportTagNames } from "~/lib/import-tag-suggestions";
 
 // ─── Template ─────────────────────────────────────────────────────────────────
 
@@ -120,6 +121,19 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     .where(and(eq(schema.recipes.userId, user.id), isNull(schema.recipes.deletedAt)));
   const usedSlugs = new Set(existingSlugRows.map((r) => r.slug));
 
+  const existingTagRows = await db
+    .select({ name: schema.tags.name })
+    .from(schema.tags)
+    .where(eq(schema.tags.userId, user.id));
+  const importTagNames = buildImportTagNames({
+    title: parsed.title,
+    ingredients: parsed.ingredients,
+    directions: parsed.directions,
+    notes: parsed.notes,
+    sourceTags: parsed.tags,
+    existingTags: existingTagRows.map((row) => row.name),
+  });
+
   const base = generateSlug(parsed.title);
   let slug = base;
   let n = 2;
@@ -176,8 +190,8 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   }
 
   // ── Tags upsert + link ───────────────────────────────────────────────────
-  if (parsed.tags.length > 0) {
-    const tagInserts = parsed.tags.map((name) => ({
+  if (importTagNames.length > 0) {
+    const tagInserts = importTagNames.map((name) => ({
       id: crypto.randomUUID(),
       userId: user.id,
       name,
@@ -191,13 +205,13 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       .where(
         and(
           eq(schema.tags.userId, user.id),
-          inArray(schema.tags.name, parsed.tags)
+          inArray(schema.tags.name, importTagNames)
         )
       );
     const tagIdMap = new Map(tagRows.map((r) => [r.name, r.id]));
 
     const recipeTagRows: { recipeId: string; tagId: string }[] = [];
-    for (const name of parsed.tags) {
+    for (const name of importTagNames) {
       const tagId = tagIdMap.get(name);
       if (tagId) recipeTagRows.push({ recipeId, tagId });
     }
