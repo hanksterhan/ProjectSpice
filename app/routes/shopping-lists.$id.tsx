@@ -1,10 +1,11 @@
 import { data, Form, Link, redirect, useFetcher } from "react-router";
 import { useState } from "react";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { Route } from "./+types/shopping-lists.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { categorizeAisle, AISLE_ORDER } from "~/lib/aisle-categorizer";
+import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const name =
@@ -34,18 +35,49 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   const addFromRecipeId = url.searchParams.get("addFromRecipeId");
 
   const { db } = createDb(context.cloudflare.env.DB);
+  const d1 = context.cloudflare.env.DB;
 
-  const [listRows, items, recipes] = await Promise.all([
-    db
-      .select()
-      .from(schema.shoppingLists)
-      .where(
-        and(
-          eq(schema.shoppingLists.id, params.id),
-          eq(schema.shoppingLists.userId, user.id)
-        )
-      )
-      .limit(1),
+  const listAccess = await d1
+    .prepare(
+      `SELECT sl.id, sl.name, sl.user_id, sl.created_at, sl.completed_at,
+              u.name as owner_name,
+              CASE WHEN sl.user_id = ? THEN 1 ELSE 0 END as is_owner,
+              CASE WHEN sh.id IS NOT NULL THEN 1 ELSE 0 END as is_shared
+       FROM shopping_lists sl
+       JOIN users u ON u.id = sl.user_id
+       LEFT JOIN shares sh ON sh.resource_type = 'shopping_list'
+        AND sh.resource_id = sl.id
+        AND (sh.shared_with_user_id IS NULL OR sh.shared_with_user_id = ?)
+       WHERE sl.id = ?
+         AND (sl.user_id = ? OR sh.id IS NOT NULL)
+       LIMIT 1`
+    )
+    .bind(user.id, user.id, params.id, user.id)
+    .first<{
+      id: string;
+      name: string;
+      user_id: string;
+      created_at: number;
+      completed_at: number | null;
+      owner_name: string;
+      is_owner: number;
+      is_shared: number;
+    }>();
+
+  if (!listAccess) throw data(null, { status: 404 });
+
+  const list = {
+    id: listAccess.id,
+    userId: listAccess.user_id,
+    name: listAccess.name,
+    createdAt: listAccess.created_at,
+    completedAt: listAccess.completed_at,
+    ownerName: listAccess.owner_name,
+    isOwner: listAccess.is_owner === 1,
+    isShared: listAccess.is_shared === 1,
+  };
+
+  const [items, recipes] = await Promise.all([
     db
       .select()
       .from(schema.shoppingListItems)
@@ -56,15 +88,15 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
       .from(schema.recipes)
       .where(
         and(
-          eq(schema.recipes.userId, user.id),
+          or(
+            eq(schema.recipes.userId, user.id),
+            eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+          ),
           isNull(schema.recipes.deletedAt)
         )
       )
       .orderBy(asc(schema.recipes.title)),
   ]);
-
-  const list = listRows[0];
-  if (!list) throw data(null, { status: 404 });
 
   let addFromIngredients: Array<{
     id: string;
@@ -82,7 +114,10 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
       .where(
         and(
           eq(schema.recipes.id, addFromRecipeId),
-          eq(schema.recipes.userId, user.id),
+          or(
+            eq(schema.recipes.userId, user.id),
+            eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+          ),
           isNull(schema.recipes.deletedAt)
         )
       )
@@ -115,22 +150,73 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   const intent = String(fd.get("_intent") ?? "");
   const { db } = createDb(context.cloudflare.env.DB);
 
+  async function getListAccess() {
+    const list = await context.cloudflare.env.DB
+      .prepare(
+        `SELECT sl.id, sl.user_id as userId,
+                CASE WHEN sl.user_id = ? THEN 1 ELSE 0 END as is_owner
+         FROM shopping_lists sl
+         LEFT JOIN shares sh ON sh.resource_type = 'shopping_list'
+          AND sh.resource_id = sl.id
+          AND (sh.shared_with_user_id IS NULL OR sh.shared_with_user_id = ?)
+         WHERE sl.id = ?
+           AND (sl.user_id = ? OR sh.id IS NOT NULL)
+         LIMIT 1`
+      )
+      .bind(user.id, user.id, params.id, user.id)
+      .first<{ id: string; userId: string; is_owner: number }>();
+    if (!list) throw data(null, { status: 403 });
+    return { id: list.id, userId: list.userId, isOwner: list.is_owner === 1 };
+  }
+
+  async function assertListAccess() {
+    await getListAccess();
+  }
+
   async function assertListOwner() {
-    const [list] = await db
-      .select({ id: schema.shoppingLists.id })
-      .from(schema.shoppingLists)
+    const access = await getListAccess();
+    if (!access.isOwner) throw data(null, { status: 403 });
+  }
+
+  if (intent === "share-family") {
+    await assertListOwner();
+    await db
+      .delete(schema.shares)
       .where(
         and(
-          eq(schema.shoppingLists.id, params.id),
-          eq(schema.shoppingLists.userId, user.id)
+          eq(schema.shares.resourceType, "shopping_list"),
+          eq(schema.shares.resourceId, params.id),
+          isNull(schema.shares.sharedWithUserId)
         )
-      )
-      .limit(1);
-    if (!list) throw data(null, { status: 403 });
+      );
+    await db
+      .insert(schema.shares)
+      .values({
+        id: crypto.randomUUID(),
+        resourceType: "shopping_list",
+        resourceId: params.id,
+        sharedByUserId: user.id,
+        sharedWithUserId: null,
+      });
+    return { ok: true };
+  }
+
+  if (intent === "unshare-family") {
+    await assertListOwner();
+    await db
+      .delete(schema.shares)
+      .where(
+        and(
+          eq(schema.shares.resourceType, "shopping_list"),
+          eq(schema.shares.resourceId, params.id),
+          isNull(schema.shares.sharedWithUserId)
+        )
+      );
+    return { ok: true };
   }
 
   if (intent === "check" || intent === "uncheck") {
-    await assertListOwner();
+    await assertListAccess();
     const itemId = String(fd.get("itemId") ?? "");
     await db
       .update(schema.shoppingListItems)
@@ -145,7 +231,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   }
 
   if (intent === "remove-item") {
-    await assertListOwner();
+    await assertListAccess();
     const itemId = String(fd.get("itemId") ?? "");
     await db
       .delete(schema.shoppingListItems)
@@ -159,7 +245,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   }
 
   if (intent === "add-manual") {
-    await assertListOwner();
+    await assertListAccess();
     const text = String(fd.get("text") ?? "").trim();
     if (!text) return { error: "Item text is required." };
     const quantity = String(fd.get("quantity") ?? "").trim() || null;
@@ -175,7 +261,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   }
 
   if (intent === "add-from-recipe") {
-    await assertListOwner();
+    await assertListAccess();
     const recipeId = String(fd.get("recipeId") ?? "");
     const ingredientIds = fd.getAll("ingredientId").map(String).filter(Boolean);
 
@@ -187,7 +273,10 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       .where(
         and(
           eq(schema.recipes.id, recipeId),
-          eq(schema.recipes.userId, user.id),
+          or(
+            eq(schema.recipes.userId, user.id),
+            eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+          ),
           isNull(schema.recipes.deletedAt)
         )
       )
@@ -216,7 +305,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   }
 
   if (intent === "complete" || intent === "uncomplete") {
-    await assertListOwner();
+    await assertListAccess();
     await db
       .update(schema.shoppingLists)
       .set({ completedAt: intent === "complete" ? new Date() : null })
@@ -345,10 +434,34 @@ export default function ShoppingListDetail({
           <span className="font-semibold flex-1 truncate text-sm">
             {list.name}
           </span>
+          {!list.isOwner && (
+            <span className="text-xs text-muted-foreground shrink-0">
+              {list.ownerName}
+            </span>
+          )}
           {items.length > 0 && (
             <span className="text-xs text-muted-foreground shrink-0">
               {checkedCount}/{items.length}
             </span>
+          )}
+          {list.isOwner && (
+            <Form method="post" className="shrink-0">
+              <input
+                type="hidden"
+                name="_intent"
+                value={list.isShared ? "unshare-family" : "share-family"}
+              />
+              <button
+                type="submit"
+                className={`text-xs px-2 py-1 rounded-md border transition-colors ${
+                  list.isShared
+                    ? "border-primary text-primary hover:bg-primary/10"
+                    : "border-input text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {list.isShared ? "Unshare" : "Share"}
+              </button>
+            </Form>
           )}
           <Form method="post" className="shrink-0">
             <input
@@ -371,6 +484,13 @@ export default function ShoppingListDetail({
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-6">
+        {/* Items grouped by aisle */}
+        {list.isShared && (
+          <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+            Shared family list. Everyone in the household can add and check off items.
+          </p>
+        )}
+
         {/* Items grouped by aisle */}
         {items.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-12">

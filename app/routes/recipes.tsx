@@ -5,6 +5,7 @@ import type { Route } from "./+types/recipes";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
+import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
 
 const PAGE_SIZE = 24;
 
@@ -17,6 +18,9 @@ type RecipeCard = {
   imageKey: string | null;
   createdAt: number;
   cookCount: number;
+  ownerName: string;
+  isOwnedByViewer: boolean;
+  visibility: string;
 };
 
 type TagCount = {
@@ -52,8 +56,7 @@ function orderByClause(sort: SortOption): string {
 // Returns a SQL fragment starting with AND (if non-empty) and the corresponding params.
 function buildFilterFragments(
   selectedTags: string[],
-  showArchived: boolean,
-  userId: string
+  showArchived: boolean
 ): { sql: string; params: unknown[] } {
   const parts: string[] = [];
   const params: unknown[] = [];
@@ -75,9 +78,9 @@ function buildFilterFragments(
     parts.push(`EXISTS (
       SELECT 1 FROM recipe_tags rt
       JOIN tags t ON rt.tag_id = t.id
-      WHERE rt.recipe_id = r.id AND t.name = ? AND t.user_id = ?
+      WHERE rt.recipe_id = r.id AND t.name = ?
     )`);
-    params.push(tag, userId);
+    params.push(tag);
   }
 
   return {
@@ -104,6 +107,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         .filter(Boolean)
     : [];
   const showArchived = url.searchParams.get("archived") === "1";
+  const rawScope = url.searchParams.get("scope") ?? "mine";
+  const scope: "mine" | "family" | "shared" =
+    rawScope === "family" || rawScope === "shared" ? rawScope : "mine";
+  const accessSql =
+    scope === "mine"
+      ? "r.user_id = ?"
+      : scope === "shared"
+        ? "r.user_id <> ? AND r.visibility = ?"
+        : "(r.user_id = ? OR r.visibility = ?)";
+  const accessParams =
+    scope === "mine" ? [user.id] : [user.id, FAMILY_RECIPE_VISIBILITY];
 
   const d1 = context.cloudflare.env.DB;
   const { db } = createDb(d1);
@@ -112,8 +126,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const orderBy = orderByClause(sort);
   const { sql: filterSql, params: filterParams } = buildFilterFragments(
     selectedTags,
-    showArchived,
-    user.id
+    showArchived
   );
 
   let rows: RecipeCard[];
@@ -124,28 +137,33 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       d1
         .prepare(
           `SELECT r.id, r.title, r.total_time_min, r.image_key, r.created_at,
+                  r.user_id, r.visibility, u.name as owner_name,
                   COALESCE(cl.cook_count, 0) as cook_count
            FROM recipes_fts fts
            JOIN recipes r ON r.rowid = fts.rowid
+           JOIN users u ON u.id = r.user_id
            LEFT JOIN (
              SELECT recipe_id, COUNT(*) as cook_count
              FROM cooking_log WHERE user_id = ?
              GROUP BY recipe_id
            ) cl ON r.id = cl.recipe_id
            WHERE recipes_fts MATCH ?
-             AND r.user_id = ?
+             AND ${accessSql}
              AND r.deleted_at IS NULL
              ${filterSql}
            ORDER BY ${orderBy}
            LIMIT ? OFFSET ?`
         )
-        .bind(user.id, safeQ, user.id, ...filterParams, PAGE_SIZE, offset)
+        .bind(user.id, safeQ, ...accessParams, ...filterParams, PAGE_SIZE, offset)
         .all<{
           id: string;
           title: string;
           total_time_min: number | null;
           image_key: string | null;
           created_at: number;
+          user_id: string;
+          visibility: string;
+          owner_name: string;
           cook_count: number;
         }>(),
       d1
@@ -154,11 +172,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            FROM recipes_fts fts
            JOIN recipes r ON r.rowid = fts.rowid
            WHERE recipes_fts MATCH ?
-             AND r.user_id = ?
+             AND ${accessSql}
              AND r.deleted_at IS NULL
              ${filterSql}`
         )
-        .bind(safeQ, user.id, ...filterParams)
+        .bind(safeQ, ...accessParams, ...filterParams)
         .first<{ cnt: number }>(),
     ]);
     rows = (rowsResult.results ?? []).map((r) => ({
@@ -167,6 +185,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       totalTimeMin: r.total_time_min,
       imageKey: r.image_key,
       createdAt: r.created_at,
+      ownerName: r.owner_name,
+      isOwnedByViewer: r.user_id === user.id,
+      visibility: r.visibility,
       cookCount: r.cook_count,
     }));
     total = countResult?.cnt ?? 0;
@@ -175,37 +196,42 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       d1
         .prepare(
           `SELECT r.id, r.title, r.total_time_min, r.image_key, r.created_at,
+                  r.user_id, r.visibility, u.name as owner_name,
                   COALESCE(cl.cook_count, 0) as cook_count
            FROM recipes r
+           JOIN users u ON u.id = r.user_id
            LEFT JOIN (
              SELECT recipe_id, COUNT(*) as cook_count
              FROM cooking_log WHERE user_id = ?
              GROUP BY recipe_id
            ) cl ON r.id = cl.recipe_id
-           WHERE r.user_id = ?
+           WHERE ${accessSql}
              AND r.deleted_at IS NULL
              ${filterSql}
            ORDER BY ${orderBy}
            LIMIT ? OFFSET ?`
         )
-        .bind(user.id, user.id, ...filterParams, PAGE_SIZE, offset)
+        .bind(user.id, ...accessParams, ...filterParams, PAGE_SIZE, offset)
         .all<{
           id: string;
           title: string;
           total_time_min: number | null;
           image_key: string | null;
           created_at: number;
+          user_id: string;
+          visibility: string;
+          owner_name: string;
           cook_count: number;
         }>(),
       d1
         .prepare(
-          `SELECT COUNT(*) as cnt
+           `SELECT COUNT(*) as cnt
            FROM recipes r
-           WHERE r.user_id = ?
+           WHERE ${accessSql}
              AND r.deleted_at IS NULL
              ${filterSql}`
         )
-        .bind(user.id, ...filterParams)
+        .bind(...accessParams, ...filterParams)
         .first<{ cnt: number }>(),
     ]);
     rows = (rowsResult.results ?? []).map((r) => ({
@@ -214,6 +240,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       totalTimeMin: r.total_time_min,
       imageKey: r.image_key,
       createdAt: r.created_at,
+      ownerName: r.owner_name,
+      isOwnedByViewer: r.user_id === user.id,
+      visibility: r.visibility,
       cookCount: r.cook_count,
     }));
     total = countResult?.cnt ?? 0;
@@ -225,12 +254,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       `SELECT t.id, t.name, COUNT(DISTINCT r.id) as recipe_count
        FROM tags t
        LEFT JOIN recipe_tags rt ON t.id = rt.tag_id
-       LEFT JOIN recipes r ON rt.recipe_id = r.id AND r.deleted_at IS NULL AND r.user_id = ?
-       WHERE t.user_id = ?
+       LEFT JOIN recipes r ON rt.recipe_id = r.id AND r.deleted_at IS NULL AND ${accessSql}
+       WHERE ${scope === "mine" ? "t.user_id = ?" : "r.id IS NOT NULL"}
        GROUP BY t.id, t.name
        ORDER BY t.name ASC`
     )
-    .bind(user.id, user.id)
+    .bind(...accessParams, ...(scope === "mine" ? [user.id] : []))
     .all<{ id: string; name: string; recipe_count: number }>();
 
   const allTags: TagCount[] = (allTagsResult.results ?? []).map((r) => ({
@@ -263,6 +292,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     allTags,
     selectedTags,
     showArchived,
+    scope,
     total,
     page,
     pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -292,6 +322,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
     allTags,
     selectedTags,
     showArchived,
+    scope,
     total,
     page,
     pageCount,
@@ -315,6 +346,7 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
       page: String(page),
       tags: selectedTags.length > 0 ? selectedTags.join(",") : null,
       archived: showArchived ? "1" : null,
+      scope: scope === "mine" ? null : scope,
     };
     const merged = { ...base, ...overrides };
     for (const [k, v] of Object.entries(merged)) {
@@ -414,6 +446,35 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { value: "mine", label: "Mine" },
+              { value: "family", label: "Family" },
+              { value: "shared", label: "Shared with You" },
+            ] as const
+          ).map((option) => {
+            const active = scope === option.value;
+            const qs = buildParams({
+              scope: option.value === "mine" ? null : option.value,
+              page: "1",
+            });
+            return (
+              <Link
+                key={option.value}
+                to={`/recipes${qs ? `?${qs}` : ""}`}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-foreground border-input hover:bg-muted"
+                }`}
+              >
+                {option.label}
+              </Link>
+            );
+          })}
+        </div>
+
         {/* Search + Sort bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -588,6 +649,14 @@ export default function RecipeList({ loaderData }: Route.ComponentProps) {
                     <h2 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                       {recipe.title}
                     </h2>
+                    {(!recipe.isOwnedByViewer ||
+                      recipe.visibility === FAMILY_RECIPE_VISIBILITY) && (
+                      <p className="text-[11px] text-muted-foreground -mt-1">
+                        {recipe.isOwnedByViewer
+                          ? "Shared with family"
+                          : `From ${recipe.ownerName}`}
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
                       {recipe.totalTimeMin ? (
                         <span>{formatTime(recipe.totalTimeMin)}</span>

@@ -437,4 +437,7 @@ export const shares = sqliteTable("shares", {
   }),
   signedToken: text("signed_token"),
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-});
+}, (t) => [
+  index("shares_resource_idx").on(t.resourceType, t.resourceId),
+  index("shares_shared_with_idx").on(t.sharedWithUserId),
+]);

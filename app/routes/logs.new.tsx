@@ -1,10 +1,11 @@
 import { Form, Link, redirect, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import type { Route } from "./+types/logs.new";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { createCookingLog } from "~/lib/cooking-log.server";
+import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
 import {
   createLogClientId,
   queueLogDraft,
@@ -31,7 +32,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .where(
       and(
         eq(schema.recipes.id, recipeId),
-        eq(schema.recipes.userId, user.id),
+        or(
+          eq(schema.recipes.userId, user.id),
+          eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+        ),
         isNull(schema.recipes.deletedAt)
       )
     )

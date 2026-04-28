@@ -1,5 +1,5 @@
 import { Form, Link, redirect, useSearchParams } from "react-router";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Route } from "./+types/shopping-lists";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
@@ -10,24 +10,43 @@ export function meta() {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
-  const { db } = createDb(context.cloudflare.env.DB);
+  const d1 = context.cloudflare.env.DB;
 
-  const lists = await db
-    .select({
-      id: schema.shoppingLists.id,
-      name: schema.shoppingLists.name,
-      createdAt: schema.shoppingLists.createdAt,
-      completedAt: schema.shoppingLists.completedAt,
-      itemCount: count(schema.shoppingListItems.id),
-    })
-    .from(schema.shoppingLists)
-    .leftJoin(
-      schema.shoppingListItems,
-      eq(schema.shoppingLists.id, schema.shoppingListItems.shoppingListId)
+  const listsResult = await d1
+    .prepare(
+      `SELECT sl.id, sl.name, sl.created_at, sl.completed_at, u.name as owner_name,
+              CASE WHEN sl.user_id = ? THEN 1 ELSE 0 END as is_owner,
+              COUNT(sli.id) as item_count
+       FROM shopping_lists sl
+       JOIN users u ON u.id = sl.user_id
+       LEFT JOIN shopping_list_items sli ON sl.id = sli.shopping_list_id
+       LEFT JOIN shares sh ON sh.resource_type = 'shopping_list'
+        AND sh.resource_id = sl.id
+        AND (sh.shared_with_user_id IS NULL OR sh.shared_with_user_id = ?)
+       WHERE sl.user_id = ? OR sh.id IS NOT NULL
+       GROUP BY sl.id
+       ORDER BY sl.created_at DESC`
     )
-    .where(eq(schema.shoppingLists.userId, user.id))
-    .groupBy(schema.shoppingLists.id)
-    .orderBy(desc(schema.shoppingLists.createdAt));
+    .bind(user.id, user.id, user.id)
+    .all<{
+      id: string;
+      name: string;
+      created_at: number;
+      completed_at: number | null;
+      owner_name: string;
+      is_owner: number;
+      item_count: number;
+    }>();
+
+  const lists = (listsResult.results ?? []).map((list) => ({
+    id: list.id,
+    name: list.name,
+    createdAt: list.created_at,
+    completedAt: list.completed_at,
+    ownerName: list.owner_name,
+    isOwner: list.is_owner === 1,
+    itemCount: list.item_count,
+  }));
 
   return { lists };
 }
@@ -46,6 +65,15 @@ export async function action({ request, context }: Route.ActionArgs) {
       .insert(schema.shoppingLists)
       .values({ userId: user.id, name })
       .returning({ id: schema.shoppingLists.id });
+    if (fd.get("shared") === "family") {
+      await db.insert(schema.shares).values({
+        id: crypto.randomUUID(),
+        resourceType: "shopping_list",
+        resourceId: list.id,
+        sharedByUserId: user.id,
+        sharedWithUserId: null,
+      });
+    }
     const dest = recipeId
       ? `/shopping-lists/${list.id}?addFromRecipeId=${recipeId}`
       : `/shopping-lists/${list.id}`;
@@ -116,6 +144,10 @@ export default function ShoppingListsPage({
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
+          <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border rounded-md px-2">
+            <input type="checkbox" name="shared" value="family" />
+            Family
+          </label>
           <button
             type="submit"
             className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
@@ -143,18 +175,22 @@ export default function ShoppingListsPage({
                   <div className="font-medium truncate text-sm">{l.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {l.itemCount} item{l.itemCount !== 1 ? "s" : ""}
+                    {!l.isOwner && ` · From ${l.ownerName}`}
+                    {l.isOwner && " · Yours"}
                   </div>
                 </Link>
-                <Form method="post">
-                  <input type="hidden" name="_intent" value="delete" />
-                  <input type="hidden" name="listId" value={l.id} />
-                  <button
-                    type="submit"
-                    className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
-                  >
-                    Delete
-                  </button>
-                </Form>
+                {l.isOwner && (
+                  <Form method="post">
+                    <input type="hidden" name="_intent" value="delete" />
+                    <input type="hidden" name="listId" value={l.id} />
+                    <button
+                      type="submit"
+                      className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
+                    >
+                      Delete
+                    </button>
+                  </Form>
+                )}
               </div>
             ))}
           </section>
@@ -177,18 +213,21 @@ export default function ShoppingListsPage({
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {l.itemCount} item{l.itemCount !== 1 ? "s" : ""}
+                    {!l.isOwner && ` · From ${l.ownerName}`}
                   </div>
                 </Link>
-                <Form method="post">
-                  <input type="hidden" name="_intent" value="delete" />
-                  <input type="hidden" name="listId" value={l.id} />
-                  <button
-                    type="submit"
-                    className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
-                  >
-                    Delete
-                  </button>
-                </Form>
+                {l.isOwner && (
+                  <Form method="post">
+                    <input type="hidden" name="_intent" value="delete" />
+                    <input type="hidden" name="listId" value={l.id} />
+                    <button
+                      type="submit"
+                      className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
+                    >
+                      Delete
+                    </button>
+                  </Form>
+                )}
               </div>
             ))}
           </section>

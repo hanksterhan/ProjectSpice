@@ -1,11 +1,16 @@
 import { data, Form, Link, useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import { eq, and, isNull, asc, count, desc } from "drizzle-orm";
+import { eq, and, isNull, asc, count, desc, or } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { buildTermIndex, segmentStep, type MappableIngredient } from "~/lib/ingredient-mapper";
 import { cacheRecipe } from "~/lib/offline-db";
+import {
+  canManageRecipe,
+  canPubliclyShareRecipe,
+  FAMILY_RECIPE_VISIBILITY,
+} from "~/lib/family-sharing";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Recipe";
@@ -56,12 +61,51 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
   const [recipeRows, ingredients, tagRows, logRows, variantRows] = await Promise.all([
     db
-      .select()
+      .select({
+        id: schema.recipes.id,
+        userId: schema.recipes.userId,
+        title: schema.recipes.title,
+        slug: schema.recipes.slug,
+        description: schema.recipes.description,
+        sourceUrl: schema.recipes.sourceUrl,
+        sourceType: schema.recipes.sourceType,
+        prepTimeMin: schema.recipes.prepTimeMin,
+        activeTimeMin: schema.recipes.activeTimeMin,
+        totalTimeMin: schema.recipes.totalTimeMin,
+        timeNotes: schema.recipes.timeNotes,
+        servings: schema.recipes.servings,
+        servingsUnit: schema.recipes.servingsUnit,
+        difficulty: schema.recipes.difficulty,
+        directionsText: schema.recipes.directionsText,
+        notes: schema.recipes.notes,
+        imageKey: schema.recipes.imageKey,
+        imageSourceUrl: schema.recipes.imageSourceUrl,
+        imageAttribution: schema.recipes.imageAttribution,
+        imageAlt: schema.recipes.imageAlt,
+        rating: schema.recipes.rating,
+        parentRecipeId: schema.recipes.parentRecipeId,
+        variantType: schema.recipes.variantType,
+        variantProfileId: schema.recipes.variantProfileId,
+        contentHash: schema.recipes.contentHash,
+        sourceHash: schema.recipes.sourceHash,
+        paprikaOriginalId: schema.recipes.paprikaOriginalId,
+        importedAt: schema.recipes.importedAt,
+        importJobId: schema.recipes.importJobId,
+        visibility: schema.recipes.visibility,
+        deletedAt: schema.recipes.deletedAt,
+        createdAt: schema.recipes.createdAt,
+        updatedAt: schema.recipes.updatedAt,
+        ownerName: schema.users.name,
+      })
       .from(schema.recipes)
+      .innerJoin(schema.users, eq(schema.recipes.userId, schema.users.id))
       .where(
         and(
           eq(schema.recipes.id, params.id),
-          eq(schema.recipes.userId, user.id),
+          or(
+            eq(schema.recipes.userId, user.id),
+            eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+          ),
           isNull(schema.recipes.deletedAt)
         )
       )
@@ -101,6 +145,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
   const recipe = recipeRows[0];
   if (!recipe) throw data(null, { status: 404 });
+  const isOwner = canManageRecipe(recipe, user.id);
 
   return {
     recipe,
@@ -108,6 +153,8 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     tags: tagRows.map((r) => r.name),
     cookCount: logRows[0]?.total ?? 0,
     variants: variantRows,
+    isOwner,
+    canPublicShare: canPubliclyShareRecipe(recipe),
   };
 }
 
@@ -210,6 +257,7 @@ export default function RecipeDetail({
   actionData,
 }: Route.ComponentProps) {
   const { recipe, ingredients, tags, cookCount, variants } = loaderData;
+  const { isOwner, canPublicShare } = loaderData;
   const navigate = useNavigate();
   const [scaleFactor, setScaleFactor] = useState(1);
   const [customScale, setCustomScale] = useState("");
@@ -313,28 +361,34 @@ export default function RecipeDetail({
           >
             Add to List
           </Link>
-          <Link
-            to={`/recipes/${recipe.id}/improve`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Improve
-          </Link>
-          <Link
-            to={`/recipes/${recipe.id}/edit`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Edit
-          </Link>
-          <Form method="post">
-            <input type="hidden" name="_intent" value="delete" />
-            <input type="hidden" name="recipeTitle" value={recipe.title} />
-            <button
-              type="submit"
-              className="text-sm text-red-500 hover:text-red-600"
+          {isOwner && (
+            <Link
+              to={`/recipes/${recipe.id}/improve`}
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Delete
-            </button>
-          </Form>
+              Improve
+            </Link>
+          )}
+          {isOwner && (
+            <>
+              <Link
+                to={`/recipes/${recipe.id}/edit`}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Edit
+              </Link>
+              <Form method="post">
+                <input type="hidden" name="_intent" value="delete" />
+                <input type="hidden" name="recipeTitle" value={recipe.title} />
+                <button
+                  type="submit"
+                  className="text-sm text-red-500 hover:text-red-600"
+                >
+                  Delete
+                </button>
+              </Form>
+            </>
+          )}
         </div>
       </header>
 
@@ -381,6 +435,16 @@ export default function RecipeDetail({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {!isOwner && (
+              <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
+                From {recipe.ownerName}
+              </span>
+            )}
+            {isOwner && recipe.visibility === FAMILY_RECIPE_VISIBILITY && (
+              <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
+                Shared with family
+              </span>
+            )}
             {tags.map((tag) => (
               <span
                 key={tag}
@@ -567,6 +631,13 @@ export default function RecipeDetail({
             >
               {recipe.sourceUrl}
             </a>
+          </p>
+        )}
+
+        {!canPublicShare && (
+          <p className="text-xs text-muted-foreground border-t pt-4">
+            Public signed-link sharing is unavailable for PDF/EPUB-sourced recipes.
+            Family sharing is allowed.
           </p>
         )}
 

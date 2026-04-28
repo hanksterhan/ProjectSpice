@@ -1,6 +1,7 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { schema } from "~/db";
 import type { createDb } from "~/db";
+import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
 
 type Db = ReturnType<typeof createDb>["db"];
 
@@ -84,7 +85,10 @@ export async function createCookingLog(
       .where(
         and(
           eq(schema.recipes.id, recipeId),
-          eq(schema.recipes.userId, userId),
+          or(
+            eq(schema.recipes.userId, userId),
+            eq(schema.recipes.visibility, FAMILY_RECIPE_VISIBILITY)
+          ),
           isNull(schema.recipes.deletedAt)
         )
       )
