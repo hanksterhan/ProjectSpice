@@ -1,11 +1,11 @@
 import { redirect, data } from "react-router";
-import { useEffect, useRef, useState } from "react";
-import { Form, Link, useNavigation } from "react-router";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { Route } from "./+types/recipes.$id.edit";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema, type Db } from "~/db";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
+import { AppShell } from "~/components/app-shell";
+import { RecipeEditorForm } from "~/components/recipe-editor-form";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const title = d?.recipe?.title ?? "Edit Recipe";
@@ -68,7 +68,11 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const { db } = createDb(context.cloudflare.env.DB);
 
-  const [recipeRows, ingredients, tagRows, allTagRows] = await Promise.all([
+  const [fullUser, recipeRows, ingredients, tagRows, allTagRows] = await Promise.all([
+    db.query.users.findFirst({
+      where: eq(schema.users.id, user.id),
+      columns: { email: true, name: true },
+    }),
     db
       .select()
       .from(schema.recipes)
@@ -100,6 +104,10 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (!recipe) throw data(null, { status: 404 });
 
   return {
+    user: {
+      name: fullUser?.name ?? user.email,
+      email: fullUser?.email ?? user.email,
+    },
     recipe,
     ingredientsText: ingredients.map(ingredientToLine).join("\n"),
     currentTags: tagRows.map((r) => r.name),
@@ -116,6 +124,8 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   const description = String(fd.get("description") ?? "").trim() || null;
   const sourceUrl = String(fd.get("sourceUrl") ?? "").trim() || null;
+  const imageSourceUrl = String(fd.get("imageSourceUrl") ?? "").trim() || null;
+  const imageAlt = String(fd.get("imageAlt") ?? "").trim() || null;
   const prepTimeMin = parseInt(String(fd.get("prepTimeMin") ?? "")) || null;
   const activeTimeMin =
     parseInt(String(fd.get("activeTimeMin") ?? "")) || null;
@@ -166,6 +176,8 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       difficulty,
       directionsText,
       notes,
+      imageSourceUrl,
+      imageAlt,
       visibility,
       updatedAt: new Date(),
     })
@@ -210,323 +222,25 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   throw redirect(`/recipes/${params.id}`);
 }
 
-const INPUT =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
-const LABEL = "text-sm font-medium";
-const FIELD = "flex flex-col gap-1";
-
 export default function EditRecipe({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
   const { recipe, ingredientsText, currentTags, tagSuggestions } = loaderData;
-  const navigation = useNavigation();
-  const isPending = navigation.state === "submitting";
-  const isDirty = useRef(false);
-  const [tagInput, setTagInput] = useState(currentTags.join(", "));
-
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty.current) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-
-  function addSuggestedTag(tag: string) {
-    const current = tagInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    if (!current.includes(tag)) {
-      setTagInput([...current, tag].join(", "));
-      isDirty.current = true;
-    }
-  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link
-            to={`/recipes/${recipe.id}`}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            ← Cancel
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium text-sm truncate">
-            Edit: {recipe.title}
-          </span>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        <Form
-          method="post"
-          className="space-y-6"
-          onChange={() => {
-            isDirty.current = true;
-          }}
-        >
-          {actionData?.error && (
-            <p
-              role="alert"
-              className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2"
-            >
-              {actionData.error}
-            </p>
-          )}
-
-          <div className={FIELD}>
-            <label htmlFor="title" className={LABEL}>
-              Title *
-            </label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              required
-              defaultValue={recipe.title}
-              className={INPUT}
-            />
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="description" className={LABEL}>
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={2}
-              defaultValue={recipe.description ?? ""}
-              className={INPUT}
-            />
-          </div>
-
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-semibold">Timing</legend>
-            <div className="grid grid-cols-3 gap-3">
-              <div className={FIELD}>
-                <label htmlFor="prepTimeMin" className={LABEL}>
-                  Prep (min)
-                </label>
-                <input
-                  id="prepTimeMin"
-                  name="prepTimeMin"
-                  type="number"
-                  min="0"
-                  defaultValue={recipe.prepTimeMin ?? ""}
-                  className={INPUT}
-                />
-              </div>
-              <div className={FIELD}>
-                <label htmlFor="activeTimeMin" className={LABEL}>
-                  Active (min)
-                </label>
-                <input
-                  id="activeTimeMin"
-                  name="activeTimeMin"
-                  type="number"
-                  min="0"
-                  defaultValue={recipe.activeTimeMin ?? ""}
-                  className={INPUT}
-                />
-              </div>
-              <div className={FIELD}>
-                <label htmlFor="totalTimeMin" className={LABEL}>
-                  Total (min)
-                </label>
-                <input
-                  id="totalTimeMin"
-                  name="totalTimeMin"
-                  type="number"
-                  min="0"
-                  defaultValue={recipe.totalTimeMin ?? ""}
-                  className={INPUT}
-                />
-              </div>
-            </div>
-            <div className={FIELD}>
-              <label htmlFor="timeNotes" className={LABEL}>
-                Time notes
-              </label>
-              <input
-                id="timeNotes"
-                name="timeNotes"
-                type="text"
-                defaultValue={recipe.timeNotes ?? ""}
-                className={INPUT}
-              />
-            </div>
-          </fieldset>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className={FIELD}>
-              <label htmlFor="servings" className={LABEL}>
-                Servings
-              </label>
-              <input
-                id="servings"
-                name="servings"
-                type="number"
-                min="0"
-                step="0.5"
-                defaultValue={recipe.servings ?? ""}
-                className={INPUT}
-              />
-            </div>
-            <div className={FIELD}>
-              <label htmlFor="servingsUnit" className={LABEL}>
-                Unit
-              </label>
-              <input
-                id="servingsUnit"
-                name="servingsUnit"
-                type="text"
-                defaultValue={recipe.servingsUnit ?? ""}
-                className={INPUT}
-              />
-            </div>
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="ingredients" className={LABEL}>
-              Ingredients
-            </label>
-            <p className="text-xs text-muted-foreground">
-              One per line. End with ":" for a section header.
-            </p>
-            <textarea
-              id="ingredients"
-              name="ingredients"
-              rows={10}
-              defaultValue={ingredientsText}
-              className={`${INPUT} font-mono`}
-            />
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="directionsText" className={LABEL}>
-              Directions
-            </label>
-            <p className="text-xs text-muted-foreground">
-              One step per line. Blank lines create paragraph breaks.
-            </p>
-            <textarea
-              id="directionsText"
-              name="directionsText"
-              rows={12}
-              defaultValue={recipe.directionsText}
-              className={INPUT}
-            />
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="notes" className={LABEL}>
-              Notes
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={3}
-              defaultValue={recipe.notes ?? ""}
-              className={INPUT}
-            />
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="tags" className={LABEL}>
-              Tags
-            </label>
-            <input
-              id="tags"
-              name="tags"
-              type="text"
-              className={INPUT}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-            />
-            {tagSuggestions.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {tagSuggestions.slice(0, 24).map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => addSuggestedTag(tag)}
-                    className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70 transition-colors"
-                  >
-                    + {tag}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className={FIELD}>
-              <label htmlFor="difficulty" className={LABEL}>
-                Difficulty
-              </label>
-              <select
-                id="difficulty"
-                name="difficulty"
-                defaultValue={recipe.difficulty ?? ""}
-                className={INPUT}
-              >
-                <option value="">—</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div className={FIELD}>
-              <label htmlFor="visibility" className={LABEL}>
-                Visibility
-              </label>
-              <select
-                id="visibility"
-                name="visibility"
-                defaultValue={recipe.visibility}
-                className={INPUT}
-              >
-                <option value="private">Private</option>
-                <option value="family">Family</option>
-              </select>
-            </div>
-          </div>
-
-          <div className={FIELD}>
-            <label htmlFor="sourceUrl" className={LABEL}>
-              Source URL
-            </label>
-            <input
-              id="sourceUrl"
-              name="sourceUrl"
-              type="url"
-              defaultValue={recipe.sourceUrl ?? ""}
-              className={INPUT}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 pt-2 pb-8">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {isPending ? "Saving…" : "Save Changes"}
-            </button>
-            <Link
-              to={`/recipes/${recipe.id}`}
-              className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </Link>
-          </div>
-        </Form>
-      </main>
-    </div>
+    <AppShell user={loaderData.user}>
+      <RecipeEditorForm
+        mode="edit"
+        values={{
+          ...recipe,
+          ingredientsText,
+          tagsText: currentTags.join(", "),
+        }}
+        tagSuggestions={tagSuggestions}
+        actionError={actionData?.error}
+        cancelTo={`/recipes/${recipe.id}`}
+      />
+    </AppShell>
   );
 }
