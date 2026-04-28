@@ -20,6 +20,7 @@ import {
   parseServings,
   type PaprikaRecipeText,
 } from "~/lib/paprika-binary-parser";
+import { scorePaprikaImportConfidence } from "~/lib/import-review.server";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -188,18 +189,36 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   type IngredientRow = typeof schema.ingredients.$inferInsert;
   type RecipeTagRow = typeof schema.recipeTags.$inferInsert;
   type CookbookRecipeRow = typeof schema.cookbookRecipes.$inferInsert;
+  type ReviewItemRow = typeof schema.importReviewItems.$inferInsert;
 
   const recipeRows: RecipeRow[] = [];
   const ingredientRows: IngredientRow[] = [];
   const recipeTagRows: RecipeTagRow[] = [];
   const cookbookRecipeRows: CookbookRecipeRow[] = [];
+  const reviewItemRows: ReviewItemRow[] = [];
 
   for (const raw of recipes) {
     if (!raw.uid || !raw.name) {
       errors.push(`Recipe missing uid or name — skipped`);
       continue;
     }
+    const confidence = scorePaprikaImportConfidence(raw);
     if (existingPaprikaIds.has(raw.uid)) {
+      reviewItemRows.push({
+        id: crypto.randomUUID(),
+        jobId,
+        userId: user.id,
+        sourceType: "paprika_binary",
+        sourceUid: raw.uid,
+        title: raw.name,
+        status: "skipped",
+        confidenceScore: confidence.score,
+        confidenceLevel: confidence.level,
+        parsedFieldSummary: confidence.summary,
+        originalPayloadJson: raw,
+        decisionReason: "Duplicate Paprika UID already imported",
+        reviewedAt: new Date(),
+      });
       skipped++;
       continue;
     }
@@ -212,6 +231,21 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     let n = 2;
     while (usedSlugs.has(slug)) slug = `${base}-${n++}`;
     usedSlugs.add(slug);
+
+    reviewItemRows.push({
+      id: crypto.randomUUID(),
+      jobId,
+      userId: user.id,
+      recipeId,
+      sourceType: "paprika_binary",
+      sourceUid: raw.uid,
+      title: raw.name,
+      status: "pending",
+      confidenceScore: confidence.score,
+      confidenceLevel: confidence.level,
+      parsedFieldSummary: confidence.summary,
+      originalPayloadJson: raw,
+    });
 
     // Time parsing — Paprika provides separate fields already split
     const prepTimeMin = parseDuration(raw.prep_time ?? "") ?? null;
@@ -322,6 +356,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const INGREDIENT_CHUNK = 6;
   const TAG_CHUNK = 30;
   const CB_RECIPE_CHUNK = 20;
+  const REVIEW_CHUNK = 10;
   const insertedRecipeIds = new Set<string>();
 
   for (let i = 0; i < recipeRows.length; i += RECIPE_CHUNK) {
@@ -338,6 +373,15 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const insertedIngredientRows = ingredientRows.filter((row) => insertedRecipeIds.has(row.recipeId));
   const insertedRecipeTagRows = recipeTagRows.filter((row) => insertedRecipeIds.has(row.recipeId));
   const insertedCookbookRecipeRows = cookbookRecipeRows.filter((row) => insertedRecipeIds.has(row.recipeId));
+
+  for (const row of reviewItemRows) {
+    if (row.status === "pending" && row.recipeId && insertedRecipeIds.has(row.recipeId)) {
+      row.status = "approved";
+      row.reviewedAt = new Date();
+    } else if (row.status === "pending") {
+      row.decisionReason = "Recipe insert did not complete; needs manual review";
+    }
+  }
 
   for (let i = 0; i < insertedIngredientRows.length; i += INGREDIENT_CHUNK) {
     const chunk = insertedIngredientRows.slice(i, i + INGREDIENT_CHUNK);
@@ -363,6 +407,35 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       await db.insert(schema.cookbookRecipes).values(chunk).onConflictDoNothing();
     } catch (err) {
       errors.push(`Cookbook-recipe insert ${i}–${i + chunk.length} failed: ${String(err)}`);
+    }
+  }
+
+  for (let i = 0; i < reviewItemRows.length; i += REVIEW_CHUNK) {
+    const chunk = reviewItemRows.slice(i, i + REVIEW_CHUNK);
+    try {
+      await db
+        .insert(schema.importReviewItems)
+        .values(chunk)
+        .onConflictDoUpdate({
+          target: [
+            schema.importReviewItems.jobId,
+            schema.importReviewItems.sourceUid,
+          ],
+          set: {
+            recipeId: sql`excluded.recipe_id`,
+            title: sql`excluded.title`,
+            status: sql`excluded.status`,
+            confidenceScore: sql`excluded.confidence_score`,
+            confidenceLevel: sql`excluded.confidence_level`,
+            parsedFieldSummary: sql`excluded.parsed_field_summary`,
+            originalPayloadJson: sql`excluded.original_payload_json`,
+            decisionReason: sql`excluded.decision_reason`,
+            reviewedAt: sql`excluded.reviewed_at`,
+            updatedAt: new Date(),
+          },
+        });
+    } catch (err) {
+      errors.push(`Review item insert ${i}–${i + chunk.length} failed: ${String(err)}`);
     }
   }
 

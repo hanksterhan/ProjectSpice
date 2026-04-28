@@ -143,6 +143,57 @@ export const recipes = sqliteTable(
 );
 
 // ---------------------------------------------------------------------------
+// import_review_items (per-recipe review queue for import jobs)
+// ---------------------------------------------------------------------------
+export const importReviewItems = sqliteTable(
+  "import_review_items",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    jobId: text("job_id")
+      .notNull()
+      .references(() => importJobs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipeId: text("recipe_id").references(() => recipes.id, {
+      onDelete: "set null",
+    }),
+    sourceType: text("source_type", {
+      enum: ["paprika_binary", "paprika_html"],
+    }).notNull(),
+    sourceUid: text("source_uid").notNull(),
+    title: text("title").notNull(),
+    status: text("status", {
+      enum: ["pending", "approved", "edited", "skipped"],
+    })
+      .notNull()
+      .default("pending"),
+    confidenceScore: integer("confidence_score").notNull().default(0),
+    confidenceLevel: text("confidence_level", {
+      enum: ["high", "medium", "low"],
+    })
+      .notNull()
+      .default("low"),
+    parsedFieldSummary: text("parsed_field_summary", { mode: "json" }),
+    originalPayloadJson: text("original_payload_json", { mode: "json" }),
+    editedPayloadJson: text("edited_payload_json", { mode: "json" }),
+    decisionReason: text("decision_reason"),
+    reviewedAt: integer("reviewed_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [
+    index("import_review_items_job_idx").on(t.jobId),
+    index("import_review_items_user_status_idx").on(t.userId, t.status),
+    uniqueIndex("import_review_items_job_source_uid_idx").on(t.jobId, t.sourceUid),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // ingredients
 // ---------------------------------------------------------------------------
 export const ingredients = sqliteTable(
