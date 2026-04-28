@@ -21,7 +21,7 @@ const REVIEW_STATUSES: ImportReviewStatus[] = [
 ];
 
 type ReviewActionPayload = {
-  action?: "approve" | "edit" | "skip" | "bulk-approve";
+  action?: "approve" | "edit" | "skip" | "undo" | "bulk-approve";
   itemIds?: string[];
   editedPayload?: unknown;
   reason?: string;
@@ -174,7 +174,7 @@ export async function action({ params, request, context }: Route.ActionArgs): Pr
     });
   }
 
-  if (!payload.action || !["approve", "edit", "skip"].includes(payload.action)) {
+  if (!payload.action || !["approve", "edit", "skip", "undo"].includes(payload.action)) {
     return Response.json({ error: "Unsupported review action" }, { status: 400 });
   }
 
@@ -190,7 +190,9 @@ export async function action({ params, request, context }: Route.ActionArgs): Pr
       ? "approved"
       : payload.action === "edit"
         ? "edited"
-        : "skipped";
+        : payload.action === "undo"
+          ? "pending"
+          : "skipped";
 
   const result = await db
     .update(schema.importReviewItems)
@@ -199,8 +201,8 @@ export async function action({ params, request, context }: Route.ActionArgs): Pr
       ...(payload.action === "edit"
         ? { editedPayloadJson: payload.editedPayload }
         : {}),
-      decisionReason: payload.reason ?? null,
-      reviewedAt: now,
+      decisionReason: payload.action === "undo" ? "Decision undone" : payload.reason ?? null,
+      reviewedAt: payload.action === "undo" ? null : now,
       updatedAt: now,
     })
     .where(

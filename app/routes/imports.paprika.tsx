@@ -8,12 +8,14 @@
  *   4. Optionally upload photos in batches to /api/imports/paprika/photos
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { eq } from "drizzle-orm";
 import type { Route } from "./+types/imports.paprika";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, ImageFallback, SectionHeader } from "~/components/ui";
 import {
   parsePaprikaArchive,
   toTextPayload,
@@ -29,9 +31,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { db } = createDb(context.cloudflare.env.DB);
   const fullUser = await db.query.users.findFirst({
     where: eq(schema.users.id, user.id),
-    columns: { onboardingCompletedAt: true },
+    columns: { email: true, name: true, onboardingCompletedAt: true },
   });
-  return { inOnboarding: !fullUser?.onboardingCompletedAt };
+  return {
+    inOnboarding: !fullUser?.onboardingCompletedAt,
+    user: {
+      name: fullUser?.name ?? user.email,
+      email: fullUser?.email ?? user.email,
+    },
+  };
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,6 +54,36 @@ type Progress = {
   photosTotal: number;
   errors: string[];
   jobId: string;
+};
+
+type ReviewStatus = "pending" | "approved" | "edited" | "skipped";
+
+type ReviewSummary = {
+  titlePresent: boolean;
+  ingredientLineCount: number;
+  directionStepCount: number;
+  categoryCount: number;
+  hasSourceUrl: boolean;
+  hasImage: boolean;
+  hasServings: boolean;
+  hasTiming: boolean;
+  warnings: string[];
+};
+
+type ReviewItem = {
+  id: string;
+  recipeId: string | null;
+  title: string;
+  status: ReviewStatus;
+  confidenceScore: number;
+  confidenceLevel: "high" | "medium" | "low";
+  parsedFieldSummary: ReviewSummary | null;
+  decisionReason: string | null;
+};
+
+type ReviewPayload = {
+  reviewTabs: Record<"all" | ReviewStatus, number>;
+  reviewItems: ReviewItem[];
 };
 
 const RECIPE_BATCH = 100; // recipes per text batch
@@ -72,7 +110,7 @@ async function readJsonResponse<T>(res: Response): Promise<T> {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
-  const { inOnboarding } = loaderData;
+  const { inOnboarding, user } = loaderData;
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -211,25 +249,29 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
   const photosAvailable = parsedRecipes.filter((r) => r.photo_data).length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+    <AppShell user={user} forceBare={inOnboarding}>
+      <div className={inOnboarding ? "min-h-screen bg-background" : ""}>
+        {inOnboarding && (
+          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+            <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link to="/recipes" className="text-muted-foreground hover:text-foreground text-sm">
             ← Recipes
           </Link>
           <span className="text-muted-foreground">/</span>
           <span className="font-medium text-sm">Import from Paprika</span>
-        </div>
-      </header>
+            </div>
+          </header>
+        )}
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Import Paprika Recipes</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Export your library from Paprika 3 as a <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">.paprikarecipes</code> file,
-            then select it below. Recipes are parsed in your browser — no large upload needed.
-          </p>
-        </div>
+        <div
+          className={`${inOnboarding ? "max-w-2xl mx-auto px-4 py-8" : ""} space-y-6`}
+        >
+          <SectionHeader
+            eyebrow="Paprika migration"
+            title="Import Review"
+            description="Bring in a Paprika archive, then scan confidence, warnings, and review decisions before moving on."
+            actions={!inOnboarding && <Button variant="secondary" onClick={() => navigate("/recipes")}>Recipes</Button>}
+          />
 
         {/* File picker — always shown */}
         {(step === "idle" || step === "error") && (
@@ -306,19 +348,13 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
 
         {/* Done */}
         {step === "done" && (
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-card px-5 py-4 space-y-2">
-              <p className="text-sm font-semibold text-green-700">
-                ✓ Import complete
-              </p>
-              <ul className="text-sm text-muted-foreground space-y-0.5">
-                <li><strong>{progress.imported.toLocaleString()}</strong> recipes imported</li>
-                {progress.skipped > 0 && (
-                  <li><strong>{progress.skipped.toLocaleString()}</strong> already existed (skipped)</li>
-                )}
-                <li><strong>{progress.photosUploaded.toLocaleString()}</strong> photos uploaded</li>
-              </ul>
-            </div>
+          <div className="space-y-5">
+            <ImportReviewPanel
+              jobId={progress.jobId}
+              imported={progress.imported}
+              skipped={progress.skipped}
+              photosUploaded={progress.photosUploaded}
+            />
 
             {/* Errors summary */}
             {progress.errors.length > 0 && (
@@ -390,8 +426,9 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
             </ol>
           </div>
         )}
-      </main>
-    </div>
+        </div>
+      </div>
+    </AppShell>
   );
 }
 
@@ -428,4 +465,324 @@ function ProgressBar({ current, total, label }: { current: number; total: number
       </div>
     </div>
   );
+}
+
+function ImportReviewPanel({
+  jobId,
+  imported,
+  skipped,
+  photosUploaded,
+}: {
+  jobId: string;
+  imported: number;
+  skipped: number;
+  photosUploaded: number;
+}) {
+  const [review, setReview] = useState<ReviewPayload | null>(null);
+  const [tab, setTab] = useState<"all" | ReviewStatus>("all");
+  const [threshold, setThreshold] = useState(90);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadReview(selectedTab = tab) {
+    if (!jobId) return;
+    const params = selectedTab === "all" ? "" : `?reviewTab=${selectedTab}`;
+    const data = await readJsonResponse<ReviewPayload>(await fetch(`/api/imports/${jobId}${params}`));
+    setReview(data);
+  }
+
+  useEffect(() => {
+    void loadReview().catch((err) => setError(String(err)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId, tab]);
+
+  async function applyReviewAction(action: "approve" | "skip" | "undo", itemIds: string[]) {
+    setBusy(`${action}:${itemIds.join(",")}`);
+    setError(null);
+    try {
+      await readJsonResponse(
+        await fetch(`/api/imports/${jobId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, itemIds }),
+        })
+      );
+      await loadReview();
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function bulkApprove() {
+    setBusy("bulk-approve");
+    setError(null);
+    try {
+      await readJsonResponse(
+        await fetch(`/api/imports/${jobId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "bulk-approve", threshold }),
+        })
+      );
+      await loadReview();
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const items = review?.reviewItems ?? [];
+  const histogram = {
+    high: items.filter((item) => item.confidenceLevel === "high").length,
+    medium: items.filter((item) => item.confidenceLevel === "medium").length,
+    low: items.filter((item) => item.confidenceLevel === "low").length,
+  };
+  const maxBucket = Math.max(1, histogram.high, histogram.medium, histogram.low);
+  const tabs: Array<"all" | ReviewStatus> = ["all", "pending", "approved", "edited", "skipped"];
+
+  return (
+    <section className="space-y-4">
+      <div className="ps-surface p-4">
+        <div className="grid gap-3 sm:grid-cols-4">
+          <ReviewMetric label="Imported" value={imported} tone="success" />
+          <ReviewMetric label="Skipped" value={skipped} tone="warning" />
+          <ReviewMetric label="Photos" value={photosUploaded} tone="neutral" />
+          <ReviewMetric label="Review rows" value={review?.reviewTabs.all ?? 0} tone="neutral" />
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside className="space-y-4">
+          <div className="ps-surface p-4">
+            <h2 className="text-sm font-semibold text-ink">Confidence</h2>
+            <div className="mt-4 space-y-3">
+              <HistogramRow label="High" value={histogram.high} max={maxBucket} className="bg-ok" />
+              <HistogramRow label="Medium" value={histogram.medium} max={maxBucket} className="bg-warn" />
+              <HistogramRow label="Low" value={histogram.low} max={maxBucket} className="bg-err" />
+            </div>
+          </div>
+
+          <div className="ps-surface space-y-3 p-4">
+            <label className="block text-sm font-semibold text-ink" htmlFor="bulk-threshold">
+              Bulk approve threshold
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="bulk-threshold"
+                type="number"
+                min={60}
+                max={100}
+                value={threshold}
+                onChange={(event) => setThreshold(Number(event.target.value))}
+                className="ps-control w-24 border border-rule bg-paper-2 px-3 text-sm text-ink focus-visible:ps-focus-ring"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={bulkApprove}
+                disabled={!jobId || busy === "bulk-approve"}
+              >
+                Approve
+              </Button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="ps-surface overflow-hidden">
+          <div className="flex flex-wrap gap-2 border-b border-rule p-3">
+            {tabs.map((nextTab) => (
+              <button
+                key={nextTab}
+                type="button"
+                onClick={() => setTab(nextTab)}
+                className={`ps-control min-h-8 rounded-full px-3 text-xs font-semibold capitalize transition-colors focus-visible:ps-focus-ring ${
+                  tab === nextTab ? "bg-primary text-primary-foreground" : "bg-paper-3 text-ink-3 hover:text-ink"
+                }`}
+              >
+                {nextTab} {review?.reviewTabs[nextTab] ?? 0}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <div className="border-b border-rule bg-err/10 px-4 py-3 text-sm text-err">
+              {error}
+            </div>
+          )}
+
+          <div className="divide-y divide-rule">
+            {items.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-ink-3">
+                No review rows in this view.
+              </div>
+            ) : (
+              items.map((item) => (
+                <ReviewItemRow
+                  key={item.id}
+                  item={item}
+                  busy={busy}
+                  onAction={applyReviewAction}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReviewMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "neutral" | "success" | "warning";
+}) {
+  const toneClass =
+    tone === "success" ? "text-ok" : tone === "warning" ? "text-warn" : "text-ink";
+  return (
+    <div className="rounded-lg border border-rule bg-paper-3 px-3 py-3">
+      <p className="text-xs font-semibold uppercase text-ink-3">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold ${toneClass}`}>{value.toLocaleString()}</p>
+    </div>
+  );
+}
+
+function HistogramRow({
+  label,
+  value,
+  max,
+  className,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  className: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs text-ink-3">
+        <span>{label}</span>
+        <span>{value.toLocaleString()}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-paper-3">
+        <div
+          className={`h-full rounded-full ${className}`}
+          style={{ width: `${Math.round((value / max) * 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ReviewItemRow({
+  item,
+  busy,
+  onAction,
+}: {
+  item: ReviewItem;
+  busy: string | null;
+  onAction: (action: "approve" | "skip" | "undo", itemIds: string[]) => Promise<void>;
+}) {
+  const warnings = item.parsedFieldSummary?.warnings ?? [];
+  const actionBusy = busy?.includes(item.id) ?? false;
+
+  return (
+    <article className="grid gap-3 px-4 py-4 md:grid-cols-[3rem_minmax(0,1fr)_auto]">
+      <div className="h-12 w-12 overflow-hidden rounded-lg bg-paper-3">
+        <ImageFallback label={item.title.slice(0, 2).toUpperCase()} alt="" />
+      </div>
+
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="min-w-0 truncate text-sm font-semibold text-ink">{item.title}</h3>
+          <Chip tone={confidenceTone(item.confidenceLevel)}>
+            {item.confidenceScore}% {item.confidenceLevel}
+          </Chip>
+          <Chip tone={statusTone(item.status)}>{item.status}</Chip>
+        </div>
+
+        {item.parsedFieldSummary && (
+          <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-3">
+            <div>
+              <dt className="sr-only">Ingredients</dt>
+              <dd>{item.parsedFieldSummary.ingredientLineCount} ingredients</dd>
+            </div>
+            <div>
+              <dt className="sr-only">Steps</dt>
+              <dd>{item.parsedFieldSummary.directionStepCount} steps</dd>
+            </div>
+            <div>
+              <dt className="sr-only">Categories</dt>
+              <dd>{item.parsedFieldSummary.categoryCount} categories</dd>
+            </div>
+          </dl>
+        )}
+
+        {warnings.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {warnings.slice(0, 4).map((warning) => (
+              <Chip key={warning} tone="warning">{warning}</Chip>
+            ))}
+            {warnings.length > 4 && <Chip tone="warning">+{warnings.length - 4}</Chip>}
+          </div>
+        )}
+
+        {item.decisionReason && (
+          <p className="text-xs text-ink-3">{item.decisionReason}</p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-start gap-2 md:justify-end">
+        {item.status === "pending" ? (
+          <>
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={actionBusy}
+              onClick={() => onAction("approve", [item.id])}
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={actionBusy}
+              onClick={() => onAction("skip", [item.id])}
+            >
+              Skip
+            </Button>
+          </>
+        ) : (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={actionBusy}
+            onClick={() => onAction("undo", [item.id])}
+          >
+            Undo
+          </Button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function confidenceTone(level: ReviewItem["confidenceLevel"]) {
+  if (level === "high") return "success";
+  if (level === "medium") return "warning";
+  return "danger";
+}
+
+function statusTone(status: ReviewStatus) {
+  if (status === "approved") return "success";
+  if (status === "skipped") return "warning";
+  if (status === "edited") return "accent";
+  return "neutral";
 }
