@@ -5,6 +5,8 @@ import type { Route } from "./+types/cookbooks.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
+import { AppShell } from "~/components/app-shell";
+import { Chip, SectionHeader } from "~/components/ui";
 
 export function meta({ data }: Route.MetaArgs) {
   const name = (data as { cookbook: { name: string } } | undefined)?.cookbook?.name ?? "Cookbook";
@@ -52,7 +54,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     )
     .orderBy(asc(schema.cookbookRecipes.sortOrder), asc(schema.recipes.title));
 
-  return { cookbook, recipes };
+  return { user, cookbook, recipes };
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
@@ -102,75 +104,67 @@ function formatTime(min: number | null) {
 }
 
 export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
-  const { cookbook, recipes } = loaderData;
+  const { user, cookbook, recipes } = loaderData;
   const nav = useNavigation();
   const busy = nav.state !== "idle";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link
-          to="/settings/cookbooks"
-          className="text-gray-500 hover:text-gray-700 text-sm"
-        >
-          ← Cookbooks
-        </Link>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-gray-900 truncate">
-            {cookbook.name}
-            {cookbook.archived && (
-              <span className="ml-2 text-xs text-gray-400 font-normal">archived</span>
-            )}
-          </h1>
-          {cookbook.description && (
-            <p className="text-xs text-gray-500 truncate">{cookbook.description}</p>
-          )}
-        </div>
-        <span className="ml-auto text-sm text-gray-500 shrink-0">
-          {recipes.length} recipe{recipes.length !== 1 ? "s" : ""}
-        </span>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <SectionHeader
+          eyebrow="Cookbook source"
+          title={cookbook.name}
+          description={cookbook.description || "A source grouping for imported or manually organized recipes."}
+          actions={
+            <>
+              {cookbook.archived && <Chip>Archived</Chip>}
+              <Chip>{recipes.length} recipe{recipes.length !== 1 ? "s" : ""}</Chip>
+              <Link to="/settings/cookbooks" className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+                Cookbooks
+              </Link>
+            </>
+          }
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
         {recipes.length === 0 ? (
-          <div className="text-center text-gray-500 py-16">
-            <p className="text-base font-medium">No recipes in this cookbook yet.</p>
-            <p className="text-sm mt-1">
+          <div className="ps-surface px-5 py-16 text-center">
+            <p className="text-base font-semibold text-ink">No recipes in this cookbook yet.</p>
+            <p className="mt-1 text-sm text-ink-3">
               Recipes are linked to cookbooks during Paprika import, or you can add them from a{" "}
-              <Link to="/recipes" className="text-blue-600 hover:underline">
+              <Link to="/recipes" className="font-medium text-ink hover:underline">
                 recipe's detail page
               </Link>
               .
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100 bg-white border rounded-lg">
+          <ul className="ps-surface divide-y divide-rule overflow-hidden">
             {recipes.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={r.id} className="ps-row flex items-center gap-3 px-4 py-3">
                 {appImageUrl(r.imageKey) ? (
                   <img
                     src={appImageUrl(r.imageKey, { width: 128, format: "webp" }) ?? undefined}
                     srcSet={appImageSrcSet(r.imageKey, [96, 128, 192])}
                     sizes="48px"
                     alt=""
-                    className="w-12 h-12 rounded object-cover shrink-0"
+                    className="h-12 w-12 shrink-0 rounded object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
+                  <div className="h-12 w-12 shrink-0 rounded bg-paper-3" />
                 )}
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <Link
                     to={`/recipes/${r.id}`}
                     prefetch="intent"
-                    className="font-medium text-sm text-gray-900 hover:text-blue-600 truncate block"
+                    className="block truncate text-sm font-medium text-ink hover:underline"
                   >
                     {r.title}
                   </Link>
                   {r.totalTimeMin && (
-                    <span className="text-xs text-gray-400">{formatTime(r.totalTimeMin)}</span>
+                    <span className="text-xs text-ink-3">{formatTime(r.totalTimeMin)}</span>
                   )}
                 </div>
 
@@ -181,7 +175,7 @@ export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
                     type="submit"
                     disabled={busy}
                     aria-label={`Remove ${r.title} from cookbook`}
-                    className="text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 px-2 py-1"
+                    className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-xs font-medium text-ink-3 hover:text-err disabled:opacity-50 focus-visible:ps-focus-ring"
                     onClick={(e) => {
                       if (!confirm(`Remove "${r.title}" from this cookbook?`)) {
                         e.preventDefault();
@@ -195,7 +189,7 @@ export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
             ))}
           </ul>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

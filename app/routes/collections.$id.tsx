@@ -6,6 +6,8 @@ import type { Route } from "./+types/collections.$id";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { appImageSrcSet, appImageUrl } from "~/lib/image-url";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta({ data }: Route.MetaArgs) {
   const name =
@@ -86,7 +88,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           )
           .orderBy(asc(schema.recipes.title));
 
-  return { collection, recipes, available };
+  return { user, collection, recipes, available };
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
@@ -243,7 +245,7 @@ function AddRecipeForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-700"
+        className="ps-control inline-flex items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring"
       >
         + Add Recipe
       </button>
@@ -251,13 +253,13 @@ function AddRecipeForm({
   }
 
   return (
-    <Form method="post" className="flex flex-col sm:flex-row gap-2 bg-white border rounded-lg p-3">
+    <Form method="post" className="ps-surface flex flex-col gap-2 p-3 sm:flex-row">
       <input type="hidden" name="_intent" value="add-recipe" />
       <select
         name="recipeId"
         required
         defaultValue=""
-        className="border rounded px-2 py-1.5 text-sm flex-1"
+        className="ps-control flex-1 border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
         autoFocus
       >
         <option value="" disabled>
@@ -270,20 +272,12 @@ function AddRecipeForm({
         ))}
       </select>
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={busy}
-          className="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" disabled={busy}>
           Add
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="text-sm text-gray-500 px-2"
-        >
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
           Cancel
-        </button>
+        </Button>
       </div>
     </Form>
   );
@@ -292,78 +286,70 @@ function AddRecipeForm({
 export default function CollectionDetail({
   loaderData,
 }: Route.ComponentProps) {
-  const { collection, recipes, available } = loaderData;
+  const { user, collection, recipes, available } = loaderData;
   const nav = useNavigation();
   const busy = nav.state !== "idle";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link
-          to="/settings/collections"
-          className="text-gray-500 hover:text-gray-700 text-sm"
-        >
-          ← Collections
-        </Link>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-gray-900 truncate">
-            {collection.name}
-          </h1>
-          {collection.description && (
-            <p className="text-xs text-gray-500 truncate">
-              {collection.description}
-            </p>
-          )}
-        </div>
-        <span className="ml-auto text-sm text-gray-500 shrink-0">
-          {recipes.length} recipe{recipes.length !== 1 ? "s" : ""}
-        </span>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-4xl space-y-5">
+        <SectionHeader
+          eyebrow="Curated collection"
+          title={collection.name}
+          description={collection.description || "A hand-picked set for menus, seasons, projects, or family moments."}
+          actions={
+            <>
+              <Chip>{recipes.length} recipe{recipes.length !== 1 ? "s" : ""}</Chip>
+              <Link to="/settings/collections" className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+                Collections
+              </Link>
+            </>
+          }
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <AddRecipeForm available={available} busy={busy} />
 
         {recipes.length === 0 ? (
-          <div className="text-center text-gray-500 py-16">
-            <p className="text-base font-medium">No recipes yet.</p>
-            <p className="text-sm mt-1">
+          <div className="ps-surface px-5 py-16 text-center">
+            <p className="text-base font-semibold text-ink">No recipes yet.</p>
+            <p className="mt-1 text-sm text-ink-3">
               Use "Add Recipe" above to build this collection.
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100 bg-white border rounded-lg">
+          <ul className="ps-surface divide-y divide-rule overflow-hidden">
             {recipes.map((r, idx) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={r.id} className="ps-row flex items-center gap-3 px-4 py-3">
                 {appImageUrl(r.imageKey) ? (
                   <img
                     src={appImageUrl(r.imageKey, { width: 128, format: "webp" }) ?? undefined}
                     srcSet={appImageSrcSet(r.imageKey, [96, 128, 192])}
                     sizes="48px"
                     alt=""
-                    className="w-12 h-12 rounded object-cover shrink-0"
+                    className="h-12 w-12 shrink-0 rounded object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
+                  <div className="h-12 w-12 shrink-0 rounded bg-paper-3" />
                 )}
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <Link
                     to={`/recipes/${r.id}`}
                     prefetch="intent"
-                    className="font-medium text-sm text-gray-900 hover:text-blue-600 truncate block"
+                    className="block truncate text-sm font-medium text-ink hover:underline"
                   >
                     {r.title}
                   </Link>
                   {r.totalTimeMin && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-ink-3">
                       {formatTime(r.totalTimeMin)}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex shrink-0 items-center gap-1">
                   <Form method="post">
                     <input type="hidden" name="_intent" value="move-up" />
                     <input type="hidden" name="recipeId" value={r.id} />
@@ -371,7 +357,7 @@ export default function CollectionDetail({
                       type="submit"
                       disabled={busy || idx === 0}
                       aria-label={`Move ${r.title} up`}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 rounded"
+                      className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-ink-3 hover:text-ink disabled:opacity-20 focus-visible:ps-focus-ring"
                     >
                       ↑
                     </button>
@@ -384,7 +370,7 @@ export default function CollectionDetail({
                       type="submit"
                       disabled={busy || idx === recipes.length - 1}
                       aria-label={`Move ${r.title} down`}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 rounded"
+                      className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-ink-3 hover:text-ink disabled:opacity-20 focus-visible:ps-focus-ring"
                     >
                       ↓
                     </button>
@@ -397,7 +383,7 @@ export default function CollectionDetail({
                       type="submit"
                       disabled={busy}
                       aria-label={`Remove ${r.title} from collection`}
-                      className="text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 px-2 py-1 ml-1"
+                      className="ps-control ml-1 inline-flex min-h-8 items-center justify-center px-2 text-xs font-medium text-ink-3 hover:text-err disabled:opacity-50 focus-visible:ps-focus-ring"
                       onClick={(e) => {
                         if (
                           !confirm(`Remove "${r.title}" from this collection?`)
@@ -414,7 +400,7 @@ export default function CollectionDetail({
             ))}
           </ul>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

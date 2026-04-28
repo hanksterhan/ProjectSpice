@@ -5,6 +5,8 @@ import { and, count, eq } from "drizzle-orm";
 import type { Route } from "./+types/settings.cookbooks";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta() {
   return [{ title: "Manage Cookbooks — ProjectSpice" }];
@@ -33,7 +35,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .groupBy(schema.cookbooks.id)
     .orderBy(schema.cookbooks.name);
 
-  return { cookbooks: rows };
+  return { user, cookbooks: rows };
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
@@ -134,7 +136,7 @@ function RenameForm({ cb }: { cb: { id: string; name: string } }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:underline"
+        className="text-sm font-medium text-ink-3 hover:text-ink"
       >
         Rename
       </button>
@@ -142,20 +144,20 @@ function RenameForm({ cb }: { cb: { id: string; name: string } }) {
   }
 
   return (
-    <Form method="post" className="flex items-center gap-2">
+    <Form method="post" className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="_intent" value="rename" />
       <input type="hidden" name="cookbookId" value={cb.id} />
       <input
         name="newName"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="border rounded px-2 py-1 text-sm w-48"
+        className="ps-control w-48 border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
         autoFocus
       />
       <button
         type="submit"
         disabled={busy || !value.trim()}
-        className="text-sm text-green-700 font-medium disabled:opacity-50"
+        className="text-sm font-medium text-ok disabled:opacity-50"
       >
         Save
       </button>
@@ -165,7 +167,7 @@ function RenameForm({ cb }: { cb: { id: string; name: string } }) {
           setOpen(false);
           setValue(cb.name);
         }}
-        className="text-sm text-gray-500"
+        className="text-sm font-medium text-ink-3 hover:text-ink"
       >
         Cancel
       </button>
@@ -181,7 +183,7 @@ function CreateForm({ busy }: { busy: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-700"
+        className="ps-control inline-flex items-center justify-center border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:ps-focus-ring"
       >
         + New Cookbook
       </button>
@@ -189,42 +191,34 @@ function CreateForm({ busy }: { busy: boolean }) {
   }
 
   return (
-    <Form method="post" className="flex flex-col sm:flex-row gap-2 bg-white border rounded-lg p-3">
+    <Form method="post" className="ps-surface flex flex-col gap-2 p-3 sm:flex-row">
       <input type="hidden" name="_intent" value="create" />
       <input
         name="name"
         placeholder="Cookbook name"
         required
         autoFocus
-        className="border rounded px-2 py-1.5 text-sm flex-1"
+        className="ps-control flex-1 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
       />
       <input
         name="description"
         placeholder="Description (optional)"
-        className="border rounded px-2 py-1.5 text-sm flex-1"
+        className="ps-control flex-1 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
       />
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={busy}
-          className="text-sm bg-gray-900 text-white px-4 py-1.5 rounded hover:bg-gray-700 disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" disabled={busy}>
           Create
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="text-sm text-gray-500 px-2"
-        >
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
           Cancel
-        </button>
+        </Button>
       </div>
     </Form>
   );
 }
 
 export default function SettingsCookbooks({ loaderData }: Route.ComponentProps) {
-  const { cookbooks } = loaderData;
+  const { user, cookbooks } = loaderData;
   const actionData = useActionData<ActionData>();
   const nav = useNavigation();
   const busy = nav.state !== "idle";
@@ -233,20 +227,17 @@ export default function SettingsCookbooks({ loaderData }: Route.ComponentProps) 
   const archived = cookbooks.filter((cb) => cb.archived);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link to="/recipes" className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Recipes
-        </Link>
-        <h1 className="font-semibold text-gray-900">Manage Cookbooks</h1>
-        <span className="ml-auto text-sm text-gray-500">
-          {cookbooks.length} cookbook{cookbooks.length !== 1 ? "s" : ""}
-        </span>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <SectionHeader
+          eyebrow="Sources"
+          title="Manage Cookbooks"
+          description="Cookbooks act as source containers, especially for imports. Archive noisy sources without deleting recipes."
+          actions={<Chip>{cookbooks.length} cookbook{cookbooks.length !== 1 ? "s" : ""}</Chip>}
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {actionData?.error && (
-          <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <div className="rounded-md border border-err/30 bg-err/10 p-3 text-sm text-err">
             {actionData.error}
           </div>
         )}
@@ -254,28 +245,28 @@ export default function SettingsCookbooks({ loaderData }: Route.ComponentProps) 
         <CreateForm busy={busy} />
 
         {cookbooks.length === 0 ? (
-          <p className="text-center text-gray-500 py-12">
+          <p className="ps-surface py-12 text-center text-sm text-ink-3">
             No cookbooks yet. Cookbooks are created when you import from Paprika or manually above.
           </p>
         ) : (
           <>
             {active.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-gray-700 mb-2">Active</h2>
+                <h2 className="mb-2 text-sm font-semibold text-ink">Active sources</h2>
                 <CookbookList cookbooks={active} busy={busy} />
               </section>
             )}
 
             {archived.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-gray-500 mb-2">Archived</h2>
+                <h2 className="mb-2 text-sm font-semibold text-ink-3">Archived sources</h2>
                 <CookbookList cookbooks={archived} busy={busy} />
               </section>
             )}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
@@ -293,28 +284,28 @@ function CookbookList({
   busy: boolean;
 }) {
   return (
-    <ul className="divide-y divide-gray-100 bg-white border rounded-lg">
+    <ul className="ps-surface divide-y divide-rule overflow-hidden">
       {cookbooks.map((cb) => (
-        <li key={cb.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="flex-1 min-w-0">
+        <li key={cb.id} className="ps-row flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
             <Link
               to={`/cookbooks/${cb.id}`}
-              className="font-medium text-gray-900 text-sm hover:text-blue-600 truncate block"
+              className="block truncate text-sm font-medium text-ink hover:underline"
             >
               {cb.name}
               {cb.archived && (
-                <span className="ml-2 text-xs text-gray-400 font-normal">archived</span>
+                <span className="ml-2 text-xs font-normal text-ink-4">archived</span>
               )}
             </Link>
             {cb.description && (
-              <span className="text-xs text-gray-400 truncate block">{cb.description}</span>
+              <span className="block truncate text-xs text-ink-3">{cb.description}</span>
             )}
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-ink-3">
               {cb.recipeCount} recipe{cb.recipeCount !== 1 ? "s" : ""}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-wrap items-center gap-3">
             <RenameForm cb={cb} />
 
             <Form method="post">
@@ -323,7 +314,7 @@ function CookbookList({
               <button
                 type="submit"
                 disabled={busy}
-                className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                className="text-sm font-medium text-ink-3 hover:text-ink disabled:opacity-50"
               >
                 {cb.archived ? "Unarchive" : "Archive"}
               </button>
@@ -347,7 +338,7 @@ function CookbookList({
               <button
                 type="submit"
                 disabled={busy}
-                className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                className="text-sm font-medium text-err disabled:opacity-50"
               >
                 Delete
               </button>

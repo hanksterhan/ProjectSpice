@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Form, Link, useNavigation, useActionData } from "react-router";
+import { Form, useNavigation, useActionData } from "react-router";
 import { redirect } from "react-router";
 import { and, count, eq, inArray, ne } from "drizzle-orm";
 import type { Route } from "./+types/settings.tags";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { findSimilarTagPairs } from "~/lib/tag-similarity";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta() {
   return [{ title: "Manage Tags — ProjectSpice" }];
@@ -32,7 +34,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const similar = findSimilarTagPairs(rows.map((r) => ({ id: r.id, name: r.name })));
 
-  return { tags: rows, similar };
+  return { user, tags: rows, similar };
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
@@ -160,7 +162,7 @@ function RenameForm({ tag }: { tag: { id: string; name: string } }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:underline"
+        className="text-sm font-medium text-ink-3 hover:text-ink"
       >
         Rename
       </button>
@@ -168,27 +170,27 @@ function RenameForm({ tag }: { tag: { id: string; name: string } }) {
   }
 
   return (
-    <Form method="post" className="flex items-center gap-2">
+    <Form method="post" className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="_intent" value="rename" />
       <input type="hidden" name="tagId" value={tag.id} />
       <input
         name="newName"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="border rounded px-2 py-1 text-sm w-40"
+        className="ps-control w-40 border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
         autoFocus
       />
       <button
         type="submit"
         disabled={busy || !value.trim()}
-        className="text-sm text-green-700 font-medium disabled:opacity-50"
+        className="text-sm font-medium text-ok disabled:opacity-50"
       >
         Save
       </button>
       <button
         type="button"
         onClick={() => { setOpen(false); setValue(tag.name); }}
-        className="text-sm text-gray-500"
+        className="text-sm font-medium text-ink-3 hover:text-ink"
       >
         Cancel
       </button>
@@ -197,41 +199,39 @@ function RenameForm({ tag }: { tag: { id: string; name: string } }) {
 }
 
 export default function SettingsTags({ loaderData }: Route.ComponentProps) {
-  const { tags, similar } = loaderData;
+  const { user, tags, similar } = loaderData;
   const actionData = useActionData<ActionData>();
   const nav = useNavigation();
   const busy = nav.state !== "idle";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link to="/recipes" className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Recipes
-        </Link>
-        <h1 className="font-semibold text-gray-900">Manage Tags</h1>
-        <span className="ml-auto text-sm text-gray-500">{tags.length} tag{tags.length !== 1 ? "s" : ""}</span>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <SectionHeader
+          eyebrow="Lightweight facets"
+          title="Manage Tags"
+          description="Tags stay small and scannable: useful for filtering, cleanup, and duplicate merges."
+          actions={<Chip>{tags.length} tag{tags.length !== 1 ? "s" : ""}</Chip>}
+        />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {actionData?.error && (
-          <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <div className="rounded-md border border-err/30 bg-err/10 p-3 text-sm text-err">
             {actionData.error}
           </div>
         )}
 
-        {/* Similarity suggestions */}
         {similar.length > 0 && (
           <section>
-            <h2 className="text-sm font-medium text-amber-800 mb-2">
+            <h2 className="mb-2 text-sm font-semibold text-warn">
               Possible duplicates
             </h2>
             <ul className="space-y-2">
               {similar.map(({ a, b }) => (
                 <li
                   key={`${a.id}-${b.id}`}
-                  className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3"
+                  className="flex flex-col gap-3 rounded-md border border-warn/30 bg-warn/10 p-3 sm:flex-row sm:items-center"
                 >
-                  <span className="text-sm text-amber-900 flex-1">
+                  <span className="flex-1 text-sm text-ink">
                     <span className="font-medium">"{a.name}"</span> and{" "}
                     <span className="font-medium">"{b.name}"</span> look similar — merge?
                   </span>
@@ -243,7 +243,7 @@ export default function SettingsTags({ loaderData }: Route.ComponentProps) {
                       <button
                         type="submit"
                         disabled={busy}
-                        className="text-xs bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 disabled:opacity-50"
+                        className="ps-control inline-flex min-h-8 items-center justify-center border border-transparent bg-warn px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50 focus-visible:ps-focus-ring"
                       >
                         Keep "{b.name}"
                       </button>
@@ -255,7 +255,7 @@ export default function SettingsTags({ loaderData }: Route.ComponentProps) {
                       <button
                         type="submit"
                         disabled={busy}
-                        className="text-xs bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 disabled:opacity-50"
+                        className="ps-control inline-flex min-h-8 items-center justify-center border border-transparent bg-warn px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50 focus-visible:ps-focus-ring"
                       >
                         Keep "{a.name}"
                       </button>
@@ -267,22 +267,21 @@ export default function SettingsTags({ loaderData }: Route.ComponentProps) {
           </section>
         )}
 
-        {/* Tag list */}
         {tags.length === 0 ? (
-          <p className="text-center text-gray-500 py-12">
+          <p className="ps-surface py-12 text-center text-sm text-ink-3">
             No tags yet. Tags are created when you add them to a recipe.
           </p>
         ) : (
           <section>
-            <h2 className="text-sm font-medium text-gray-700 mb-2">All tags</h2>
-            <ul className="divide-y divide-gray-100 bg-white border rounded-lg">
+            <h2 className="mb-2 text-sm font-semibold text-ink">All tags</h2>
+            <ul className="ps-surface divide-y divide-rule overflow-hidden">
               {tags.map((tag) => (
                 <li
                   key={tag.id}
-                  className="flex items-center gap-3 px-4 py-3 flex-wrap"
+                  className="ps-row flex flex-wrap items-center gap-3 px-4 py-3"
                 >
-                  <span className="font-medium text-gray-900 text-sm">{tag.name}</span>
-                  <span className="text-xs text-gray-400 mr-auto">
+                  <span className="rounded-full border border-rule bg-paper-3 px-2.5 py-1 text-sm font-medium text-ink">{tag.name}</span>
+                  <span className="mr-auto text-xs text-ink-3">
                     {tag.recipeCount} recipe{tag.recipeCount !== 1 ? "s" : ""}
                   </span>
                   <RenameForm tag={tag} />
@@ -304,7 +303,7 @@ export default function SettingsTags({ loaderData }: Route.ComponentProps) {
                     <button
                       type="submit"
                       disabled={busy}
-                      className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                      className="text-sm font-medium text-err disabled:opacity-50"
                     >
                       Delete
                     </button>
@@ -315,15 +314,14 @@ export default function SettingsTags({ loaderData }: Route.ComponentProps) {
           </section>
         )}
 
-        {/* Manual merge — for tags not surfaced by similarity */}
         {tags.length >= 2 && (
           <section>
-            <h2 className="text-sm font-medium text-gray-700 mb-2">Merge tags</h2>
+            <h2 className="mb-2 text-sm font-semibold text-ink">Merge tags</h2>
             <ManualMerge tags={tags} busy={busy} />
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
@@ -338,20 +336,20 @@ function ManualMerge({
   const [target, setTarget] = useState("");
 
   return (
-    <Form method="post" className="bg-white border rounded-lg p-4 space-y-3">
+    <Form method="post" className="ps-surface space-y-3 p-4">
       <input type="hidden" name="_intent" value="merge" />
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-ink-3">
         All recipes tagged with <strong>Source</strong> will be re-tagged with{" "}
         <strong>Target</strong>, then the source tag is deleted.
       </p>
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
-          <label className="block text-xs text-gray-600 mb-1">Source (to delete)</label>
+          <label className="mb-1 block text-xs font-medium text-ink-3">Source (to delete)</label>
           <select
             name="sourceTagId"
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="w-full border rounded px-2 py-1.5 text-sm"
+            className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
             required
           >
             <option value="">— pick a tag —</option>
@@ -365,12 +363,12 @@ function ManualMerge({
           </select>
         </div>
         <div className="flex-1">
-          <label className="block text-xs text-gray-600 mb-1">Target (to keep)</label>
+          <label className="mb-1 block text-xs font-medium text-ink-3">Target (to keep)</label>
           <select
             name="targetTagId"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            className="w-full border rounded px-2 py-1.5 text-sm"
+            className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
             required
           >
             <option value="">— pick a tag —</option>
@@ -384,13 +382,9 @@ function ManualMerge({
           </select>
         </div>
       </div>
-      <button
-        type="submit"
-        disabled={busy || !source || !target}
-        className="w-full sm:w-auto bg-gray-800 text-white text-sm px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
-      >
+      <Button type="submit" variant="primary" disabled={busy || !source || !target} className="w-full sm:w-auto">
         Merge tags
-      </button>
+      </Button>
     </Form>
   );
 }
