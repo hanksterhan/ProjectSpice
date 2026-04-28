@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import type { Route } from "./+types/shopping-lists";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta() {
   return [{ title: "Shopping Lists — ProjectSpice" }];
@@ -48,7 +50,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     itemCount: list.item_count,
   }));
 
-  return { lists };
+  return { user, lists };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -100,7 +102,7 @@ export default function ShoppingListsPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { lists } = loaderData;
+  const { user, lists } = loaderData;
   const [searchParams] = useSearchParams();
   const recipeId = searchParams.get("recipeId");
 
@@ -114,66 +116,61 @@ export default function ShoppingListsPage({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background border-b">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Link
-            to="/recipes"
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            ← Recipes
-          </Link>
-          <h1 className="font-semibold flex-1 truncate">Shopping Lists</h1>
-        </div>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <SectionHeader
+          eyebrow="Shopping"
+          title="Shopping Lists"
+          description="Plan, share, and check off groceries with stable aisle-grouped lists."
+          actions={
+            <Link to="/meal-planner" className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+              Meal planner
+            </Link>
+          }
+        />
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {recipeId && (
-          <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+          <p className="rounded-lg border border-rule bg-paper-3 px-3 py-2 text-sm text-ink-3">
             Pick a list to add recipe ingredients, or create a new one.
           </p>
         )}
 
-        {/* Create form */}
-        <Form method="post" className="flex gap-2">
+        <Form method="post" className="ps-surface grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
           <input type="hidden" name="_intent" value="create" />
           {recipeId && <input type="hidden" name="recipeId" value={recipeId} />}
           <input
             name="name"
-            placeholder="New list name…"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="New list name..."
+            className="ps-control min-w-0 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
             required
           />
-          <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border rounded-md px-2">
+          <label className="ps-control inline-flex items-center justify-center gap-2 border border-rule bg-paper-2 px-3 text-xs font-medium text-ink-3">
             <input type="checkbox" name="shared" value="family" />
             Family
           </label>
-          <button
-            type="submit"
-            className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
-          >
+          <Button type="submit" variant="primary">
             Create
-          </button>
+          </Button>
         </Form>
 
         {actionData && "error" in actionData && (
-          <p className="text-sm text-red-500">{actionData.error}</p>
+          <p className="text-sm text-err">{actionData.error}</p>
         )}
 
-        {/* Active lists */}
         {active.length > 0 && (
           <section className="space-y-2">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Active
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase text-ink-3">Active</h2>
+              <Chip>{active.length} open</Chip>
+            </div>
             {active.map((l) => (
               <div
                 key={l.id}
-                className="flex items-center gap-3 rounded-lg border p-3"
+                className="ps-row flex items-center gap-3 rounded-lg border border-rule bg-paper-2 p-3 shadow-[var(--shadow-1)]"
               >
                 <Link to={listHref(l.id)} className="flex-1 min-w-0">
-                  <div className="font-medium truncate text-sm">{l.name}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="truncate text-sm font-semibold text-ink">{l.name}</div>
+                  <div className="mt-0.5 text-xs text-ink-3">
                     {l.itemCount} item{l.itemCount !== 1 ? "s" : ""}
                     {!l.isOwner && ` · From ${l.ownerName}`}
                     {l.isOwner && " · Yours"}
@@ -185,7 +182,7 @@ export default function ShoppingListsPage({
                     <input type="hidden" name="listId" value={l.id} />
                     <button
                       type="submit"
-                      className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
+                      className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-xs font-medium text-ink-3 hover:text-err focus-visible:ps-focus-ring"
                     >
                       Delete
                     </button>
@@ -196,22 +193,19 @@ export default function ShoppingListsPage({
           </section>
         )}
 
-        {/* Completed lists */}
         {completed.length > 0 && (
           <section className="space-y-2">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Completed
-            </h2>
+            <h2 className="text-xs font-semibold uppercase text-ink-3">Completed</h2>
             {completed.map((l) => (
               <div
                 key={l.id}
-                className="flex items-center gap-3 rounded-lg border p-3 opacity-60"
+                className="ps-row flex items-center gap-3 rounded-lg border border-rule bg-paper-2 p-3 opacity-65"
               >
                 <Link to={listHref(l.id)} className="flex-1 min-w-0">
-                  <div className="font-medium truncate text-sm line-through">
+                  <div className="truncate text-sm font-semibold text-ink line-through">
                     {l.name}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="mt-0.5 text-xs text-ink-3">
                     {l.itemCount} item{l.itemCount !== 1 ? "s" : ""}
                     {!l.isOwner && ` · From ${l.ownerName}`}
                   </div>
@@ -222,7 +216,7 @@ export default function ShoppingListsPage({
                     <input type="hidden" name="listId" value={l.id} />
                     <button
                       type="submit"
-                      className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1"
+                      className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-xs font-medium text-ink-3 hover:text-err focus-visible:ps-focus-ring"
                     >
                       Delete
                     </button>
@@ -234,11 +228,11 @@ export default function ShoppingListsPage({
         )}
 
         {lists.length === 0 && !recipeId && (
-          <p className="text-center text-muted-foreground text-sm py-16">
+          <p className="ps-surface py-16 text-center text-sm text-ink-3">
             No shopping lists yet. Create one to get started.
           </p>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

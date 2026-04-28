@@ -6,6 +6,8 @@ import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { categorizeAisle, AISLE_ORDER } from "~/lib/aisle-categorizer";
 import { FAMILY_RECIPE_VISIBILITY } from "~/lib/family-sharing";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 export function meta({ data: d }: Route.MetaArgs) {
   const name =
@@ -139,7 +141,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     }
   }
 
-  return { list, items, recipes, addFromRecipeId, addFromIngredients };
+  return { user, list, items, recipes, addFromRecipeId, addFromIngredients };
 }
 
 // ─── Action ───────────────────────────────────────────────────────────────────
@@ -362,15 +364,15 @@ function ItemRow({ item }: { item: ListItem }) {
   if (isRemoving) return null;
 
   return (
-    <div className={`flex items-center gap-3 py-2.5 ${optimisticChecked ? "opacity-50" : ""}`}>
+    <div className={`ps-row flex items-center gap-3 rounded-md px-2 py-2.5 ${optimisticChecked ? "opacity-55" : ""}`}>
       <button
         type="button"
         onClick={handleToggle}
         aria-label={optimisticChecked ? "Uncheck item" : "Check off item"}
-        className={`w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-colors focus-visible:ps-focus-ring
           ${optimisticChecked
             ? "bg-primary border-primary"
-            : "border-input hover:border-primary"
+            : "border-rule bg-paper-2 hover:border-primary"
           }`}
       >
         {optimisticChecked && (
@@ -385,7 +387,7 @@ function ItemRow({ item }: { item: ListItem }) {
           </svg>
         )}
       </button>
-      <span className={`flex-1 text-sm ${optimisticChecked ? "line-through text-muted-foreground" : ""}`}>
+      <span className={`flex-1 text-sm ${optimisticChecked ? "line-through text-ink-4" : "text-ink"}`}>
         {formatItemLabel(item)}
       </span>
       <removeFetcher.Form method="post">
@@ -394,7 +396,7 @@ function ItemRow({ item }: { item: ListItem }) {
         <button
           type="submit"
           aria-label="Remove item"
-          className="text-muted-foreground hover:text-red-500 text-base leading-none px-1.5 py-0.5"
+          className="ps-control inline-flex min-h-8 items-center justify-center px-2 text-base leading-none text-ink-3 hover:text-err focus-visible:ps-focus-ring"
         >
           ×
         </button>
@@ -409,7 +411,7 @@ export default function ShoppingListDetail({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { list, items, recipes, addFromRecipeId, addFromIngredients } = loaderData;
+  const { user, list, items, recipes, addFromRecipeId, addFromIngredients } = loaderData;
   const [addMode, setAddMode] = useState<"recipe" | "manual" | null>(null);
   const [allSelected, setAllSelected] = useState(false);
 
@@ -421,79 +423,55 @@ export default function ShoppingListDetail({
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <Link
-            to="/shopping-lists"
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            ← Lists
-          </Link>
-          <span className="font-semibold flex-1 truncate text-sm">
-            {list.name}
-          </span>
-          {!list.isOwner && (
-            <span className="text-xs text-muted-foreground shrink-0">
-              {list.ownerName}
-            </span>
-          )}
-          {items.length > 0 && (
-            <span className="text-xs text-muted-foreground shrink-0">
-              {checkedCount}/{items.length}
-            </span>
-          )}
-          {list.isOwner && (
-            <Form method="post" className="shrink-0">
-              <input
-                type="hidden"
-                name="_intent"
-                value={list.isShared ? "unshare-family" : "share-family"}
-              />
-              <button
-                type="submit"
-                className={`text-xs px-2 py-1 rounded-md border transition-colors ${
-                  list.isShared
-                    ? "border-primary text-primary hover:bg-primary/10"
-                    : "border-input text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {list.isShared ? "Unshare" : "Share"}
-              </button>
-            </Form>
-          )}
-          <Form method="post" className="shrink-0">
-            <input
-              type="hidden"
-              name="_intent"
-              value={list.completedAt ? "uncomplete" : "complete"}
-            />
-            <button
-              type="submit"
-              className={`text-xs px-2 py-1 rounded-md border transition-colors ${
-                list.completedAt
-                  ? "border-primary text-primary hover:bg-primary/10"
-                  : "border-input text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {list.completedAt ? "Reopen" : "Complete"}
-            </button>
-          </Form>
-        </div>
-      </header>
+    <AppShell user={user}>
+      <div className="mx-auto max-w-3xl space-y-6 pb-24">
+        <SectionHeader
+          eyebrow={!list.isOwner ? `Shared by ${list.ownerName}` : "Shopping list"}
+          title={list.name}
+          description={
+            items.length > 0
+              ? `${checkedCount} of ${items.length} item${items.length === 1 ? "" : "s"} checked.`
+              : "Add items manually or pull ingredients from a recipe."
+          }
+          actions={
+            <>
+              <Link to="/shopping-lists" className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+                Lists
+              </Link>
+              {list.isOwner && (
+                <Form method="post">
+                  <input
+                    type="hidden"
+                    name="_intent"
+                    value={list.isShared ? "unshare-family" : "share-family"}
+                  />
+                  <Button type="submit" variant={list.isShared ? "secondary" : "primary"}>
+                    {list.isShared ? "Unshare" : "Share"}
+                  </Button>
+                </Form>
+              )}
+              <Form method="post">
+                <input
+                  type="hidden"
+                  name="_intent"
+                  value={list.completedAt ? "uncomplete" : "complete"}
+                />
+                <Button type="submit" variant={list.completedAt ? "secondary" : "primary"}>
+                  {list.completedAt ? "Reopen" : "Complete"}
+                </Button>
+              </Form>
+            </>
+          }
+        />
 
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-6">
-        {/* Items grouped by aisle */}
         {list.isShared && (
-          <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+          <p className="rounded-md border border-rule bg-paper-3 px-3 py-2 text-xs text-ink-3">
             Shared family list. Everyone in the household can add and check off items.
           </p>
         )}
 
-        {/* Items grouped by aisle */}
         {items.length === 0 ? (
-          <p className="text-center text-muted-foreground text-sm py-12">
+          <p className="ps-surface py-12 text-center text-sm text-ink-3">
             No items yet. Add some below.
           </p>
         ) : (
@@ -503,11 +481,12 @@ export default function ShoppingListDetail({
               const checked = aisleItems.filter((i) => i.checkedAt);
               const sorted = [...unchecked, ...checked];
               return (
-                <section key={aisle}>
-                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 pb-1 border-b">
-                    {aisle}
-                  </h2>
-                  <div className="divide-y">
+                <section key={aisle} className="ps-surface overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-rule bg-paper-3 px-3 py-2">
+                    <h2 className="text-xs font-semibold uppercase text-ink-3">{aisle}</h2>
+                    <Chip>{unchecked.length} left</Chip>
+                  </div>
+                  <div className="divide-y divide-rule p-1">
                     {sorted.map((item) => (
                       <ItemRow key={item.id} item={item as ListItem} />
                     ))}
@@ -518,28 +497,27 @@ export default function ShoppingListDetail({
           </div>
         )}
 
-        {/* Add items panel */}
-        <div className="border rounded-lg overflow-hidden">
-          <div className="flex border-b">
+        <div className="ps-surface overflow-hidden">
+          <div className="flex border-b border-rule bg-paper-3">
             <button
               type="button"
               onClick={() => setAddMode(addMode === "recipe" ? null : "recipe")}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              className={`ps-control flex-1 rounded-none py-2.5 text-sm font-medium transition-colors focus-visible:ps-focus-ring ${
                 addMode === "recipe"
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-ink-3 hover:text-ink"
               }`}
             >
               + From Recipe
             </button>
-            <div className="w-px bg-border" />
+            <div className="w-px bg-rule" />
             <button
               type="button"
               onClick={() => setAddMode(addMode === "manual" ? null : "manual")}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              className={`ps-control flex-1 rounded-none py-2.5 text-sm font-medium transition-colors focus-visible:ps-focus-ring ${
                 addMode === "manual"
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-ink-3 hover:text-ink"
               }`}
             >
               + Manual
@@ -555,7 +533,7 @@ export default function ShoppingListDetail({
                   name="addFromRecipeId"
                   defaultValue={addFromRecipeId ?? ""}
                   onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="ps-control flex-1 border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
                 >
                   <option value="">Select a recipe…</option>
                   {recipes.map((r) => (
@@ -576,8 +554,8 @@ export default function ShoppingListDetail({
                     value={addFromRecipeId ?? ""}
                   />
 
-                  <div className="space-y-0.5 max-h-64 overflow-y-auto rounded border">
-                    <label className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 cursor-pointer">
+                  <div className="max-h-64 space-y-0.5 overflow-y-auto rounded border border-rule">
+                    <label className="flex cursor-pointer items-center gap-2 border-b border-rule bg-paper-3 px-3 py-2">
                       <input
                         type="checkbox"
                         className="rounded"
@@ -585,7 +563,7 @@ export default function ShoppingListDetail({
                         onChange={(e) => setAllSelected(e.target.checked)}
                         aria-label={allSelected ? "Deselect all ingredients" : "Select all ingredients"}
                       />
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <span className="text-xs font-medium text-ink-3">
                         Select all
                       </span>
                     </label>
@@ -598,7 +576,7 @@ export default function ShoppingListDetail({
                         return (
                           <label
                             key={ing.id}
-                            className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 cursor-pointer"
+                            className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-paper-3"
                           >
                             <input
                               type="checkbox"
@@ -608,27 +586,24 @@ export default function ShoppingListDetail({
                               checked={allSelected || undefined}
                               aria-label={`Add ingredient ${label} to shopping list`}
                             />
-                            <span className="text-sm">{label}</span>
+                            <span className="text-sm text-ink">{label}</span>
                           </label>
                         );
                       })}
                   </div>
 
                   {actionData && "error" in actionData && (
-                    <p className="text-sm text-red-500">{actionData.error}</p>
+                    <p className="text-sm text-err">{actionData.error}</p>
                   )}
 
-                  <button
-                    type="submit"
-                    className="w-full rounded-md bg-primary text-primary-foreground py-2 text-sm font-medium hover:bg-primary/90"
-                  >
+                  <Button type="submit" variant="primary" className="w-full">
                     Add Selected
-                  </button>
+                  </Button>
                 </Form>
               )}
 
               {addFromRecipeId && addFromIngredients && addFromIngredients.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-2">
+                <p className="py-2 text-center text-sm text-ink-3">
                   No ingredients found for this recipe.
                 </p>
               )}
@@ -642,7 +617,7 @@ export default function ShoppingListDetail({
               <input
                 name="text"
                 placeholder="Item name (e.g. olive oil, flour)"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
                 required
                 autoFocus
               />
@@ -650,22 +625,19 @@ export default function ShoppingListDetail({
                 <input
                   name="quantity"
                   placeholder="Qty"
-                  className="w-20 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="ps-control w-20 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
                 />
                 <input
                   name="unit"
                   placeholder="Unit"
-                  className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="ps-control w-24 border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
                 />
-                <button
-                  type="submit"
-                  className="flex-1 rounded-md bg-primary text-primary-foreground py-2 text-sm font-medium hover:bg-primary/90"
-                >
+                <Button type="submit" variant="primary" className="flex-1">
                   Add
-                </button>
+                </Button>
               </div>
               {actionData && "error" in actionData && (
-                <p className="text-sm text-red-500">{actionData.error}</p>
+                <p className="text-sm text-err">{actionData.error}</p>
               )}
             </Form>
           )}
@@ -675,11 +647,11 @@ export default function ShoppingListDetail({
         <button
           type="button"
           onClick={copyLink}
-          className="w-full text-xs text-muted-foreground hover:text-foreground py-2 text-center"
+          className="ps-control w-full py-2 text-center text-xs font-medium text-ink-3 hover:text-ink focus-visible:ps-focus-ring"
         >
           Copy link (requires sign-in to view)
         </button>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

@@ -5,6 +5,8 @@ import type { Route } from "./+types/meal-planner";
 import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { categorizeAisle } from "~/lib/aisle-categorizer";
+import { AppShell } from "~/components/app-shell";
+import { Button, Chip, SectionHeader } from "~/components/ui";
 
 const SLOT_LABELS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
@@ -116,6 +118,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   ]);
 
   return {
+    user,
     weekStart,
     weekEnd,
     prevWeek: addDays(weekStart, -7),
@@ -288,14 +291,14 @@ function DayColumn({
     <section
       onDragOver={(event) => event.preventDefault()}
       onDrop={handleDrop}
-      className="min-h-52 rounded-lg border bg-white p-3"
+      className="ps-surface min-h-56 p-3"
     >
       <div className="flex items-center gap-2">
-        <h2 className="font-semibold text-sm text-gray-900">{formatDay(day)}</h2>
+        <h2 className="text-sm font-semibold text-ink">{formatDay(day)}</h2>
         <button
           type="button"
           onClick={() => setFormOpen((open) => !open)}
-          className="ml-auto rounded-md border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+          className="ps-control ml-auto inline-flex min-h-8 min-w-8 items-center justify-center border border-rule bg-paper-2 text-sm font-semibold text-ink hover:bg-paper-3 focus-visible:ps-focus-ring"
           aria-label={`Add meal on ${formatDay(day)}`}
         >
           +
@@ -307,17 +310,17 @@ function DayColumn({
           <PlannedMeal key={entry.id} entry={entry} />
         ))}
         {entries.length === 0 && (
-          <p className="rounded-md border border-dashed px-3 py-6 text-center text-xs text-gray-400">
+          <p className="rounded-md border border-dashed border-rule bg-paper-3/40 px-3 py-6 text-center text-xs text-ink-4">
             Drop a recipe here
           </p>
         )}
       </div>
 
       {formOpen && (
-        <Form method="post" className="mt-3 space-y-2 rounded-md bg-gray-50 p-2">
+        <Form method="post" className="mt-3 space-y-2 rounded-md border border-rule bg-paper-3 p-2">
           <input type="hidden" name="_intent" value="add" />
           <input type="hidden" name="date" value={day} />
-          <select name="recipeId" required className="w-full rounded-md border bg-white px-2 py-1.5 text-sm">
+          <select name="recipeId" required className="ps-control w-full border border-rule bg-paper-2 px-2 text-sm text-ink focus-visible:ps-focus-ring">
             <option value="">Recipe</option>
             {recipes.map((recipe) => (
               <option key={recipe.id} value={recipe.id}>
@@ -326,7 +329,7 @@ function DayColumn({
             ))}
           </select>
           <div className="grid grid-cols-2 gap-2">
-            <select name="mealSlot" defaultValue="Dinner" className="rounded-md border bg-white px-2 py-1.5 text-sm">
+            <select name="mealSlot" defaultValue="Dinner" className="ps-control border border-rule bg-paper-2 px-2 text-sm text-ink focus-visible:ps-focus-ring">
               {SLOT_LABELS.map((slot) => (
                 <option key={slot} value={slot}>
                   {slot}
@@ -339,13 +342,13 @@ function DayColumn({
               min="0"
               step="0.5"
               placeholder="Servings"
-              className="rounded-md border bg-white px-2 py-1.5 text-sm"
+              className="ps-control border border-rule bg-paper-2 px-2 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
             />
           </div>
-          <input name="notes" placeholder="Notes" className="w-full rounded-md border bg-white px-2 py-1.5 text-sm" />
-          <button type="submit" className="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white">
+          <input name="notes" placeholder="Notes" className="ps-control w-full border border-rule bg-paper-2 px-2 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring" />
+          <Button type="submit" variant="primary" className="w-full">
             Add
-          </button>
+          </Button>
         </Form>
       )}
     </section>
@@ -359,28 +362,28 @@ function PlannedMeal({ entry }: { entry: PlannedEntry }) {
     <article
       draggable
       onDragStart={(event) => event.dataTransfer.setData("application/x-projectspice-entry", entry.id)}
-      className="rounded-md border bg-gray-50 p-2"
+      className="rounded-md border border-rule bg-paper-3 p-2"
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-gray-900">{label}</p>
-          <p className="text-xs text-gray-500">
+          <p className="truncate text-sm font-medium text-ink">{label}</p>
+          <p className="text-xs text-ink-3">
             {[entry.mealSlot, entry.servingsOverride ? `${entry.servingsOverride} servings` : null]
               .filter(Boolean)
               .join(" · ")}
           </p>
-          {entry.notes && <p className="mt-1 text-xs text-gray-600">{entry.notes}</p>}
+          {entry.notes && <p className="mt-1 text-xs text-ink-3">{entry.notes}</p>}
         </div>
-        <button type="button" onClick={() => setEditing((open) => !open)} className="text-xs text-gray-500 hover:text-gray-900">
+        <button type="button" onClick={() => setEditing((open) => !open)} className="text-xs font-medium text-ink-3 hover:text-ink">
           Edit
         </button>
       </div>
       {editing && (
-        <Form method="post" className="mt-2 space-y-2 border-t pt-2">
+        <Form method="post" className="mt-2 space-y-2 border-t border-rule pt-2">
           <input type="hidden" name="_intent" value="update" />
           <input type="hidden" name="entryId" value={entry.id} />
           <div className="grid grid-cols-2 gap-2">
-            <select name="mealSlot" defaultValue={entry.mealSlot ?? ""} className="rounded-md border bg-white px-2 py-1.5 text-sm">
+            <select name="mealSlot" defaultValue={entry.mealSlot ?? ""} className="ps-control border border-rule bg-paper-2 px-2 text-sm text-ink focus-visible:ps-focus-ring">
               <option value="">Meal</option>
               {SLOT_LABELS.map((slot) => (
                 <option key={slot} value={slot}>
@@ -394,20 +397,20 @@ function PlannedMeal({ entry }: { entry: PlannedEntry }) {
               min="0"
               step="0.5"
               defaultValue={entry.servingsOverride ?? ""}
-              className="rounded-md border bg-white px-2 py-1.5 text-sm"
+              className="ps-control border border-rule bg-paper-2 px-2 text-sm text-ink focus-visible:ps-focus-ring"
               placeholder="Servings"
             />
           </div>
-          <input name="notes" defaultValue={entry.notes ?? ""} placeholder="Notes" className="w-full rounded-md border bg-white px-2 py-1.5 text-sm" />
+          <input name="notes" defaultValue={entry.notes ?? ""} placeholder="Notes" className="ps-control w-full border border-rule bg-paper-2 px-2 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring" />
           <div className="flex gap-2">
-            <button type="submit" className="flex-1 rounded-md bg-gray-900 px-2 py-1.5 text-sm font-medium text-white">
+            <Button type="submit" variant="primary" size="sm" className="flex-1">
               Save
-            </button>
+            </Button>
             <button
               type="submit"
               name="_intent"
               value="delete"
-              className="rounded-md border px-2 py-1.5 text-sm text-gray-600 hover:text-red-600"
+              className="ps-control inline-flex min-h-8 items-center justify-center border border-rule bg-paper-2 px-2 text-sm font-medium text-ink-3 hover:bg-paper-3 hover:text-err focus-visible:ps-focus-ring"
             >
               Remove
             </button>
@@ -419,7 +422,7 @@ function PlannedMeal({ entry }: { entry: PlannedEntry }) {
 }
 
 export default function MealPlanner({ loaderData, actionData }: Route.ComponentProps) {
-  const { weekStart, weekEnd, prevWeek, nextWeek, days, entries, recipes } = loaderData;
+  const { user, weekStart, weekEnd, prevWeek, nextWeek, days, entries, recipes } = loaderData;
   const [searchParams] = useSearchParams();
   const recipeQuery = searchParams.get("q")?.toLowerCase() ?? "";
   const visibleRecipes = recipeQuery
@@ -427,37 +430,36 @@ export default function MealPlanner({ loaderData, actionData }: Route.ComponentP
     : recipes.slice(0, 20);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 border-b bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
-          <Link to="/recipes" className="shrink-0 text-sm text-gray-500 hover:text-gray-700">
-            ← Recipes
-          </Link>
-          <h1 className="font-semibold text-gray-900">Meal Planner</h1>
-          <div className="ml-auto flex items-center gap-2">
-            <Link to={`/meal-planner?week=${prevWeek}`} className="rounded-md border px-2 py-1 text-sm text-gray-600 hover:bg-gray-50">
-              Prev
-            </Link>
-            <Link to={`/meal-planner?week=${nextWeek}`} className="rounded-md border px-2 py-1 text-sm text-gray-600 hover:bg-gray-50">
-              Next
-            </Link>
-          </div>
-        </div>
-      </header>
+    <AppShell user={user}>
+      <div className="space-y-5">
+        <SectionHeader
+          eyebrow={`Week of ${formatDay(weekStart)}`}
+          title="Meal Planner"
+          description={`${entries.length} planned meal${entries.length === 1 ? "" : "s"} through ${formatDay(weekEnd)}.`}
+          actions={
+            <>
+              <Link to={`/meal-planner?week=${prevWeek}`} className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+                Prev
+              </Link>
+              <Link to={`/meal-planner?week=${nextWeek}`} className="ps-control inline-flex items-center justify-center border border-rule bg-paper-2 px-4 text-sm font-medium text-ink hover:bg-paper-3 focus-visible:ps-focus-ring">
+                Next
+              </Link>
+            </>
+          }
+        />
 
-      <main className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[16rem_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
         <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-lg border bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Week of {formatDay(weekStart)}
-            </p>
-            <p className="mt-1 text-sm text-gray-600">
-              {entries.length} planned meal{entries.length === 1 ? "" : "s"} through {formatDay(weekEnd)}
-            </p>
+          <div className="ps-surface p-3">
+            <p className="text-xs font-semibold uppercase text-ink-3">Week status</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Chip>{entries.length} planned</Chip>
+              <Chip>{recipes.length} recipes</Chip>
+            </div>
           </div>
 
-          <Form method="get" className="rounded-lg border bg-white p-3">
-            <label htmlFor="recipe-search" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <Form method="get" className="ps-surface p-3">
+            <label htmlFor="recipe-search" className="text-xs font-semibold uppercase text-ink-3">
               Recipes
             </label>
             <input
@@ -465,38 +467,38 @@ export default function MealPlanner({ loaderData, actionData }: Route.ComponentP
               name="q"
               defaultValue={recipeQuery}
               placeholder="Search recipes"
-              className="mt-2 w-full rounded-md border px-2 py-1.5 text-sm"
+              className="ps-control mt-2 w-full border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-4 focus-visible:ps-focus-ring"
             />
             <input type="hidden" name="week" value={weekStart} />
           </Form>
 
-          <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg border bg-white p-2">
+          <div className="ps-surface max-h-80 space-y-2 overflow-y-auto p-2">
             {visibleRecipes.map((recipe) => (
               <div
                 key={recipe.id}
                 draggable
                 onDragStart={(event) => event.dataTransfer.setData("application/x-projectspice-recipe", recipe.id)}
-                className="cursor-grab rounded-md border bg-gray-50 px-3 py-2 active:cursor-grabbing"
+                className="ps-row cursor-grab rounded-md border border-rule bg-paper-3 px-3 py-2 active:cursor-grabbing"
               >
-                <p className="truncate text-sm font-medium text-gray-900">{recipe.title}</p>
-                <p className="text-xs text-gray-500">
+                <p className="truncate text-sm font-medium text-ink">{recipe.title}</p>
+                <p className="text-xs text-ink-3">
                   {[recipe.servings ? `${recipe.servings} servings` : null, recipe.totalTimeMin ? `${recipe.totalTimeMin} min` : null]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
               </div>
             ))}
-            {visibleRecipes.length === 0 && <p className="px-2 py-6 text-center text-sm text-gray-500">No recipes found.</p>}
+            {visibleRecipes.length === 0 && <p className="px-2 py-6 text-center text-sm text-ink-3">No recipes found.</p>}
           </div>
 
           <Form method="post">
             <input type="hidden" name="_intent" value="generate-list" />
             <input type="hidden" name="weekStart" value={weekStart} />
-            <button type="submit" className="w-full rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">
+            <Button type="submit" variant="primary" className="w-full">
               Generate Shopping List
-            </button>
+            </Button>
           </Form>
-          {actionData && "error" in actionData && <p className="text-sm text-red-600">{actionData.error}</p>}
+          {actionData && "error" in actionData && <p className="text-sm text-err">{actionData.error}</p>}
         </aside>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
@@ -509,7 +511,8 @@ export default function MealPlanner({ loaderData, actionData }: Route.ComponentP
             />
           ))}
         </section>
-      </main>
-    </div>
+        </div>
+      </div>
+    </AppShell>
   );
 }
