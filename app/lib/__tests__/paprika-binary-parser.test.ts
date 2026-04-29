@@ -3,6 +3,7 @@ import { gzipSync, strToU8, zipSync } from "fflate";
 import {
   parsePaprikaArchive,
   toTextPayload,
+  derivePaprikaCookbookName,
   normaliseDifficulty,
   parseServings,
   type PaprikaRecipeRaw,
@@ -148,6 +149,44 @@ describe("toTextPayload", () => {
     expect(text.categories).toEqual(["Italian", "Pasta"]);
     expect(text.rating).toBe(4);
     expect(text.prep_time).toBe("15 mins");
+  });
+});
+
+// ─── derivePaprikaCookbookName ────────────────────────────────────────────────
+
+describe("derivePaprikaCookbookName", () => {
+  it("uses a single category shared by every recipe as the source cookbook", () => {
+    const recipes = [
+      { categories: ["Joshua Weissman", "Breakfast"] },
+      { categories: ["Joshua Weissman", "Dessert"] },
+      { categories: ["Joshua Weissman", "Dinner"] },
+    ];
+
+    expect(derivePaprikaCookbookName("JW_Recipes.paprikarecipes", recipes)).toBe(
+      "Joshua Weissman"
+    );
+  });
+
+  it("falls back to a readable file name when common categories are ambiguous", () => {
+    const recipes = [
+      { categories: ["Cookbook", "Dinner"] },
+      { categories: ["Cookbook", "Dinner"] },
+    ];
+
+    expect(derivePaprikaCookbookName("JW_Recipes.paprikarecipes", recipes)).toBe(
+      "JW Recipes"
+    );
+  });
+
+  it("falls back to a readable file name when no category spans the archive", () => {
+    const recipes = [
+      { categories: ["Breakfast"] },
+      { categories: ["Dessert"] },
+    ];
+
+    expect(derivePaprikaCookbookName("family-favorites.paprikarecipes", recipes)).toBe(
+      "family favorites"
+    );
   });
 });
 

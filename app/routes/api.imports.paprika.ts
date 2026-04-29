@@ -5,7 +5,13 @@
  * The client parses the .paprikarecipes archive in the browser and sends
  * text-only batches here, keeping the request under CF Worker size limits.
  *
- * Request body: { recipes: PaprikaRecipeText[], jobId?: string, expectedTotal?: number }
+ * Request body: {
+ *   recipes: PaprikaRecipeText[],
+ *   jobId?: string,
+ *   expectedTotal?: number,
+ *   sourceCookbookName?: string,
+ *   commonTagNames?: string[],
+ * }
  * Response:     { jobId, imported, skipped, errors }
  */
 
@@ -18,9 +24,11 @@ import { parseDuration } from "~/lib/time-parser";
 import {
   normaliseDifficulty,
   parseServings,
+  derivePaprikaCookbookName,
   type PaprikaRecipeText,
 } from "~/lib/paprika-binary-parser";
 import { scorePaprikaImportConfidence } from "~/lib/import-review.server";
+import { getOrCreateCookbookByName } from "~/lib/cookbooks.server";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +64,16 @@ type BatchPayload = {
   recipes: PaprikaRecipeText[];
   jobId?: string;
   expectedTotal?: number;
+  sourceCookbookName?: string;
+  commonTagNames?: string[];
+  /** @deprecated Use sourceCookbookName. */
+  commonLabel?: string;
+  /** @deprecated Use sourceCookbookName/commonTagNames. */
+  commonLabelMode?: "cookbook" | "tag" | "none";
+  /** @deprecated Use commonTagNames. */
+  importTagNames?: string[];
+  /** @deprecated Use sourceCookbookName. */
+  sourceName?: string;
 };
 
 type BatchResult = {
@@ -115,7 +133,25 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     existingRows.map((r) => r.paprikaId).filter(Boolean)
   );
 
-  // ── Collect all unique category names in this batch ────────────────────
+  const sourceCookbookName =
+    typeof payload.sourceCookbookName === "string"
+      ? payload.sourceCookbookName.trim()
+      : payload.commonLabelMode === "cookbook" && typeof payload.commonLabel === "string"
+        ? payload.commonLabel.trim()
+        : payload.sourceName?.trim() || derivePaprikaCookbookName("Paprika Import", recipes);
+  const commonLabelMode = payload.commonLabelMode ?? "cookbook";
+  const commonTagNames = Array.isArray(payload.commonTagNames)
+    ? payload.commonTagNames.map((name) => name.trim()).filter(Boolean)
+    : Array.isArray(payload.importTagNames)
+      ? payload.importTagNames.map((name) => name.trim()).filter(Boolean)
+      : [];
+  const legacyCommonTagNames =
+    commonLabelMode === "tag" && typeof payload.commonLabel === "string"
+      ? [payload.commonLabel.trim()].filter(Boolean)
+      : [];
+  const importTagNames = [...commonTagNames, ...legacyCommonTagNames];
+
+  // ── Collect all unique tag names in this batch ─────────────────────────
   const allCategoryNames = new Set<string>();
   for (const r of recipes) {
     for (const cat of r.categories ?? []) {
@@ -123,8 +159,9 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       if (t) allCategoryNames.add(t);
     }
   }
+  for (const tagName of importTagNames) allCategoryNames.add(tagName);
 
-  // ── Upsert tags (one per category name) + cookbooks (one per category) ──
+  // ── Upsert tags (one per category name) ────────────────────────────────
   if (allCategoryNames.size > 0) {
     const categoryList = Array.from(allCategoryNames);
 
@@ -139,25 +176,11 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
         .values(tagInserts.slice(i, i + CATEGORY_UPSERT_CHUNK))
         .onConflictDoNothing();
     }
-
-    // Upsert cookbooks with the same names
-    const cookbookInserts = categoryList.map((name) => ({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      name,
-    }));
-    for (let i = 0; i < cookbookInserts.length; i += CATEGORY_UPSERT_CHUNK) {
-      await db
-        .insert(schema.cookbooks)
-        .values(cookbookInserts.slice(i, i + CATEGORY_UPSERT_CHUNK))
-        .onConflictDoNothing();
-    }
   }
 
-  // Query back real IDs for tags and cookbooks
+  // Query back real IDs for tags
   const categoryList = Array.from(allCategoryNames);
   const tagIdMap = new Map<string, string>(); // name → tag id
-  const cookbookIdMap = new Map<string, string>(); // name → cookbook id
   if (categoryList.length > 0) {
     for (let i = 0; i < categoryList.length; i += 50) {
       const chunk = categoryList.slice(i, i + 50);
@@ -166,15 +189,14 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
         .from(schema.tags)
         .where(and(eq(schema.tags.userId, user.id), inArray(schema.tags.name, chunk)));
       for (const row of tagRows) tagIdMap.set(row.name, row.id);
-
-      const cbRows = await db
-        .select({ id: schema.cookbooks.id, name: schema.cookbooks.name })
-        .from(schema.cookbooks)
-        .where(
-          and(eq(schema.cookbooks.userId, user.id), inArray(schema.cookbooks.name, chunk))
-        );
-      for (const row of cbRows) cookbookIdMap.set(row.name, row.id);
     }
+  }
+
+  let cookbookId: string | null = null;
+  if (sourceCookbookName) {
+    cookbookId = (
+      await getOrCreateCookbookByName(db, user.id, sourceCookbookName, "Imported from Paprika")
+    )?.id ?? null;
   }
 
   // ── Pre-load existing slugs to avoid uniqueness collisions ──────────────
@@ -326,13 +348,18 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
       });
     }
 
-    // Recipe → tag + cookbook links
+    // Recipe → tag links
     for (const cat of raw.categories ?? []) {
       const name = cat.trim();
       const tagId = tagIdMap.get(name);
       if (tagId) recipeTagRows.push({ recipeId, tagId });
-      const cookbookId = cookbookIdMap.get(name);
-      if (cookbookId) cookbookRecipeRows.push({ cookbookId, recipeId, sortOrder: 0 });
+    }
+    for (const tagName of importTagNames) {
+      const tagId = tagIdMap.get(tagName);
+      if (tagId) recipeTagRows.push({ recipeId, tagId });
+    }
+    if (cookbookId) {
+      cookbookRecipeRows.push({ cookbookId, recipeId, sortOrder: recipeRows.length - 1 });
     }
   }
 
@@ -356,7 +383,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const INGREDIENT_CHUNK = 6;
   const TAG_CHUNK = 30;
   const CB_RECIPE_CHUNK = 20;
-  const REVIEW_CHUNK = 10;
+  const REVIEW_CHUNK = 5;
   const insertedRecipeIds = new Set<string>();
 
   for (let i = 0; i < recipeRows.length; i += RECIPE_CHUNK) {

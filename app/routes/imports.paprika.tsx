@@ -25,6 +25,7 @@ import {
   SectionHeader,
 } from "~/components/ui";
 import {
+  derivePaprikaCookbookName,
   parsePaprikaArchive,
   toTextPayload,
   type PaprikaRecipeRaw,
@@ -124,6 +125,8 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
 
   const [step, setStep] = useState<Step>("idle");
   const [parsedRecipes, setParsedRecipes] = useState<PaprikaRecipeRaw[]>([]);
+  const [sourceCookbookName, setSourceCookbookName] = useState("");
+  const [commonTagsText, setCommonTagsText] = useState("");
   const [progress, setProgress] = useState<Progress>({
     imported: 0,
     skipped: 0,
@@ -150,6 +153,8 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
         return;
       }
       setParsedRecipes(recipes);
+      setSourceCookbookName(derivePaprikaCookbookName(file.name, recipes));
+      setCommonTagsText("");
       setProgress((p) => ({
         ...p,
         total: recipes.length,
@@ -180,6 +185,8 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
             recipes: batch,
             jobId: jobId || undefined,
             expectedTotal: parsedRecipes.length,
+            sourceCookbookName,
+            commonTagNames: commonTagNames,
           }),
         });
         const data = await readJsonResponse<{
@@ -255,6 +262,43 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
 
   // ─── Render ─────────────────────────────────────────────────────────────
   const photosAvailable = parsedRecipes.filter((r) => r.photo_data).length;
+  const commonTagNames = commonTagsText
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  const commonCategories = parsedRecipes.length
+    ? Array.from(
+        parsedRecipes.reduce((counts, recipe) => {
+          const seen = new Set<string>();
+          for (const category of recipe.categories ?? []) {
+            const name = category.trim();
+            if (!name) continue;
+            const key = name.toLocaleLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const current = counts.get(key);
+            counts.set(key, {
+              name: current?.name ?? name,
+              count: (current?.count ?? 0) + 1,
+            });
+          }
+          return counts;
+        }, new Map<string, { name: string; count: number }>())
+      )
+        .map(([, category]) => category)
+        .filter((category) => category.count === parsedRecipes.length)
+    : [];
+
+  function appendCommonTag(name: string) {
+    setCommonTagsText((current) => {
+      const tags = current
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      if (tags.includes(name)) return current;
+      return [...tags, name].join(", ");
+    });
+  }
 
   return (
     <AppShell user={user} forceBare={inOnboarding}>
@@ -327,6 +371,56 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
                 <strong>{photosAvailable.toLocaleString()}</strong> have photos
               </p>
             </div>
+            <div className="ps-surface space-y-3 px-5 py-4">
+              <label className="block text-sm font-semibold text-ink" htmlFor="source-cookbook">
+                Source cookbook
+              </label>
+              <input
+                id="source-cookbook"
+                value={sourceCookbookName}
+                onChange={(event) => setSourceCookbookName(event.target.value)}
+                className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
+              />
+              {commonCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {commonCategories.map((category) => (
+                    <button
+                      key={category.name}
+                      type="button"
+                      onClick={() => setSourceCookbookName(category.name)}
+                      className="rounded-full border border-rule bg-paper-3 px-3 py-1 text-xs font-medium text-ink-3 transition-colors hover:text-ink"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="ps-surface space-y-3 px-5 py-4">
+              <label className="block text-sm font-semibold text-ink" htmlFor="common-tags">
+                Common tags
+              </label>
+              <input
+                id="common-tags"
+                value={commonTagsText}
+                onChange={(event) => setCommonTagsText(event.target.value)}
+                className="ps-control w-full border border-rule bg-paper px-3 text-sm text-ink focus-visible:ps-focus-ring"
+              />
+              {commonCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {commonCategories.map((category) => (
+                    <button
+                      key={category.name}
+                      type="button"
+                      onClick={() => appendCommonTag(category.name)}
+                      className="rounded-full border border-rule bg-paper-3 px-3 py-1 text-xs font-medium text-ink-3 transition-colors hover:text-ink"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={handleImport}
               className="rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -390,6 +484,8 @@ export default function ImportPaprika({ loaderData }: Route.ComponentProps) {
                 onClick={() => {
                   setStep("idle");
                   setParsedRecipes([]);
+                  setSourceCookbookName("");
+                  setCommonTagsText("");
                   setProgress({ imported: 0, skipped: 0, total: 0, photosUploaded: 0, photosTotal: 0, errors: [], jobId: "" });
                   if (inputRef.current) inputRef.current.value = "";
                 }}

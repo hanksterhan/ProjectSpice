@@ -86,6 +86,50 @@ export function toTextPayload(recipe: PaprikaRecipeRaw): PaprikaRecipeText {
   return rest;
 }
 
+function fallbackCookbookName(fileName: string): string {
+  const baseName = fileName
+    .replace(/\.[^.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return baseName || "Paprika Import";
+}
+
+/**
+ * Pick one source cookbook name for a Paprika archive.
+ *
+ * Paprika categories are recipe tags, but some exports include one category
+ * applied to every recipe that describes the source. Use that when unambiguous;
+ * otherwise fall back to the uploaded file name.
+ */
+export function derivePaprikaCookbookName(
+  fileName: string,
+  recipes: Pick<PaprikaRecipeRaw, "categories">[]
+): string {
+  if (recipes.length === 0) return fallbackCookbookName(fileName);
+
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const recipe of recipes) {
+    const seen = new Set<string>();
+    for (const rawCategory of recipe.categories ?? []) {
+      const name = rawCategory.trim();
+      if (!name) continue;
+      const key = name.toLocaleLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const current = counts.get(key);
+      counts.set(key, { name: current?.name ?? name, count: (current?.count ?? 0) + 1 });
+    }
+  }
+
+  const commonCategories = Array.from(counts.values()).filter(
+    (category) => category.count === recipes.length
+  );
+  return commonCategories.length === 1
+    ? commonCategories[0].name
+    : fallbackCookbookName(fileName);
+}
+
 /** Parse Paprika's difficulty string into a normalised value (or null). */
 export function normaliseDifficulty(raw: string): string | null {
   if (!raw?.trim()) return null;

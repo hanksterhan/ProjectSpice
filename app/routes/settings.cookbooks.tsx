@@ -7,6 +7,7 @@ import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { AppShell } from "~/components/app-shell";
 import { Button, Chip, SectionHeader } from "~/components/ui";
+import { findCookbookByName, getOrCreateCookbookByName } from "~/lib/cookbooks.server";
 
 export function meta() {
   return [{ title: "Manage Cookbooks — ProjectSpice" }];
@@ -50,12 +51,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = String(fd.get("name") ?? "").trim();
     if (!name) return { error: "Cookbook name cannot be empty." };
     const description = String(fd.get("description") ?? "").trim() || null;
-    await db.insert(schema.cookbooks).values({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      name,
-      description,
-    });
+    const existing = await findCookbookByName(db, user.id, name);
+    if (existing) return { error: `A cookbook named "${name}" already exists.` };
+    await getOrCreateCookbookByName(db, user.id, name, description);
     return redirect("/settings/cookbooks");
   }
 
@@ -71,8 +69,12 @@ export async function action({ request, context }: Route.ActionArgs) {
           eq(schema.cookbooks.id, cookbookId),
           eq(schema.cookbooks.userId, user.id)
         )
-      );
+    );
     if (!cb) return { error: "Cookbook not found." };
+    const existing = await findCookbookByName(db, user.id, newName);
+    if (existing && existing.id !== cookbookId) {
+      return { error: `A cookbook named "${newName}" already exists.` };
+    }
     await db
       .update(schema.cookbooks)
       .set({ name: newName })

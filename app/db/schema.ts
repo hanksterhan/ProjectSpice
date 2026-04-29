@@ -261,18 +261,22 @@ export const recipeTags = sqliteTable(
 // ---------------------------------------------------------------------------
 // cookbooks
 // ---------------------------------------------------------------------------
-export const cookbooks = sqliteTable("cookbooks", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  description: text("description"),
-  archived: integer("archived", { mode: "boolean" }).notNull().default(false),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
+export const cookbooks = sqliteTable(
+  "cookbooks",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    archived: integer("archived", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("cookbooks_user_name_idx").on(t.userId, t.name)]
+);
 
 // ---------------------------------------------------------------------------
 // cookbook_recipes

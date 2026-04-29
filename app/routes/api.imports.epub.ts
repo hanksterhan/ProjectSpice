@@ -10,6 +10,7 @@ import { requireUser } from "~/lib/auth.server";
 import { createDb, schema } from "~/db";
 import { parseIngredientLine } from "~/lib/ingredient-parser";
 import type { EpubRecipeCandidate } from "~/lib/epub-parser";
+import { getOrCreateCookbookByName } from "~/lib/cookbooks.server";
 
 type Payload = {
   cookbookName?: string;
@@ -100,15 +101,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
 
   let cookbookId: string | null = null;
   if (cookbookName) {
-    await db
-      .insert(schema.cookbooks)
-      .values({ id: crypto.randomUUID(), userId: user.id, name: cookbookName })
-      .onConflictDoNothing();
-    const row = await db.query.cookbooks.findFirst({
-      where: and(eq(schema.cookbooks.userId, user.id), eq(schema.cookbooks.name, cookbookName)),
-      columns: { id: true },
-    });
-    cookbookId = row?.id ?? null;
+    cookbookId = (await getOrCreateCookbookByName(db, user.id, cookbookName))?.id ?? null;
   }
 
   let imported = 0;
