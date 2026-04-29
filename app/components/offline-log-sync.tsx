@@ -73,7 +73,7 @@ export function OfflineLogSync() {
   return (
     <FeedbackToast
       tone={state.failed > 0 ? "danger" : state.pending > 0 ? "warning" : "success"}
-      className="fixed bottom-3 left-3 z-50"
+      className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0"
     >
       {message}
     </FeedbackToast>

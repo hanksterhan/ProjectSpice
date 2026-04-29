@@ -8,7 +8,8 @@
     "app/lib/export-builder.ts",
     "app/lib/ingredient-parser.ts",
     "app/lib/paprika-binary-parser.ts",
-    "app/lib/time-parser.ts"
+    "app/lib/time-parser.ts",
+    "app/lib/visual-debt-scanner.ts"
   ],
   "compilerOptions": {
     "composite": true,
