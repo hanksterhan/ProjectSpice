@@ -4,37 +4,14 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "postbuild": "tsx scripts/scrub-build-secrets.ts",
     "cf-typegen": "wrangler types",
     "dev": "react-router dev",
-    "deploy:staging": "pnpm cf:check --env staging --remote-secrets && CLOUDFLARE_ENV=staging pnpm build && wrangler deploy --env staging",
-    "deploy:prod": "pnpm cf:check --env production --remote-secrets && CLOUDFLARE_ENV=production pnpm build && wrangler deploy --env production",
     "preview": "pnpm build && vite preview",
     "typecheck": "pnpm cf-typegen && react-router typegen && tsc -b",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests",
-    "smoke:setup": "tsx scripts/smoke-setup.ts",
-    "smoke:e2e": "playwright test",
-    "perf:audit": "tsx scripts/performance-audit.ts",
-    "test:watch": "vitest",
-    "paprika:truth": "tsx scripts/paprika-truth-test.ts",
-    "cf:check": "tsx scripts/cloudflare-readiness.ts",
-    "cf:provision:staging": "wrangler d1 create projectspice-staging --env staging --binding DB --location wnam && wrangler kv namespace create SESSIONS --env staging --binding SESSIONS && wrangler r2 bucket create projectspice-images-staging --env staging --binding IMAGES --location wnam && wrangler queues create projectspice-pdf-import-staging",
-    "cf:provision:prod": "wrangler d1 create projectspice-production --env production --binding DB --location wnam && wrangler kv namespace create SESSIONS --env production --binding SESSIONS && wrangler r2 bucket create projectspice-images-prod --env production --binding IMAGES --location wnam && wrangler queues create projectspice-pdf-import-prod",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply DB --local",
-    "db:migrate:staging": "wrangler d1 migrations apply DB --env staging --remote",
-    "db:migrate:prod": "wrangler d1 migrations apply DB --env production --remote",
-    "seed": "tsx scripts/seed.ts",
-    "seed:staging": "tsx scripts/seed.ts --env staging --remote",
-    "postinstall": "pnpm cf-typegen || true"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@cf-wasm/photon": "0.3.4",
-    "drizzle-orm": "^0.45.2",
-    "fflate": "^0.8.2",
-    "idb": "^8.0.3",
-    "isbot": "^5.1.31",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router": "^7.9.2"
@@ -42,7 +19,6 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "sharp",
       "workerd"
     ]
   },
@@ -56,11 +32,9 @@
     "@types/node": "^22",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
-    "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "tailwindcss": "^4.1.13",
-    "tsx": "^4.19.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.0.0",
     "vite": "^7.1.7",

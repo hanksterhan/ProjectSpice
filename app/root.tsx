@@ -5,78 +5,22 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
 } from "react-router";
-import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { OfflineIndicator } from "~/components/offline-indicator";
-import { OfflineLogSync } from "~/components/offline-log-sync";
-
-const DISPLAY_PREF_KEYS = {
-  contrast: "spice_contrast_mode",
-  fontSize: "spice_font_size",
-  reducedMotion: "spice_reduced_motion",
-} as const;
-
-function applyDisplayPreferences() {
-  const root = document.documentElement;
-  const contrast = localStorage.getItem(DISPLAY_PREF_KEYS.contrast);
-  const fontSize = localStorage.getItem(DISPLAY_PREF_KEYS.fontSize);
-  const reducedMotion = localStorage.getItem(DISPLAY_PREF_KEYS.reducedMotion);
-
-  if (contrast === "high" || contrast === "standard") {
-    root.dataset.contrast = contrast;
-  } else {
-    delete root.dataset.contrast;
-  }
-
-  if (fontSize === "large" || fontSize === "extra-large") {
-    root.dataset.fontSize = fontSize;
-  } else {
-    delete root.dataset.fontSize;
-  }
-
-  if (reducedMotion === "true") {
-    root.dataset.reducedMotion = "true";
-  } else {
-    delete root.dataset.reducedMotion;
-  }
-}
 
 export function meta(_args: Route.MetaArgs) {
   return [
     { title: "ProjectSpice" },
-    { name: "description", content: "Your personal recipe manager" },
+    {
+      name: "description",
+      content: "A small AI-native recipe workbench for creating and refining recipes.",
+    },
   ];
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
-    }
-  }, []);
-
-  useEffect(() => {
-    applyDisplayPreferences();
-    window.addEventListener("storage", applyDisplayPreferences);
-    window.addEventListener("spice:display-preferences", applyDisplayPreferences);
-    return () => {
-      window.removeEventListener("storage", applyDisplayPreferences);
-      window.removeEventListener("spice:display-preferences", applyDisplayPreferences);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (location.pathname === "/login") {
-      navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_RECIPE_CACHE" });
-    }
-  }, [location.pathname]);
-
   return (
     <html lang="en">
       <head>
@@ -86,8 +30,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <OfflineIndicator />
-        <OfflineLogSync />
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -101,30 +43,23 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  let title = "Something went wrong";
+  let message = "ProjectSpice could not render this page.";
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    title = error.status === 404 ? "Page not found" : `Error ${error.status}`;
+    message = error.statusText || message;
+  } else if (import.meta.env.DEV && error instanceof Error) {
+    message = error.message;
   }
 
   return (
-    <main className="container mx-auto p-4 pt-16">
-      <h1 className="text-2xl font-bold mb-2">{message}</h1>
-      <p className="text-muted-foreground">{details}</p>
-      {stack && (
-        <pre className="w-full p-4 mt-4 overflow-x-auto rounded bg-muted text-sm">
-          <code>{stack}</code>
-        </pre>
-      )}
+    <main className="app-frame">
+      <section className="empty-state" aria-labelledby="error-title">
+        <p className="eyebrow">ProjectSpice</p>
+        <h1 id="error-title">{title}</h1>
+        <p>{message}</p>
+      </section>
     </main>
   );
 }
