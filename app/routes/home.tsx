@@ -7,6 +7,7 @@ import {
   parseRecipeLibraryQuery,
   type RecipeLibraryQuery,
 } from "~/modules/library/recipe-library";
+import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import {
   Button,
   EmptyState,
@@ -102,24 +103,30 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 <article className="recipe-row large" key={recipe.id}>
                   <RecipeImage src={recipe.imageUrl} title={recipe.title} />
                   <div>
-                    <h3>{recipe.title}</h3>
+                    <h3>
+                      <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                    </h3>
                     <p>{getRecipeDescription(recipe.description)}</p>
                     <RecipeMeta query={query} recipe={recipe} />
                   </div>
                 </article>
               ) : (
                 <article className="recipe-card" key={recipe.id}>
-                  <RecipeImage
-                    className="recipe-card-image"
-                    src={recipe.imageUrl}
-                    title={recipe.title}
-                  />
+                  <Link to={getRecipeDetailPath(recipe)} aria-label={recipe.title}>
+                    <RecipeImage
+                      className="recipe-card-image"
+                      src={recipe.imageUrl}
+                      title={recipe.title}
+                    />
+                  </Link>
                   <div className="recipe-card-copy">
                     <div>
                       <p className="recipe-card-kicker">
                         {recipe.yield?.notes ?? "Recipe"}
                       </p>
-                      <h3>{recipe.title}</h3>
+                      <h3>
+                        <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                      </h3>
                       <p>{getRecipeDescription(recipe.description)}</p>
                     </div>
                     <RecipeMeta query={query} recipe={recipe} />
