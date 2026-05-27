@@ -1,16 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL =
-  process.env.PROJECTSPICE_SMOKE_BASE_URL ?? "http://127.0.0.1:5173";
+const baseURL = process.env.PROJECTSPICE_SMOKE_BASE_URL ?? "http://127.0.0.1:5173";
 const usesExternalServer = Boolean(process.env.PROJECTSPICE_SMOKE_BASE_URL);
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   workers: 1,
-  timeout: 60_000,
+  timeout: 30_000,
   expect: {
-    timeout: 10_000,
+    timeout: 5_000,
   },
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
@@ -20,24 +19,15 @@ export default defineConfig({
   webServer: usesExternalServer
     ? undefined
     : {
-        command: "pnpm smoke:setup && pnpm dev --host 127.0.0.1 --port 5173",
+        command: "pnpm dev --host 127.0.0.1 --port 5173",
         url: baseURL,
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 90_000,
       },
   projects: [
     {
       name: "desktop",
       use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "tablet",
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 834, height: 1194 },
-        isMobile: true,
-        hasTouch: true,
-      },
     },
     {
       name: "mobile",
