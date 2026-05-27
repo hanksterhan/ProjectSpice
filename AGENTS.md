@@ -30,6 +30,14 @@ Defer imports, scraping, shopping lists, meal planning, family sharing, public s
 - Store recipe images as optional `imageUrl` strings only. Do not add R2 uploads or image transforms in V1.
 - Use one narrow Codex/GPT provider adapter. AI output must validate with Zod and remain a draft until accepted.
 
+## Recipe Fixtures
+
+- Use the canonical `recipe-domain` fixtures when building schema, persistence, seed, library, viewer, editor, and AI draft tests.
+- A converted Paprika corpus is available at `app/modules/recipe-domain/paprika-chilled-desserts.fixtures.ts`, sourced from `zips/chilled_desserts.paprikarecipes`.
+- The Paprika corpus contains 16 chilled dessert recipes already normalized into the Project Spice `Recipe` schema. Use it for realistic fixture and seed coverage instead of inventing placeholder recipes.
+- Embedded Paprika photo/base64 payloads are intentionally excluded. V1 may add lightweight `imageUrl` mock assignments later, but should not reintroduce uploaded media, R2, or image transforms.
+- Keep large fixture corpora out of normal runtime barrels unless a feature explicitly needs them; prefer direct imports in tests, seed scripts, or fixture-specific modules.
+
 ## Commands
 
 Keep this list current as the rebuild changes scripts.
