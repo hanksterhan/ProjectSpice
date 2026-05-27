@@ -1,5 +1,0 @@
-# Copy this file to .dev.vars and fill in your local values.
-# .dev.vars is gitignored and never committed.
-
-SESSION_SECRET=dev-session-secret-change-in-production
-OPENAI_CODEX_TOKEN=...
