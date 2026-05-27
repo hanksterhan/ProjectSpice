@@ -163,6 +163,29 @@ export class RecipeRepository {
     return recipe;
   }
 
+  async recordVersion(recipe: Recipe, changeSummary?: string): Promise<void> {
+    await this.database
+      .prepare(
+        `INSERT INTO recipe_versions (
+          id,
+          recipe_id,
+          version,
+          recipe_json,
+          change_summary,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        `${recipe.id}:v${recipe.version}`,
+        recipe.id,
+        recipe.version,
+        JSON.stringify(recipe),
+        changeSummary ?? null,
+        recipe.updatedAt,
+      )
+      .run();
+  }
+
   async softDelete(id: string, deletedAt: string): Promise<boolean> {
     const result = await this.database
       .prepare(

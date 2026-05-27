@@ -84,6 +84,29 @@ describe("RecipeRepository", () => {
     });
   });
 
+  it("records recipe versions with change summaries", async () => {
+    const database = new FakeRecipeD1Database();
+    const repository = new RecipeRepository(database);
+    const updatedRecipe: Recipe = {
+      ...validRecipeFixture,
+      version: 2,
+      updatedAt: "2026-05-27T08:00:00.000Z",
+    };
+
+    await repository.recordVersion(updatedRecipe, "Updated timing");
+
+    expect(database.versions).toEqual([
+      {
+        id: "weeknight-sesame-chicken-bowls:v2",
+        recipeId: "weeknight-sesame-chicken-bowls",
+        version: 2,
+        recipe: updatedRecipe,
+        changeSummary: "Updated timing",
+        createdAt: "2026-05-27T08:00:00.000Z",
+      },
+    ]);
+  });
+
   it("soft deletes recipes from list and get queries", async () => {
     const repository = new RecipeRepository(new FakeRecipeD1Database());
     await repository.create(validRecipeFixture);
@@ -107,6 +130,14 @@ type FakeRecipeRow = {
 
 class FakeRecipeD1Database implements RecipeRepositoryDatabase {
   readonly rows = new Map<string, FakeRecipeRow>();
+  readonly versions: Array<{
+    id: string;
+    recipeId: string;
+    version: number;
+    recipe: Recipe;
+    changeSummary: string | null;
+    createdAt: string;
+  }> = [];
 
   prepare(query: string) {
     return new FakeRecipeD1PreparedStatement(this, query);
@@ -175,6 +206,20 @@ class FakeRecipeD1PreparedStatement {
           ...row.recipe,
           updatedAt: deletedAt,
         },
+      });
+
+      return { meta: { changes: 1 } };
+    }
+
+    if (normalizedQuery.startsWith("INSERT INTO recipe_versions")) {
+      this.database.versions.push({
+        id: String(this.values[0]),
+        recipeId: String(this.values[1]),
+        version: Number(this.values[2]),
+        recipe: JSON.parse(String(this.values[3])) as Recipe,
+        changeSummary:
+          typeof this.values[4] === "string" ? String(this.values[4]) : null,
+        createdAt: String(this.values[5]),
       });
 
       return { meta: { changes: 1 } };
