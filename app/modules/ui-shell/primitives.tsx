@@ -1,4 +1,9 @@
-import { useState, type ButtonHTMLAttributes, type ImgHTMLAttributes } from "react";
+import {
+  useState,
+  type ButtonHTMLAttributes,
+  type ImgHTMLAttributes,
+  type InputHTMLAttributes,
+} from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "quiet";
@@ -9,12 +14,13 @@ type TextInputProps = {
   name: string;
   placeholder?: string;
   defaultValue?: string;
-};
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue" | "name" | "placeholder">;
 
 type TabsProps = {
   tabs: Array<{
     id: string;
     label: string;
+    href?: string;
     selected?: boolean;
   }>;
 };
@@ -23,6 +29,7 @@ type EmptyStateProps = {
   title: string;
   body: string;
   actionLabel?: string;
+  actionHref?: string;
 };
 
 type RecipeImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "alt"> & {
@@ -43,11 +50,17 @@ export function TextInput({
   name,
   placeholder,
   defaultValue,
+  ...props
 }: TextInputProps) {
   return (
     <label className="field">
       <span>{label}</span>
-      <input name={name} placeholder={placeholder} defaultValue={defaultValue} />
+      <input
+        name={name}
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+        {...props}
+      />
     </label>
   );
 }
@@ -56,26 +69,42 @@ export function Tabs({ tabs }: TabsProps) {
   return (
     <div className="tabs" role="tablist" aria-label="Recipe view">
       {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          className={tab.selected ? "tab active" : "tab"}
-          type="button"
-          role="tab"
-          aria-selected={tab.selected ? "true" : "false"}
-        >
-          {tab.label}
-        </button>
+        tab.href ? (
+          <a
+            key={tab.id}
+            className={tab.selected ? "tab active" : "tab"}
+            href={tab.href}
+            role="tab"
+            aria-selected={tab.selected ? "true" : "false"}
+          >
+            {tab.label}
+          </a>
+        ) : (
+          <button
+            key={tab.id}
+            className={tab.selected ? "tab active" : "tab"}
+            type="button"
+            role="tab"
+            aria-selected={tab.selected ? "true" : "false"}
+          >
+            {tab.label}
+          </button>
+        )
       ))}
     </div>
   );
 }
 
-export function EmptyState({ title, body, actionLabel }: EmptyStateProps) {
+export function EmptyState({ title, body, actionLabel, actionHref }: EmptyStateProps) {
   return (
     <section className="empty-state" aria-labelledby="empty-state-title">
       <h2 id="empty-state-title">{title}</h2>
       <p>{body}</p>
-      {actionLabel ? (
+      {actionLabel && actionHref ? (
+        <a className="button button-primary" href={actionHref}>
+          {actionLabel}
+        </a>
+      ) : actionLabel ? (
         <Button type="button" variant="primary">
           {actionLabel}
         </Button>
