@@ -124,8 +124,9 @@ p {
 
 .shell-main {
   margin: 0 auto;
-  max-width: 1180px;
-  padding: clamp(1rem, 4vw, 2.5rem);
+  max-width: 100%;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  width: 100%;
 }
 
 .workbench-page,
@@ -139,6 +140,8 @@ p {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
+  margin-inline: auto;
+  width: min(100%, 1500px);
 }
 
 .eyebrow {
@@ -411,7 +414,9 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+  margin-inline: auto;
   padding: clamp(0.85rem, 2vw, 1.2rem);
+  width: min(100%, 1500px);
 }
 
 .results-header {
@@ -518,6 +523,8 @@ p {
 .recipe-detail-route {
   display: grid;
   gap: 1rem;
+  margin-inline: auto;
+  width: min(100%, 1560px);
 }
 
 .back-link {
@@ -540,7 +547,7 @@ p {
   box-shadow: var(--shadow);
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(24rem, 0.95fr);
   overflow: hidden;
 }
 
@@ -608,7 +615,7 @@ p {
   align-items: start;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(20rem, 0.75fr) minmax(0, 1.65fr);
 }
 
 .ingredient-rail,
