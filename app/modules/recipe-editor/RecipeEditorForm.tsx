@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { useMemo } from "react";
+import { Form, Link } from "react-router";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 
 import type { Recipe, RecipeDraft } from "~/modules/recipe-domain";
@@ -8,14 +8,10 @@ import { Button } from "~/modules/ui-shell/primitives";
 
 import {
   recipeEditorFormSchema,
-  validateRecipeEditorDraft,
   type ParsedRecipeEditorFormValues,
   type RecipeEditorFormValues,
 } from "./recipe-editor.schema";
-import {
-  getRecipeEditorBaseDraft,
-  getRecipeEditorDefaults,
-} from "./recipe-editor.values";
+import { getRecipeEditorDefaults } from "./recipe-editor.values";
 import { DirectionSectionEditor } from "./DirectionSectionEditor";
 import { IngredientSectionEditor } from "./IngredientSectionEditor";
 
@@ -23,7 +19,7 @@ type RecipeEditorFormProps = {
   mode: "new" | "edit";
   recipe: Recipe | RecipeDraft;
   cancelHref: string;
-  onSaveDraft?: (draft: RecipeDraft) => void;
+  errors?: string[];
 };
 
 type EditorFieldProps = {
@@ -41,30 +37,27 @@ export function RecipeEditorForm({
   mode,
   recipe,
   cancelHref,
-  onSaveDraft,
+  errors: actionErrors = [],
 }: RecipeEditorFormProps) {
   const defaultValues = useMemo(() => getRecipeEditorDefaults(recipe), [recipe]);
-  const baseDraft = useMemo(() => getRecipeEditorBaseDraft(recipe), [recipe]);
-  const [saveState, setSaveState] = useState<"idle" | "validated">("idle");
   const {
     register,
     control,
-    handleSubmit,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<RecipeEditorFormValues, unknown, ParsedRecipeEditorFormValues>({
     defaultValues,
     resolver: zodResolver(recipeEditorFormSchema),
   });
 
-  function handleValidSubmit(values: ParsedRecipeEditorFormValues) {
-    const draft = validateRecipeEditorDraft(values, baseDraft);
-
-    onSaveDraft?.(draft);
-    setSaveState("validated");
-  }
-
   return (
-    <form className="recipe-editor-form" onSubmit={handleSubmit(handleValidSubmit)}>
+    <Form className="recipe-editor-form" method="post">
+      {"version" in recipe ? (
+        <input
+          type="hidden"
+          name="expectedVersion"
+          defaultValue={recipe.version}
+        />
+      ) : null}
       <header className="editor-header">
         <div>
           <p className="eyebrow">{mode === "new" ? "New recipe" : "Edit recipe"}</p>
@@ -79,14 +72,19 @@ export function RecipeEditorForm({
             Cancel
           </Link>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            Save Draft
+            Save Recipe
           </Button>
         </div>
       </header>
 
-      {saveState === "validated" ? (
-        <div className="form-status" role="status">
-          Draft validated and ready for the route action.
+      {actionErrors.length > 0 ? (
+        <div className="form-status error" role="alert">
+          <p>Review the highlighted save issue.</p>
+          <ul>
+            {actionErrors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
@@ -255,11 +253,11 @@ export function RecipeEditorForm({
             Cancel
           </Link>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            Save Draft
+            Save Recipe
           </Button>
         </div>
       </footer>
-    </form>
+    </Form>
   );
 }
 

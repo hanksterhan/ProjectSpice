@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/recipes.new";
-import { createEmptyRecipeDraft, type RecipeDraft } from "~/modules/recipe-domain";
+import { createEmptyRecipeDraft } from "~/modules/recipe-domain";
 import { RecipeEditorForm } from "~/modules/recipe-editor";
+import { buildRecipeFromEditorFormData } from "~/server/recipes/recipe.form";
+import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "New Recipe | ProjectSpice" }];
@@ -14,16 +16,32 @@ export function loader(_args: Route.LoaderArgs) {
   };
 }
 
-export default function NewRecipe({ loaderData }: Route.ComponentProps) {
-  const [validatedDraft, setValidatedDraft] = useState<RecipeDraft | null>(null);
+export async function action({ request, context }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const now = new Date().toISOString();
+  const result = buildRecipeFromEditorFormData({
+    formData,
+    baseDraft: createEmptyRecipeDraft(),
+    now,
+  });
 
+  if (!result.ok) {
+    return { errors: result.errors };
+  }
+
+  const recipe = await getRecipeService(context).create(result.recipe);
+
+  return redirect(`/recipes/${encodeURIComponent(recipe.id)}`);
+}
+
+export default function NewRecipe({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="recipe-editor-route">
       <RecipeEditorForm
         mode="new"
-        recipe={validatedDraft ?? loaderData.recipe}
+        recipe={loaderData.recipe}
         cancelHref="/"
-        onSaveDraft={setValidatedDraft}
+        errors={actionData?.errors}
       />
     </div>
   );

@@ -856,6 +856,25 @@ p {
   padding: 0.8rem 1rem;
 }
 
+.form-status.error {
+  background: rgb(185 68 47 / 10%);
+  border-color: rgb(185 68 47 / 25%);
+  color: var(--accent-strong);
+}
+
+.form-status p,
+.form-status ul {
+  margin: 0;
+}
+
+.form-status ul {
+  padding-left: 1.1rem;
+}
+
+.form-status li + li {
+  margin-top: 0.25rem;
+}
+
 .editor-section {
   display: grid;
   gap: 1rem;

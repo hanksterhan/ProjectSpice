@@ -15,19 +15,21 @@ import {
   Tabs,
   TextInput,
 } from "~/modules/ui-shell/primitives";
+import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "Recipe Library | ProjectSpice" }];
 }
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const query = parseRecipeLibraryQuery(request.url);
-  const recipes = getRecipeLibraryResults(seedRecipes, query);
+  const allRecipes = await getRecipeService(context).list();
+  const recipes = getRecipeLibraryResults(allRecipes, query);
 
   return {
     query,
     recipes,
-    totalRecipeCount: seedRecipes.length,
+    totalRecipeCount: allRecipes.length,
   };
 }
 
