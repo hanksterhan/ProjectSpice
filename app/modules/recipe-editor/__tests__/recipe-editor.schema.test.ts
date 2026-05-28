@@ -5,6 +5,7 @@ import { createEmptyRecipeDraft } from "~/modules/recipe-domain";
 import {
   parseRecipeEditorNotes,
   parseRecipeEditorTags,
+  parseRecipeEditorIngredientRefs,
   recipeEditorFormSchema,
   validateRecipeEditorDraft,
 } from "../index";
@@ -19,6 +20,10 @@ describe("recipe editor schema", () => {
     expect(parseRecipeEditorNotes("Chill overnight.\n\nServe cold.")).toEqual([
       "Chill overnight.",
       "Serve cold.",
+    ]);
+    expect(parseRecipeEditorIngredientRefs("crumbs, salt, ")).toEqual([
+      "crumbs",
+      "salt",
     ]);
   });
 
@@ -63,6 +68,26 @@ describe("recipe editor schema", () => {
           ],
         },
       ],
+      directionSections: [
+        {
+          id: "assembly",
+          title: "Assembly",
+          steps: [
+            {
+              id: "chill",
+              text: "Chill until set.",
+              timerMinutes: "240",
+              ingredientRefsText: "crumbs, salt",
+            },
+            {
+              id: "serve",
+              text: "Slice and serve cold.",
+              timerMinutes: "",
+              ingredientRefsText: "",
+            },
+          ],
+        },
+      ],
     });
 
     const draft = validateRecipeEditorDraft(values, createEmptyRecipeDraft());
@@ -98,9 +123,29 @@ describe("recipe editor schema", () => {
         ],
       },
     ]);
+    expect(draft.directions).toEqual([
+      {
+        id: "assembly",
+        title: "Assembly",
+        steps: [
+          {
+            id: "chill",
+            order: 1,
+            text: "Chill until set.",
+            timerMinutes: 240,
+            ingredientRefs: ["crumbs", "salt"],
+          },
+          {
+            id: "serve",
+            order: 2,
+            text: "Slice and serve cold.",
+          },
+        ],
+      },
+    ]);
   });
 
-  it("rejects invalid URLs, negative timing values, and invalid ingredients", () => {
+  it("rejects invalid URLs, negative timing values, invalid ingredients, and invalid directions", () => {
     const result = recipeEditorFormSchema.safeParse({
       title: "Pie",
       description: "",
@@ -128,6 +173,20 @@ describe("recipe editor schema", () => {
               item: "",
               preparation: "",
               optional: false,
+            },
+          ],
+        },
+      ],
+      directionSections: [
+        {
+          id: "directions",
+          title: "",
+          steps: [
+            {
+              id: "bad-step",
+              text: "",
+              timerMinutes: "-5",
+              ingredientRefsText: "",
             },
           ],
         },

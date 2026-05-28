@@ -1,3 +1,4 @@
+export * from "./DirectionSectionEditor";
 export * from "./IngredientSectionEditor";
 export * from "./RecipeEditorForm";
 export * from "./recipe-editor.ids";

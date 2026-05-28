@@ -59,6 +59,25 @@ const ingredientEditorSectionSchema = z
   })
   .strict();
 
+const directionEditorStepSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    text: z.string().trim().min(1, "Add direction text."),
+    timerMinutes: optionalNumberInput.pipe(
+      z.number().int("Use whole minutes.").positive("Use a positive timer.").optional(),
+    ),
+    ingredientRefsText: z.string(),
+  })
+  .strict();
+
+const directionEditorSectionSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    title: optionalTextInput,
+    steps: z.array(directionEditorStepSchema).min(1, "Add at least one step."),
+  })
+  .strict();
+
 export const recipeEditorFormSchema = z
   .object({
     title: z.string().trim().min(1, "Add a recipe title."),
@@ -77,6 +96,9 @@ export const recipeEditorFormSchema = z
     ingredientSections: z
       .array(ingredientEditorSectionSchema)
       .min(1, "Add at least one ingredient section."),
+    directionSections: z
+      .array(directionEditorSectionSchema)
+      .min(1, "Add at least one direction section."),
   })
   .strict();
 
@@ -97,6 +119,17 @@ export function parseRecipeEditorNotes(notesText: string): string[] | undefined 
     .filter(Boolean);
 
   return notes.length > 0 ? notes : undefined;
+}
+
+export function parseRecipeEditorIngredientRefs(
+  ingredientRefsText: string,
+): string[] | undefined {
+  const refs = ingredientRefsText
+    .split(",")
+    .map((ref) => ref.trim())
+    .filter(Boolean);
+
+  return refs.length > 0 ? refs : undefined;
 }
 
 export function validateRecipeEditorDraft(
@@ -121,6 +154,17 @@ export function validateRecipeEditorDraft(
         item: item.item,
         preparation: item.preparation,
         optional: item.optional ? true : undefined,
+      })),
+    })),
+    directions: values.directionSections.map((section) => ({
+      id: section.id,
+      title: section.title,
+      steps: section.steps.map((step, stepIndex) => ({
+        id: step.id,
+        order: stepIndex + 1,
+        text: step.text,
+        timerMinutes: step.timerMinutes,
+        ingredientRefs: parseRecipeEditorIngredientRefs(step.ingredientRefsText),
       })),
     })),
     yield:

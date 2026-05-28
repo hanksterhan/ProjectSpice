@@ -32,6 +32,19 @@ export function getRecipeEditorDefaults(
         optional: item.optional ?? false,
       })),
     })),
+    directionSections: recipe.directions.map((section) => ({
+      id: section.id,
+      title: section.title ?? "",
+      steps: section.steps
+        .slice()
+        .sort((firstStep, secondStep) => firstStep.order - secondStep.order)
+        .map((step) => ({
+          id: step.id,
+          text: step.text,
+          timerMinutes: step.timerMinutes?.toString() ?? "",
+          ingredientRefsText: step.ingredientRefs?.join(", ") ?? "",
+        })),
+    })),
   };
 }
 

@@ -16,6 +16,7 @@ import {
   getRecipeEditorBaseDraft,
   getRecipeEditorDefaults,
 } from "./recipe-editor.values";
+import { DirectionSectionEditor } from "./DirectionSectionEditor";
 import { IngredientSectionEditor } from "./IngredientSectionEditor";
 
 type RecipeEditorFormProps = {
@@ -236,6 +237,12 @@ export function RecipeEditorForm({
       </section>
 
       <IngredientSectionEditor
+        control={control}
+        register={register}
+        errors={errors}
+      />
+
+      <DirectionSectionEditor
         control={control}
         register={register}
         errors={errors}

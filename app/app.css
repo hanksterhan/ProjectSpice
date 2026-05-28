@@ -864,7 +864,9 @@ p {
 
 .editor-section-header,
 .ingredient-editor-section-header,
-.ingredient-item-actions {
+.ingredient-item-actions,
+.direction-editor-section-header,
+.direction-step-actions {
   align-items: end;
   display: flex;
   gap: 1rem;
@@ -895,12 +897,15 @@ p {
 }
 
 .ingredient-editor-list,
-.ingredient-item-list {
+.ingredient-item-list,
+.direction-editor-list,
+.direction-step-list {
   display: grid;
   gap: 1rem;
 }
 
-.ingredient-editor-section {
+.ingredient-editor-section,
+.direction-editor-section {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -909,11 +914,13 @@ p {
   padding: 1rem;
 }
 
-.ingredient-editor-section-header > .field {
+.ingredient-editor-section-header > .field,
+.direction-editor-section-header > .field {
   flex: 1;
 }
 
-.ingredient-item-editor {
+.ingredient-item-editor,
+.direction-step-editor {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -926,6 +933,10 @@ p {
   grid-template-columns:
     minmax(5rem, 0.45fr) minmax(6rem, 0.65fr) minmax(0, 1fr)
     minmax(0, 1fr);
+}
+
+.direction-fields {
+  grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1fr);
 }
 
 .checkbox-field {
@@ -983,15 +994,20 @@ p {
   .editor-section-header,
   .ingredient-editor-section-header,
   .ingredient-item-actions,
+  .direction-editor-section-header,
+  .direction-step-actions,
   .editor-grid.two-column,
   .editor-grid.three-column,
-  .ingredient-fields {
+  .ingredient-fields,
+  .direction-fields {
     grid-template-columns: 1fr;
   }
 
   .editor-section-header,
   .ingredient-editor-section-header,
-  .ingredient-item-actions {
+  .ingredient-item-actions,
+  .direction-editor-section-header,
+  .direction-step-actions {
     align-items: stretch;
     flex-direction: column;
   }
