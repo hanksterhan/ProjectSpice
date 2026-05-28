@@ -36,7 +36,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -183,7 +184,8 @@ p {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -191,6 +193,19 @@ p {
   min-height: 2.7rem;
   min-width: 0;
   padding: 0 0.85rem;
+}
+
+.field textarea {
+  line-height: 1.5;
+  padding-bottom: 0.75rem;
+  padding-top: 0.75rem;
+  resize: vertical;
+}
+
+.field-error {
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .button {
@@ -527,6 +542,10 @@ p {
   width: min(100%, 1560px);
 }
 
+.edit-recipe-link {
+  justify-self: start;
+}
+
 .back-link {
   color: var(--steel);
   font-size: 0.92rem;
@@ -774,6 +793,103 @@ p {
   margin-bottom: 0;
 }
 
+.recipe-editor-route {
+  margin-inline: auto;
+  width: min(100%, 1120px);
+}
+
+.recipe-editor-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-header,
+.editor-section,
+.editor-footer {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.editor-header {
+  align-items: end;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.editor-header h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  margin-bottom: 0.65rem;
+}
+
+.editor-header p:last-child {
+  margin-bottom: 0;
+}
+
+.editor-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: end;
+}
+
+.form-status {
+  background: rgb(47 111 78 / 10%);
+  border: 1px solid rgb(47 111 78 / 25%);
+  border-radius: 8px;
+  color: var(--leaf);
+  font-weight: 900;
+  padding: 0.8rem 1rem;
+}
+
+.editor-section {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.35rem);
+}
+
+.editor-section h2 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+.editor-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.editor-grid.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-grid.three-column {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field-wide {
+  width: 100%;
+}
+
+.editor-footer {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.editor-footer > span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
 .empty-state {
   box-shadow: none;
   padding: 1.1rem;
@@ -794,7 +910,10 @@ p {
   .toolbar-actions,
   .shell-grid,
   .recipe-detail-hero,
-  .recipe-detail-layout {
+  .recipe-detail-layout,
+  .editor-header,
+  .editor-grid.two-column,
+  .editor-grid.three-column {
     grid-template-columns: 1fr;
   }
 
@@ -935,6 +1054,19 @@ p {
   .direction-pane-header {
     align-items: start;
     flex-direction: column;
+  }
+
+  .editor-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .editor-actions {
+    justify-content: stretch;
+  }
+
+  .editor-actions .button {
+    flex: 1;
   }
 
   .direction-section li {

@@ -24,6 +24,9 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
       <Link className="back-link" to="/">
         Back to library
       </Link>
+      <Link className="button button-secondary edit-recipe-link" to="edit">
+        Edit Recipe
+      </Link>
       <RecipeViewer recipe={loaderData.recipe} />
     </div>
   );
