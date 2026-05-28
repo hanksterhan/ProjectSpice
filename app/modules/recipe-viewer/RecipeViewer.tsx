@@ -56,6 +56,13 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
         </div>
       </dl>
 
+      <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
+        <a href="#ingredients-heading">Ingredients</a>
+        <a href="#directions-heading">Directions</a>
+        <a href="#notes-heading">Notes</a>
+        <a href="#ai-heading">AI</a>
+      </nav>
+
       <div className="recipe-detail-layout">
         <aside className="ingredient-rail" aria-labelledby="ingredients-heading">
           <h2 id="ingredients-heading">Ingredients</h2>
@@ -102,14 +109,20 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
             </section>
           ))}
 
-          {recipe.notes && recipe.notes.length > 0 ? (
-            <section className="recipe-notes">
-              <h2>Notes</h2>
-              {recipe.notes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
-            </section>
-          ) : null}
+          <section className="recipe-notes" aria-labelledby="notes-heading">
+            <h2 id="notes-heading">Notes</h2>
+            {recipe.notes && recipe.notes.length > 0 ? (
+              recipe.notes.map((note) => <p key={note}>{note}</p>)
+            ) : (
+              <p>No notes yet.</p>
+            )}
+          </section>
+
+          <section className="recipe-ai-panel" aria-labelledby="ai-heading">
+            <p className="eyebrow">Workbench</p>
+            <h2 id="ai-heading">AI</h2>
+            <p>No AI drafts yet.</p>
+          </section>
         </main>
       </div>
     </article>
