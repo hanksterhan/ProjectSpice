@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
+
+import {
+  validRecipeDraftFixture,
+  validRecipeFixture,
+} from "~/modules/recipe-domain";
+
+import {
+  buildGenerateRecipePrompt,
+  buildTransformRecipePrompt,
+  parseRecipeAiProviderDraft,
+  recipeAiResponseFormat,
+} from "../recipe-ai.contracts";
+
+describe("recipe AI prompt contracts", () => {
+  it("builds a generate prompt with required structured JSON instructions", () => {
+    const contract = buildGenerateRecipePrompt({
+      prompt: "Make a weeknight vegetarian pasta with lemon.",
+      preferences: ["No mushrooms", "Serves 4"],
+    });
+    const userContent = contract.messages.at(-1)?.content ?? "";
+
+    expect(contract.operation).toBe("generate");
+    expect(contract.responseFormat).toBe(recipeAiResponseFormat);
+    expect(userContent).toContain("Return only a JSON object");
+    expect(userContent).toContain("draftRecipe");
+    expect(userContent).toContain("changeSummary");
+    expect(userContent).toContain("Do not include id, version, createdAt, or updatedAt");
+    expect(userContent).toContain("No mushrooms");
+  });
+
+  it("builds a transform prompt that includes the source recipe and preservation guidance", () => {
+    const contract = buildTransformRecipePrompt({
+      recipe: validRecipeFixture,
+      prompt: "Make this dairy-free and reduce the total time.",
+    });
+    const userContent = contract.messages.at(-1)?.content ?? "";
+
+    expect(contract.operation).toBe("transform");
+    expect(userContent).toContain("Preserve the recipe's intent");
+    expect(userContent).toContain(validRecipeFixture.title);
+    expect(userContent).toContain("\"version\": 1");
+    expect(userContent).toContain("source.type = \"ai\"");
+  });
+});
+
+describe("parseRecipeAiProviderDraft", () => {
+  it("accepts a valid provider draft envelope", () => {
+    expect(
+      parseRecipeAiProviderDraft({
+        draftRecipe: validRecipeDraftFixture,
+        changeSummary: ["Generated a new recipe draft."],
+      }),
+    ).toEqual({
+      draftRecipe: validRecipeDraftFixture,
+      changeSummary: ["Generated a new recipe draft."],
+    });
+  });
+
+  it("rejects provider output that does not match the draft schema", () => {
+    expect(() =>
+      parseRecipeAiProviderDraft({
+        draftRecipe: {
+          ...validRecipeDraftFixture,
+          directions: [],
+        },
+        changeSummary: ["Removed directions."],
+      }),
+    ).toThrow(ZodError);
+  });
+
+  it("rejects provider output without a user-facing change summary", () => {
+    expect(() =>
+      parseRecipeAiProviderDraft({
+        draftRecipe: validRecipeDraftFixture,
+        changeSummary: [],
+      }),
+    ).toThrow(ZodError);
+  });
+});
