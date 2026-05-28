@@ -37,6 +37,32 @@ describe("recipe editor schema", () => {
       notesText: "Use fresh lemon juice.",
       sourceName: "Project Spice",
       sourceUrl: "https://spice.h6nk.dev",
+      ingredientSections: [
+        {
+          id: "crust",
+          title: "Crust",
+          items: [
+            {
+              id: "crumbs",
+              raw: "1 1/2 cups graham cracker crumbs",
+              quantity: "1.5",
+              unit: "cups",
+              item: "graham cracker crumbs",
+              preparation: "",
+              optional: false,
+            },
+            {
+              id: "salt",
+              raw: "Pinch salt, optional",
+              quantity: "",
+              unit: "",
+              item: "salt",
+              preparation: "",
+              optional: true,
+            },
+          ],
+        },
+      ],
     });
 
     const draft = validateRecipeEditorDraft(values, createEmptyRecipeDraft());
@@ -51,9 +77,30 @@ describe("recipe editor schema", () => {
     });
     expect(draft.notes).toEqual(["Use fresh lemon juice."]);
     expect(draft.imageUrl).toBe("https://images.example.com/lemon-pie.jpg");
+    expect(draft.ingredients).toEqual([
+      {
+        id: "crust",
+        title: "Crust",
+        items: [
+          {
+            id: "crumbs",
+            raw: "1 1/2 cups graham cracker crumbs",
+            quantity: 1.5,
+            unit: "cups",
+            item: "graham cracker crumbs",
+          },
+          {
+            id: "salt",
+            raw: "Pinch salt, optional",
+            item: "salt",
+            optional: true,
+          },
+        ],
+      },
+    ]);
   });
 
-  it("rejects invalid URLs and negative timing values", () => {
+  it("rejects invalid URLs, negative timing values, and invalid ingredients", () => {
     const result = recipeEditorFormSchema.safeParse({
       title: "Pie",
       description: "",
@@ -68,6 +115,23 @@ describe("recipe editor schema", () => {
       notesText: "",
       sourceName: "",
       sourceUrl: "",
+      ingredientSections: [
+        {
+          id: "ingredients",
+          title: "",
+          items: [
+            {
+              id: "bad-item",
+              raw: "",
+              quantity: "-2",
+              unit: "",
+              item: "",
+              preparation: "",
+              optional: false,
+            },
+          ],
+        },
+      ],
     });
 
     expect(result.success).toBe(false);

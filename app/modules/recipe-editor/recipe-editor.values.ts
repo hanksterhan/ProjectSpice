@@ -19,6 +19,19 @@ export function getRecipeEditorDefaults(
     notesText: recipe.notes?.join("\n") ?? "",
     sourceName: recipe.source?.name ?? "",
     sourceUrl: recipe.source?.url ?? "",
+    ingredientSections: recipe.ingredients.map((section) => ({
+      id: section.id,
+      title: section.title ?? "",
+      items: section.items.map((item) => ({
+        id: item.id,
+        raw: item.raw,
+        quantity: item.quantity?.toString() ?? "",
+        unit: item.unit ?? "",
+        item: item.item,
+        preparation: item.preparation ?? "",
+        optional: item.optional ?? false,
+      })),
+    })),
   };
 }
 

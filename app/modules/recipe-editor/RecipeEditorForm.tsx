@@ -16,6 +16,7 @@ import {
   getRecipeEditorBaseDraft,
   getRecipeEditorDefaults,
 } from "./recipe-editor.values";
+import { IngredientSectionEditor } from "./IngredientSectionEditor";
 
 type RecipeEditorFormProps = {
   mode: "new" | "edit";
@@ -46,6 +47,7 @@ export function RecipeEditorForm({
   const [saveState, setSaveState] = useState<"idle" | "validated">("idle");
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<RecipeEditorFormValues, unknown, ParsedRecipeEditorFormValues>({
@@ -232,6 +234,12 @@ export function RecipeEditorForm({
           />
         </div>
       </section>
+
+      <IngredientSectionEditor
+        control={control}
+        register={register}
+        errors={errors}
+      />
 
       <footer className="editor-footer">
         <span>{isDirty ? "Unsaved changes" : "No changes yet"}</span>

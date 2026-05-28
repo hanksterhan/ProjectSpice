@@ -39,6 +39,26 @@ const optionalPositiveNumberInput = optionalNumberInput.pipe(
   z.number().positive("Use a positive number.").optional(),
 );
 
+const ingredientEditorItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    raw: z.string().trim().min(1, "Preserve the ingredient text."),
+    quantity: optionalPositiveNumberInput,
+    unit: optionalTextInput,
+    item: z.string().trim().min(1, "Name the ingredient."),
+    preparation: optionalTextInput,
+    optional: z.boolean(),
+  })
+  .strict();
+
+const ingredientEditorSectionSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    title: optionalTextInput,
+    items: z.array(ingredientEditorItemSchema).min(1, "Add at least one ingredient."),
+  })
+  .strict();
+
 export const recipeEditorFormSchema = z
   .object({
     title: z.string().trim().min(1, "Add a recipe title."),
@@ -54,6 +74,9 @@ export const recipeEditorFormSchema = z
     notesText: z.string(),
     sourceName: optionalTextInput,
     sourceUrl: optionalUrlInput,
+    ingredientSections: z
+      .array(ingredientEditorSectionSchema)
+      .min(1, "Add at least one ingredient section."),
   })
   .strict();
 
@@ -87,6 +110,19 @@ export function validateRecipeEditorDraft(
     imageUrl: values.imageUrl,
     tags: parseRecipeEditorTags(values.tagsText),
     notes: parseRecipeEditorNotes(values.notesText),
+    ingredients: values.ingredientSections.map((section) => ({
+      id: section.id,
+      title: section.title,
+      items: section.items.map((item) => ({
+        id: item.id,
+        raw: item.raw,
+        quantity: item.quantity,
+        unit: item.unit,
+        item: item.item,
+        preparation: item.preparation,
+        optional: item.optional ? true : undefined,
+      })),
+    })),
     yield:
       values.yieldQuantity || values.yieldUnit || values.yieldNotes
         ? {

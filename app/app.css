@@ -838,6 +838,15 @@ p {
   justify-content: end;
 }
 
+.editor-actions.compact {
+  gap: 0.4rem;
+}
+
+.editor-actions.compact .button {
+  min-height: 2.35rem;
+  padding-inline: 0.7rem;
+}
+
 .form-status {
   background: rgb(47 111 78 / 10%);
   border: 1px solid rgb(47 111 78 / 25%);
@@ -851,6 +860,15 @@ p {
   display: grid;
   gap: 1rem;
   padding: clamp(1rem, 3vw, 1.35rem);
+}
+
+.editor-section-header,
+.ingredient-editor-section-header,
+.ingredient-item-actions {
+  align-items: end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
 }
 
 .editor-section h2 {
@@ -874,6 +892,56 @@ p {
 
 .field-wide {
   width: 100%;
+}
+
+.ingredient-editor-list,
+.ingredient-item-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.ingredient-editor-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.ingredient-editor-section-header > .field {
+  flex: 1;
+}
+
+.ingredient-item-editor {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+.ingredient-fields {
+  grid-template-columns:
+    minmax(5rem, 0.45fr) minmax(6rem, 0.65fr) minmax(0, 1fr)
+    minmax(0, 1fr);
+}
+
+.checkbox-field {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  min-height: 2.35rem;
+}
+
+.checkbox-field input {
+  accent-color: var(--accent);
+  height: 1rem;
+  width: 1rem;
 }
 
 .editor-footer {
@@ -912,9 +980,20 @@ p {
   .recipe-detail-hero,
   .recipe-detail-layout,
   .editor-header,
+  .editor-section-header,
+  .ingredient-editor-section-header,
+  .ingredient-item-actions,
   .editor-grid.two-column,
-  .editor-grid.three-column {
+  .editor-grid.three-column,
+  .ingredient-fields {
     grid-template-columns: 1fr;
+  }
+
+  .editor-section-header,
+  .ingredient-editor-section-header,
+  .ingredient-item-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .recipe-preview {
