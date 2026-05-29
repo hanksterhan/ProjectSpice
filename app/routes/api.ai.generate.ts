@@ -4,6 +4,7 @@ import type { Route } from "./+types/api.ai.generate";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
+  getRecipeAiProviderOverride,
 } from "~/server/ai";
 import { getRecipeAiService } from "~/server/ai/recipe-ai.runtime";
 
@@ -26,7 +27,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   try {
-    const result = await getRecipeAiService(context).generateRecipeDraft(
+    const result = await getRecipeAiService(
+      context,
+      getRecipeAiProviderOverride(request, context),
+    ).generateRecipeDraft(
       parsedBody.data,
       {
         rateLimitKey: getRateLimitKey(request),

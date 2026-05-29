@@ -4,6 +4,7 @@ import type { Route } from "./+types/api.ai.transform";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
+  getRecipeAiProviderOverride,
 } from "~/server/ai";
 import { getRecipeAiService } from "~/server/ai/recipe-ai.runtime";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
@@ -34,7 +35,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   try {
-    const result = await getRecipeAiService(context).transformRecipeDraft(
+    const result = await getRecipeAiService(
+      context,
+      getRecipeAiProviderOverride(request, context),
+    ).transformRecipeDraft(
       {
         recipe,
         prompt: parsedBody.data.prompt,

@@ -13,6 +13,7 @@ import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
+  getRecipeAiProviderOverride,
   getRecipeAiService,
 } from "~/server/ai";
 import { RecipeVersionConflictError } from "~/server/recipes/recipe.repo";
@@ -77,7 +78,10 @@ export async function action({
     }
 
     try {
-      const result = await getRecipeAiService(context).transformRecipeDraft(
+      const result = await getRecipeAiService(
+        context,
+        getRecipeAiProviderOverride(request, context),
+      ).transformRecipeDraft(
         {
           recipe,
           prompt: parsed.data.prompt,

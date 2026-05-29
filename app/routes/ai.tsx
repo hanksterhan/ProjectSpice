@@ -11,6 +11,7 @@ import {
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
+  getRecipeAiProviderOverride,
   getRecipeAiService,
 } from "~/server/ai";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
@@ -50,7 +51,10 @@ export async function action({
     }
 
     try {
-      const result = await getRecipeAiService(context).generateRecipeDraft(
+      const result = await getRecipeAiService(
+        context,
+        getRecipeAiProviderOverride(request, context),
+      ).generateRecipeDraft(
         {
           prompt: parsed.data.prompt,
           preferences: parsePreferences(parsed.data.preferences),

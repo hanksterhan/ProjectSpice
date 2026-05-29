@@ -7,6 +7,7 @@
     "cf-typegen": "wrangler types",
     "dev": "react-router dev",
     "preview": "pnpm build && vite preview",
+    "test:smoke": "playwright test",
     "typecheck": "pnpm cf-typegen && react-router typegen && tsc -b",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests"
@@ -30,6 +31,7 @@
     "@cloudflare/vite-plugin": "^1.13.5",
     "@cloudflare/workers-types": "^4.20260426.1",
     "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.60.0",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^22",
