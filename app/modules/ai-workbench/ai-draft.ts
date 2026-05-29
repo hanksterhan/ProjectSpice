@@ -37,6 +37,24 @@ export function buildRecipeFromAiDraft({
   });
 }
 
+export function buildUpdatedRecipeFromAiDraft({
+  draftRecipe,
+  existingRecipe,
+  now,
+}: {
+  draftRecipe: RecipeDraft;
+  existingRecipe: Recipe;
+  now: string;
+}): Recipe {
+  return recipeSchema.parse({
+    ...recipeDraftSchema.parse(draftRecipe),
+    id: existingRecipe.id,
+    version: existingRecipe.version + 1,
+    createdAt: existingRecipe.createdAt,
+    updatedAt: now,
+  });
+}
+
 function createRecipeId(title: string): string {
   const slug = createRecipeSlug(title) || "ai-recipe";
   const suffix = globalThis.crypto?.randomUUID?.().slice(0, 8) ?? Date.now().toString(36);

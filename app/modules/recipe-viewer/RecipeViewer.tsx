@@ -3,13 +3,15 @@ import {
   formatIngredientDisplayText,
   type Recipe,
 } from "~/modules/recipe-domain";
+import { RecipeAiPanel, type RecipeAiPanelActionData } from "~/modules/ai-workbench";
 import { RecipeImage } from "~/modules/ui-shell/primitives";
 
 type RecipeViewerProps = {
+  actionData?: RecipeAiPanelActionData;
   recipe: Recipe;
 };
 
-export function RecipeViewer({ recipe }: RecipeViewerProps) {
+export function RecipeViewer({ actionData, recipe }: RecipeViewerProps) {
   const prepTime = formatDisplayTime(recipe.times?.prepMinutes);
   const cookTime = formatDisplayTime(recipe.times?.cookMinutes);
   const totalTime = formatDisplayTime(recipe.times?.totalMinutes);
@@ -118,11 +120,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
             )}
           </section>
 
-          <section className="recipe-ai-panel" aria-labelledby="ai-heading">
-            <p className="eyebrow">Workbench</p>
-            <h2 id="ai-heading">AI</h2>
-            <p>No AI drafts yet.</p>
-          </section>
+          <RecipeAiPanel actionData={actionData} recipe={recipe} />
         </main>
       </div>
     </article>

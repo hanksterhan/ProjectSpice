@@ -170,7 +170,8 @@ p {
 .ai-review-panel,
 .ai-draft-preview,
 .ai-draft-empty,
-.ai-draft-panel {
+.ai-draft-panel,
+.recipe-ai-empty {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -926,13 +927,67 @@ p {
 .recipe-ai-panel {
   background: var(--surface-muted);
   border-radius: 8px;
+  display: grid;
+  gap: 1rem;
   padding: 1rem;
 }
 
 .recipe-ai-panel h2 {
   font-size: 1.3rem;
+  margin-bottom: 0;
 }
 
+.recipe-ai-panel-header {
+  align-items: end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.recipe-ai-panel-header span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.recipe-ai-transform-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.recipe-ai-review {
+  display: grid;
+  gap: 1rem;
+}
+
+.recipe-ai-review .ai-draft-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem);
+}
+
+.recipe-ai-review .ai-draft-hero h2 {
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+}
+
+.recipe-ai-review .ai-draft-image,
+.recipe-ai-review .ai-draft-hero .image-fallback {
+  height: 11rem;
+}
+
+.recipe-ai-review .ai-draft-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.recipe-ai-empty {
+  box-shadow: none;
+  padding: 1rem;
+}
+
+.recipe-ai-empty h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+
+.recipe-ai-empty p:last-child,
 .recipe-ai-panel p:last-child {
   margin-bottom: 0;
 }
@@ -1152,6 +1207,7 @@ p {
   .ai-workbench-layout,
   .ai-draft-hero,
   .ai-draft-grid,
+  .recipe-ai-review .ai-draft-hero,
   .toolbar-actions,
   .shell-grid,
   .recipe-detail-hero,

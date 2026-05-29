@@ -4,9 +4,11 @@ import { validRecipeDraftFixture } from "~/modules/recipe-domain";
 
 import {
   buildRecipeFromAiDraft,
+  buildUpdatedRecipeFromAiDraft,
   parseAiDraftJson,
   serializeAiDraft,
 } from "../ai-draft";
+import { validRecipeFixture } from "~/modules/recipe-domain";
 
 describe("AI draft helpers", () => {
   it("serializes and parses AI drafts through the canonical draft schema", () => {
@@ -34,5 +36,28 @@ describe("AI draft helpers", () => {
       },
     });
     expect(draft).toEqual(validRecipeDraftFixture);
+  });
+
+  it("builds an updated recipe from an AI draft while preserving identity", () => {
+    const existingRecipe = structuredClone(validRecipeFixture);
+    const draft = {
+      ...structuredClone(validRecipeDraftFixture),
+      title: "Sesame Chicken Bowls with Bright Herbs",
+    };
+
+    const recipe = buildUpdatedRecipeFromAiDraft({
+      draftRecipe: draft,
+      existingRecipe,
+      now: "2026-05-29T09:00:00.000Z",
+    });
+
+    expect(recipe).toMatchObject({
+      id: existingRecipe.id,
+      title: "Sesame Chicken Bowls with Bright Herbs",
+      version: existingRecipe.version + 1,
+      createdAt: existingRecipe.createdAt,
+      updatedAt: "2026-05-29T09:00:00.000Z",
+    });
+    expect(existingRecipe).toEqual(validRecipeFixture);
   });
 });
