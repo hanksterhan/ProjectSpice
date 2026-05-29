@@ -50,6 +50,16 @@ export class OpenAiRecipeAiProviderError extends Error {
   }
 }
 
+export function formatOpenAiRecipeAiProviderError(error: unknown): string | null {
+  if (!(error instanceof OpenAiRecipeAiProviderError)) {
+    return null;
+  }
+
+  const causeMessage = getOpenAiErrorCauseMessage(error.cause);
+
+  return causeMessage ? `${error.message} ${causeMessage}` : error.message;
+}
+
 export class OpenAiRecipeAiProvider implements RecipeAiProvider {
   private readonly apiKey: string;
   private readonly endpoint: string;
@@ -67,7 +77,7 @@ export class OpenAiRecipeAiProvider implements RecipeAiProvider {
 
     this.apiKey = config.apiKey;
     this.endpoint = config.endpoint ?? DEFAULT_OPENAI_RESPONSES_URL;
-    this.fetchImpl = config.fetch ?? fetch;
+    this.fetchImpl = config.fetch ?? ((input, init) => fetch(input, init));
     this.model = config.model ?? DEFAULT_OPENAI_RECIPE_MODEL;
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
@@ -165,6 +175,7 @@ export class OpenAiRecipeAiProvider implements RecipeAiProvider {
           type: "json_schema",
           name: "project_spice_recipe_draft",
           schema: recipeAiProviderDraftJsonSchema,
+          strict: true,
         },
       },
     };
@@ -366,6 +377,30 @@ async function readResponseError(response: Response): Promise<unknown> {
   }
 }
 
+function getOpenAiErrorCauseMessage(cause: unknown): string | null {
+  if (typeof cause === "string" && cause.trim()) {
+    return cause;
+  }
+
+  if (cause instanceof Error && cause.message.trim()) {
+    return cause.message;
+  }
+
+  if (isRecord(cause)) {
+    const error = cause.error;
+
+    if (isRecord(error) && typeof error.message === "string") {
+      return error.message;
+    }
+
+    if (typeof cause.message === "string") {
+      return cause.message;
+    }
+  }
+
+  return null;
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
@@ -381,17 +416,131 @@ const recipeAiProviderDraftJsonSchema = {
   properties: {
     draftRecipe: {
       type: "object",
-      required: ["title", "ingredients", "directions", "tags"],
+      additionalProperties: false,
+      required: [
+        "title",
+        "description",
+        "yield",
+        "times",
+        "imageUrl",
+        "ingredients",
+        "directions",
+        "notes",
+        "source",
+        "tags",
+      ],
       properties: {
         title: { type: "string" },
-        description: { type: "string" },
-        yield: { type: "object" },
-        times: { type: "object" },
-        imageUrl: { type: "string" },
-        ingredients: { type: "array" },
-        directions: { type: "array" },
+        description: { type: ["string", "null"] },
+        yield: {
+          type: ["object", "null"],
+          additionalProperties: false,
+          required: ["quantity", "unit", "notes"],
+          properties: {
+            quantity: { type: ["number", "null"], exclusiveMinimum: 0 },
+            unit: { type: ["string", "null"] },
+            notes: { type: ["string", "null"] },
+          },
+        },
+        times: {
+          type: ["object", "null"],
+          additionalProperties: false,
+          required: ["prepMinutes", "cookMinutes", "totalMinutes"],
+          properties: {
+            prepMinutes: { type: ["integer", "null"], minimum: 0 },
+            cookMinutes: { type: ["integer", "null"], minimum: 0 },
+            totalMinutes: { type: ["integer", "null"], minimum: 0 },
+          },
+        },
+        imageUrl: { type: ["string", "null"] },
+        ingredients: {
+          type: "array",
+          minItems: 1,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["id", "title", "items"],
+            properties: {
+              id: { type: "string" },
+              title: { type: ["string", "null"] },
+              items: {
+                type: "array",
+                minItems: 1,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: [
+                    "id",
+                    "raw",
+                    "quantity",
+                    "unit",
+                    "item",
+                    "preparation",
+                    "optional",
+                  ],
+                  properties: {
+                    id: { type: "string" },
+                    raw: { type: "string" },
+                    quantity: { type: ["number", "null"], exclusiveMinimum: 0 },
+                    unit: { type: ["string", "null"] },
+                    item: { type: "string" },
+                    preparation: { type: ["string", "null"] },
+                    optional: { type: ["boolean", "null"] },
+                  },
+                },
+              },
+            },
+          },
+        },
+        directions: {
+          type: "array",
+          minItems: 1,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["id", "title", "steps"],
+            properties: {
+              id: { type: "string" },
+              title: { type: ["string", "null"] },
+              steps: {
+                type: "array",
+                minItems: 1,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: [
+                    "id",
+                    "order",
+                    "text",
+                    "timerMinutes",
+                    "ingredientRefs",
+                  ],
+                  properties: {
+                    id: { type: "string" },
+                    order: { type: "integer", minimum: 1 },
+                    text: { type: "string" },
+                    timerMinutes: { type: ["integer", "null"], minimum: 1 },
+                    ingredientRefs: {
+                      type: ["array", "null"],
+                      items: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         notes: { type: "array", items: { type: "string" } },
-        source: { type: "object" },
+        source: {
+          type: "object",
+          additionalProperties: false,
+          required: ["type", "name", "url"],
+          properties: {
+            type: { type: "string", enum: ["ai"] },
+            name: { type: ["string", "null"] },
+            url: { type: ["string", "null"] },
+          },
+        },
         tags: { type: "array", items: { type: "string" } },
       },
     },

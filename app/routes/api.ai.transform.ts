@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 import type { Route } from "./+types/api.ai.transform";
-import { RecipeAiRateLimitError } from "~/server/ai";
+import {
+  RecipeAiRateLimitError,
+  formatOpenAiRecipeAiProviderError,
+} from "~/server/ai";
 import { getRecipeAiService } from "~/server/ai/recipe-ai.runtime";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
@@ -75,7 +78,8 @@ function toAiErrorResponse(error: unknown) {
     error:
       error instanceof RecipeAiRateLimitError
         ? "AI rate limit exceeded. Try again later."
-        : "AI recipe transformation failed.",
+        : formatOpenAiRecipeAiProviderError(error) ??
+          "AI recipe transformation failed.",
   };
 }
 

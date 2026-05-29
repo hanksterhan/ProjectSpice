@@ -8,7 +8,11 @@ import {
   parseAiDraftJson,
   type AiWorkbenchActionData,
 } from "~/modules/ai-workbench";
-import { RecipeAiRateLimitError, getRecipeAiService } from "~/server/ai";
+import {
+  RecipeAiRateLimitError,
+  formatOpenAiRecipeAiProviderError,
+  getRecipeAiService,
+} from "~/server/ai";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 const generateFormSchema = z.object({
@@ -128,7 +132,10 @@ function getAiErrorMessage(error: unknown): string {
     return "AI rate limit exceeded. Try again later.";
   }
 
-  return error instanceof Error ? error.message : "AI draft generation failed.";
+  return (
+    formatOpenAiRecipeAiProviderError(error) ??
+    (error instanceof Error ? error.message : "AI draft generation failed.")
+  );
 }
 
 function getSaveErrorMessage(error: unknown): string {

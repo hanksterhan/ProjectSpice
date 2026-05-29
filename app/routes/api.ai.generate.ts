@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 import type { Route } from "./+types/api.ai.generate";
-import { RecipeAiRateLimitError } from "~/server/ai";
+import {
+  RecipeAiRateLimitError,
+  formatOpenAiRecipeAiProviderError,
+} from "~/server/ai";
 import { getRecipeAiService } from "~/server/ai/recipe-ai.runtime";
 
 const generateRequestSchema = z
@@ -63,7 +66,7 @@ function toAiErrorResponse(error: unknown) {
     error:
       error instanceof RecipeAiRateLimitError
         ? "AI rate limit exceeded. Try again later."
-        : "AI recipe generation failed.",
+        : formatOpenAiRecipeAiProviderError(error) ?? "AI recipe generation failed.",
   };
 }
 

@@ -172,7 +172,7 @@ export function buildTransformRecipePrompt(
 }
 
 export function parseRecipeAiProviderDraft(output: unknown): RecipeAiProviderDraft {
-  const parsed = recipeAiProviderDraftSchema.parse(output);
+  const parsed = recipeAiProviderDraftSchema.parse(removeNullObjectValues(output));
 
   return parsed;
 }
@@ -199,4 +199,22 @@ function formatStructuredOutputInstructions(): string {
     "Expected draftRecipe shape:",
     JSON.stringify(recipeDraftJsonShape, null, 2),
   ].join("\n");
+}
+
+function removeNullObjectValues(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value
+      .filter((entryValue) => entryValue !== null)
+      .map(removeNullObjectValues);
+  }
+
+  if (typeof value !== "object" || value === null) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, entryValue]) => entryValue !== null)
+      .map(([key, entryValue]) => [key, removeNullObjectValues(entryValue)]),
+  );
 }

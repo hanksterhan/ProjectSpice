@@ -58,6 +58,81 @@ describe("parseRecipeAiProviderDraft", () => {
     });
   });
 
+  it("accepts null placeholders used by strict structured outputs", () => {
+    const parsed = parseRecipeAiProviderDraft({
+        draftRecipe: {
+          ...validRecipeDraftFixture,
+          description: null,
+          imageUrl: null,
+          yield: {
+            quantity: null,
+            unit: null,
+            notes: null,
+          },
+          ingredients: [
+            {
+              id: "toast-ingredients",
+              title: null,
+              items: [
+                {
+                  id: "white-beans",
+                  raw: "1 can cannellini beans, drained",
+                  quantity: 1,
+                  unit: "can",
+                  item: "cannellini beans",
+                  preparation: null,
+                  optional: null,
+                },
+              ],
+            },
+          ],
+          directions: [
+            {
+              id: "assemble",
+              title: null,
+              steps: [
+                {
+                  id: "warm-beans",
+                  order: 1,
+                  text: "Warm the beans with olive oil, lemon zest, and salt.",
+                  timerMinutes: null,
+                  ingredientRefs: null,
+                },
+              ],
+            },
+          ],
+          source: {
+            type: "ai",
+            name: null,
+            url: null,
+          },
+          notes: ["Keep warm.", null],
+        },
+        changeSummary: ["Prepared a structured recipe draft.", null],
+      });
+
+    expect(parsed).toMatchObject({
+      draftRecipe: {
+        title: validRecipeDraftFixture.title,
+        ingredients: [
+          {
+            id: "toast-ingredients",
+            items: [
+              {
+                id: "white-beans",
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(
+      parsed.draftRecipe.ingredients[0]?.items[0],
+    ).not.toHaveProperty("preparation");
+    expect(parsed.changeSummary).toEqual(["Prepared a structured recipe draft."]);
+    expect(parsed.draftRecipe.notes).toEqual(["Keep warm."]);
+  });
+
   it("rejects provider output that does not match the draft schema", () => {
     expect(() =>
       parseRecipeAiProviderDraft({
