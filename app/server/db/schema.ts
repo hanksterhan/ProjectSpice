@@ -8,7 +8,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import type { Recipe } from "~/modules/recipe-domain";
+import type { Recipe, RecipeDraft } from "~/modules/recipe-domain";
 
 export const aiRunOperations = ["generate", "transform"] as const;
 export const aiRunStatuses = ["succeeded", "failed"] as const;
@@ -86,7 +86,7 @@ export const aiRuns = sqliteTable(
     responseJson: text("response_json", { mode: "json" }).$type<
       Record<string, unknown>
     >(),
-    draftRecipeJson: text("draft_recipe_json", { mode: "json" }).$type<Recipe>(),
+    draftRecipeJson: text("draft_recipe_json", { mode: "json" }).$type<RecipeDraft>(),
     status: text("status").$type<AiRunStatus>().notNull(),
     error: text("error"),
     changeSummary: text("change_summary"),
