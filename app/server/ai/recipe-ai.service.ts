@@ -81,11 +81,22 @@ export class RecipeAiService {
 
     return this.runWithAudit({
       operation: "generate",
-      providerCall: () => this.provider.generateRecipe(request),
+      providerCall: () =>
+        this.provider.generateRecipe({
+          ...request,
+          currentDraft: request.currentDraft
+            ? cloneRecipeDraft(request.currentDraft)
+            : undefined,
+          conversation: request.conversation
+            ? structuredClone(request.conversation)
+            : undefined,
+        }),
       prompt: {
         operation: "generate",
         prompt: request.prompt,
         preferences: request.preferences ?? [],
+        currentDraftTitle: request.currentDraft?.title,
+        conversationTurns: request.conversation?.length ?? 0,
       },
       now,
     });
@@ -106,11 +117,19 @@ export class RecipeAiService {
         this.provider.transformRecipe({
           ...request,
           recipe: cloneRecipe(sourceRecipe),
+          currentDraft: request.currentDraft
+            ? cloneRecipeDraft(request.currentDraft)
+            : undefined,
+          conversation: request.conversation
+            ? structuredClone(request.conversation)
+            : undefined,
         }),
       prompt: {
         operation: "transform",
         prompt: request.prompt,
         preferences: request.preferences ?? [],
+        currentDraftTitle: request.currentDraft?.title,
+        conversationTurns: request.conversation?.length ?? 0,
         sourceRecipe: {
           id: sourceRecipe.id,
           title: sourceRecipe.title,
@@ -245,6 +264,10 @@ function createRateLimitWindowKey(
 
 function cloneRecipe(recipe: Recipe): Recipe {
   return JSON.parse(JSON.stringify(recipe)) as Recipe;
+}
+
+function cloneRecipeDraft(recipe: RecipeDraft): RecipeDraft {
+  return JSON.parse(JSON.stringify(recipe)) as RecipeDraft;
 }
 
 function createRandomId(): string {

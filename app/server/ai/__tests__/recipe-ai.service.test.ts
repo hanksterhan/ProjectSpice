@@ -177,6 +177,60 @@ describe("RecipeAiService", () => {
       },
     ]);
   });
+
+  it("passes cloned current draft context for iterative revisions", async () => {
+    const currentDraft = structuredClone(validRecipeDraftFixture);
+    const snapshot = structuredClone(currentDraft);
+    const provider = createProviderDouble({
+      generateRecipe: vi.fn(async (request) => {
+        request.currentDraft!.title = "Mutated by provider";
+
+        return {
+          draftRecipe: {
+            ...validRecipeDraftFixture,
+            title: "Brighter Lemon Cream",
+          },
+          changeSummary: ["Brightened the lemon flavor."],
+        };
+      }),
+    });
+    const auditRepository = createAuditRepository();
+    const service = createService({
+      provider,
+      auditRepository,
+    });
+
+    await expect(
+      service.generateRecipeDraft(
+        {
+          prompt: "Make the lemon brighter.",
+          currentDraft,
+          conversation: [{ role: "user", content: "Make a lemon dessert." }],
+        },
+        {
+          rateLimitKey: "test-user",
+          now: new Date("2026-05-28T10:00:00.000Z"),
+        },
+      ),
+    ).resolves.toMatchObject({
+      draftRecipe: {
+        title: "Brighter Lemon Cream",
+      },
+      changeSummary: ["Brightened the lemon flavor."],
+    });
+
+    expect(currentDraft).toEqual(snapshot);
+    expect(auditRepository.runs).toMatchObject([
+      {
+        operation: "generate",
+        status: "succeeded",
+        prompt: {
+          currentDraftTitle: validRecipeDraftFixture.title,
+          conversationTurns: 1,
+        },
+      },
+    ]);
+  });
 });
 
 describe("MemoryRecipeAiRateLimiter", () => {

@@ -4,6 +4,8 @@ import type { Recipe, RecipeDraft } from "~/modules/recipe-domain";
 import { Button } from "~/modules/ui-shell/primitives";
 
 import { AiDraftPreview } from "./AiDraftPreview";
+import type { AiChatMessage } from "./ai-chat";
+import { serializeAiChatHistory } from "./ai-chat";
 import { serializeAiDraft } from "./ai-draft";
 
 export type RecipeAiPanelActionData =
@@ -11,12 +13,14 @@ export type RecipeAiPanelActionData =
       intent: "transform";
       draftRecipe?: RecipeDraft;
       changeSummary?: string[];
+      chatHistory?: AiChatMessage[];
       errors?: string[];
     }
   | {
       intent: "save-update" | "save-copy" | "delete";
       draftRecipe?: RecipeDraft;
       changeSummary?: string[];
+      chatHistory?: AiChatMessage[];
       errors?: string[];
     };
 
@@ -46,6 +50,13 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
     actionData?.intent === "save-copy"
       ? actionData.changeSummary ?? []
       : [];
+  const chatHistory =
+    actionData?.intent === "transform" ||
+    actionData?.intent === "save-update" ||
+    actionData?.intent === "save-copy"
+      ? actionData.chatHistory ?? []
+      : [];
+  const hasDraft = Boolean(draftRecipe);
 
   return (
     <section className="recipe-ai-panel" aria-labelledby="ai-heading">
@@ -59,11 +70,30 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
 
       <Form className="recipe-ai-transform-form" method="post">
         <input name="intent" type="hidden" value="transform" />
+        {draftRecipe ? (
+          <>
+            <input
+              name="currentDraftJson"
+              type="hidden"
+              value={serializeAiDraft(draftRecipe)}
+            />
+            <input
+              name="chatHistoryJson"
+              type="hidden"
+              value={serializeAiChatHistory(chatHistory)}
+            />
+          </>
+        ) : null}
+        {chatHistory.length ? <AiChatHistory history={chatHistory} /> : null}
         <label className="field">
-          <span>Transform request</span>
+          <span>{hasDraft ? "Message" : "Transform request"}</span>
           <textarea
             name="prompt"
-            placeholder="Make this lighter, add make-ahead notes, or scale it for 8"
+            placeholder={
+              hasDraft
+                ? "Keep the new ingredients, but make step 3 more specific"
+                : "Make this lighter, add make-ahead notes, or scale it for 8"
+            }
             required
             rows={4}
           />
@@ -86,7 +116,13 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
           </div>
         ) : null}
         <Button type="submit" variant="primary" disabled={isTransforming}>
-          {isTransforming ? "Transforming" : "Transform Recipe"}
+          {isTransforming
+            ? hasDraft
+              ? "Updating"
+              : "Transforming"
+            : hasDraft
+              ? "Update Draft"
+              : "Transform Recipe"}
         </Button>
       </Form>
 
@@ -126,6 +162,19 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
         </section>
       )}
     </section>
+  );
+}
+
+function AiChatHistory({ history }: { history: AiChatMessage[] }) {
+  return (
+    <ol className="ai-chat-history compact" aria-label="AI conversation">
+      {history.map((message, index) => (
+        <li className={`ai-chat-message ${message.role}`} key={`${message.role}-${index}`}>
+          <span>{message.role === "user" ? "You" : "AI"}</span>
+          <p>{message.content}</p>
+        </li>
+      ))}
+    </ol>
   );
 }
 

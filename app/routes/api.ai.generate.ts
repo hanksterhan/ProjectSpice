@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { Route } from "./+types/api.ai.generate";
+import { recipeDraftSchema } from "~/modules/recipe-domain";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
@@ -12,6 +13,18 @@ const generateRequestSchema = z
   .object({
     prompt: z.string().trim().min(1),
     preferences: z.array(z.string().trim().min(1)).optional(),
+    currentDraft: recipeDraftSchema.optional(),
+    conversation: z
+      .array(
+        z
+          .object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string().trim().min(1),
+          })
+          .strict(),
+      )
+      .max(12)
+      .optional(),
   })
   .strict();
 

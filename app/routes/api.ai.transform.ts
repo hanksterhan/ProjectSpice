@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { Route } from "./+types/api.ai.transform";
+import { recipeDraftSchema } from "~/modules/recipe-domain";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
@@ -14,6 +15,18 @@ const transformRequestSchema = z
     recipeId: z.string().trim().min(1),
     prompt: z.string().trim().min(1),
     preferences: z.array(z.string().trim().min(1)).optional(),
+    currentDraft: recipeDraftSchema.optional(),
+    conversation: z
+      .array(
+        z
+          .object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string().trim().min(1),
+          })
+          .strict(),
+      )
+      .max(12)
+      .optional(),
   })
   .strict();
 
@@ -43,6 +56,8 @@ export async function action({ request, context }: Route.ActionArgs) {
         recipe,
         prompt: parsedBody.data.prompt,
         preferences: parsedBody.data.preferences,
+        currentDraft: parsedBody.data.currentDraft,
+        conversation: parsedBody.data.conversation,
       },
       {
         rateLimitKey: getRateLimitKey(request),

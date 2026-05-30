@@ -4,6 +4,8 @@ import type { RecipeDraft } from "~/modules/recipe-domain";
 import { Button } from "~/modules/ui-shell/primitives";
 
 import { AiDraftPreview } from "./AiDraftPreview";
+import type { AiChatMessage } from "./ai-chat";
+import { serializeAiChatHistory } from "./ai-chat";
 import { serializeAiDraft } from "./ai-draft";
 
 export type AiWorkbenchActionData =
@@ -11,6 +13,7 @@ export type AiWorkbenchActionData =
       intent: "generate";
       draftRecipe?: RecipeDraft;
       changeSummary?: string[];
+      chatHistory?: AiChatMessage[];
       errors?: string[];
     }
   | {
@@ -33,27 +36,52 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
     actionData?.intent === "generate" ? actionData.draftRecipe : undefined;
   const changeSummary =
     actionData?.intent === "generate" ? actionData.changeSummary ?? [] : [];
+  const chatHistory =
+    actionData?.intent === "generate" ? actionData.chatHistory ?? [] : [];
+  const hasDraft = Boolean(draftRecipe);
 
   return (
     <div className="ai-workbench-page">
       <section className="ai-workbench-toolbar">
         <div>
           <p className="eyebrow">AI Workbench</p>
-          <h1>Generate Recipe</h1>
-          <p className="page-summary">Start with an idea, then review the draft.</p>
+          <h1>Recipe Chat</h1>
+          <p className="page-summary">
+            Start with an idea, then keep tuning the draft before it enters the
+            library.
+          </p>
         </div>
       </section>
 
       <div className="ai-workbench-layout">
         <Form className="ai-prompt-panel" method="post">
           <input name="intent" type="hidden" value="generate" />
+          {draftRecipe ? (
+            <>
+              <input
+                name="currentDraftJson"
+                type="hidden"
+                value={serializeAiDraft(draftRecipe)}
+              />
+              <input
+                name="chatHistoryJson"
+                type="hidden"
+                value={serializeAiChatHistory(chatHistory)}
+              />
+            </>
+          ) : null}
+          {chatHistory.length ? <AiChatHistory history={chatHistory} /> : null}
           <label className="field">
-            <span>Prompt</span>
+            <span>{hasDraft ? "Message" : "Prompt"}</span>
             <textarea
               name="prompt"
-              placeholder="Chilled lemon dessert for a summer dinner"
+              placeholder={
+                hasDraft
+                  ? "Make the filling less sweet and add a make-ahead note"
+                  : "Chilled lemon dessert for a summer dinner"
+              }
               required
-              rows={8}
+              rows={hasDraft ? 4 : 8}
             />
           </label>
           <label className="field">
@@ -74,7 +102,13 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
             </div>
           ) : null}
           <Button type="submit" variant="primary" disabled={isGenerating}>
-            {isGenerating ? "Generating" : "Generate Draft"}
+            {isGenerating
+              ? hasDraft
+                ? "Updating"
+                : "Generating"
+              : hasDraft
+                ? "Update Draft"
+                : "Generate Draft"}
           </Button>
         </Form>
 
@@ -113,5 +147,18 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function AiChatHistory({ history }: { history: AiChatMessage[] }) {
+  return (
+    <ol className="ai-chat-history" aria-label="AI conversation">
+      {history.map((message, index) => (
+        <li className={`ai-chat-message ${message.role}`} key={`${message.role}-${index}`}>
+          <span>{message.role === "user" ? "You" : "AI"}</span>
+          <p>{message.content}</p>
+        </li>
+      ))}
+    </ol>
   );
 }

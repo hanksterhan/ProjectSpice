@@ -8,6 +8,11 @@ import {
   parseAiDraftJson,
   serializeAiDraft,
 } from "../ai-draft";
+import {
+  appendAiChatTurn,
+  parseAiChatHistoryJson,
+  serializeAiChatHistory,
+} from "../ai-chat";
 import { validRecipeFixture } from "~/modules/recipe-domain";
 
 describe("AI draft helpers", () => {
@@ -59,5 +64,31 @@ describe("AI draft helpers", () => {
       updatedAt: "2026-05-29T09:00:00.000Z",
     });
     expect(existingRecipe).toEqual(validRecipeFixture);
+  });
+});
+
+describe("AI chat helpers", () => {
+  it("appends a user request and assistant change summary", () => {
+    expect(
+      appendAiChatTurn({
+        history: [],
+        prompt: "Make it brighter.",
+        changeSummary: ["Added more lemon."],
+      }),
+    ).toEqual([
+      { role: "user", content: "Make it brighter." },
+      { role: "assistant", content: "Updated the draft with 1 change." },
+    ]);
+  });
+
+  it("serializes and parses bounded chat history", () => {
+    const history = [
+      { role: "user" as const, content: "Make a tart." },
+      { role: "assistant" as const, content: "Prepared a tart draft." },
+    ];
+
+    expect(parseAiChatHistoryJson(serializeAiChatHistory(history))).toEqual(
+      history,
+    );
   });
 });

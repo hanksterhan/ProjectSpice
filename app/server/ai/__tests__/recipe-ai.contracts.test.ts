@@ -30,6 +30,24 @@ describe("recipe AI prompt contracts", () => {
     expect(userContent).toContain("No mushrooms");
   });
 
+  it("builds a generate revision prompt with current draft and conversation context", () => {
+    const contract = buildGenerateRecipePrompt({
+      prompt: "Make the lemon brighter.",
+      currentDraft: validRecipeDraftFixture,
+      conversation: [
+        { role: "user", content: "Make a lemon dessert." },
+        { role: "assistant", content: "Prepared a lemon dessert draft." },
+      ],
+    });
+    const userContent = contract.messages.at(-1)?.content ?? "";
+
+    expect(contract.operation).toBe("generate");
+    expect(userContent).toContain("Revise the current unsaved recipe draft");
+    expect(userContent).toContain("Only change the parts needed");
+    expect(userContent).toContain("user: Make a lemon dessert.");
+    expect(userContent).toContain(validRecipeDraftFixture.title);
+  });
+
   it("builds a transform prompt that includes the source recipe and preservation guidance", () => {
     const contract = buildTransformRecipePrompt({
       recipe: validRecipeFixture,
@@ -42,6 +60,21 @@ describe("recipe AI prompt contracts", () => {
     expect(userContent).toContain(validRecipeFixture.title);
     expect(userContent).toContain("\"version\": 1");
     expect(userContent).toContain("source.type = \"ai\"");
+  });
+
+  it("builds a transform revision prompt around the current unsaved draft", () => {
+    const contract = buildTransformRecipePrompt({
+      recipe: validRecipeFixture,
+      prompt: "Keep the changes but add clearer timing.",
+      currentDraft: validRecipeDraftFixture,
+    });
+    const userContent = contract.messages.at(-1)?.content ?? "";
+
+    expect(contract.operation).toBe("transform");
+    expect(userContent).toContain("current unsaved transformed draft");
+    expect(userContent).toContain("Current transformed draft JSON");
+    expect(userContent).toContain(validRecipeDraftFixture.title);
+    expect(userContent).toContain(validRecipeFixture.title);
   });
 });
 

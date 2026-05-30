@@ -28,12 +28,21 @@ export type RecipeAiResponseFormat = {
 export type RecipeAiGenerateRequest = {
   prompt: string;
   preferences?: string[];
+  currentDraft?: RecipeDraft;
+  conversation?: RecipeAiConversationMessage[];
 };
 
 export type RecipeAiTransformRequest = {
   recipe: Recipe;
   prompt: string;
   preferences?: string[];
+  currentDraft?: RecipeDraft;
+  conversation?: RecipeAiConversationMessage[];
+};
+
+export type RecipeAiConversationMessage = {
+  role: "user" | "assistant";
+  content: string;
 };
 
 export type RecipeAiProviderDraft = {
@@ -123,6 +132,8 @@ const systemMessage = [
 export function buildGenerateRecipePrompt(
   request: RecipeAiGenerateRequest,
 ): RecipeAiPromptContract {
+  const isRevision = Boolean(request.currentDraft);
+
   return {
     operation: "generate",
     messages: [
@@ -132,12 +143,24 @@ export function buildGenerateRecipePrompt(
       },
       {
         role: "user",
-        content: [
-          "Generate a new recipe draft from this request:",
-          request.prompt,
-          formatPreferences(request.preferences),
-          formatStructuredOutputInstructions(),
-        ].join("\n\n"),
+        content: isRevision
+          ? [
+              "Revise the current unsaved recipe draft according to the latest user message.",
+              "Only change the parts needed to satisfy the request; preserve the rest of the draft.",
+              formatConversation(request.conversation),
+              "Latest user message:",
+              request.prompt,
+              formatPreferences(request.preferences),
+              "Current draft JSON:",
+              JSON.stringify(request.currentDraft, null, 2),
+              formatStructuredOutputInstructions(),
+            ].join("\n\n")
+          : [
+              "Generate a new recipe draft from this request:",
+              request.prompt,
+              formatPreferences(request.preferences),
+              formatStructuredOutputInstructions(),
+            ].join("\n\n"),
       },
     ],
     responseFormat: recipeAiResponseFormat,
@@ -157,14 +180,27 @@ export function buildTransformRecipePrompt(
       {
         role: "user",
         content: [
-          "Transform the existing recipe according to this request:",
+          request.currentDraft
+            ? "Revise the current unsaved transformed draft according to this request:"
+            : "Transform the existing recipe according to this request:",
           request.prompt,
-          "Preserve the recipe's intent unless the request explicitly changes it.",
+          request.currentDraft
+            ? "Only change the parts needed to satisfy the request; preserve the rest of the current draft."
+            : "Preserve the recipe's intent unless the request explicitly changes it.",
+          formatConversation(request.conversation),
           formatPreferences(request.preferences),
           "Existing recipe JSON:",
           JSON.stringify(request.recipe, null, 2),
+          request.currentDraft
+            ? [
+                "Current transformed draft JSON:",
+                JSON.stringify(request.currentDraft, null, 2),
+              ].join("\n")
+            : "",
           formatStructuredOutputInstructions(),
-        ].join("\n\n"),
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
       },
     ],
     responseFormat: recipeAiResponseFormat,
@@ -190,6 +226,19 @@ function formatPreferences(preferences: string[] | undefined): string {
   }
 
   return `Preferences:\n${preferences.map((preference) => `- ${preference}`).join("\n")}`;
+}
+
+function formatConversation(
+  conversation: RecipeAiConversationMessage[] | undefined,
+): string {
+  if (!conversation?.length) {
+    return "Conversation so far: none.";
+  }
+
+  return [
+    "Conversation so far:",
+    ...conversation.map((message) => `${message.role}: ${message.content}`),
+  ].join("\n");
 }
 
 function formatStructuredOutputInstructions(): string {
