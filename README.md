@@ -140,14 +140,53 @@ pnpm cf-typegen
 
 ## Deploy Commands
 
-The current scaffold has Wrangler environments for development, staging, and
-production, but D1/KV bindings are intentionally deferred until the persistence
-and deployment slices add them.
+Wrangler is configured for local/preview and production Cloudflare bindings:
 
-Build before deploy:
+- `RECIPE_DB`: D1 database for recipes, recipe versions, and AI run audit rows.
+- `AI_RATE_LIMITS`: KV namespace for AI fixed-window rate limit counters.
+
+The checked-in binding IDs are placeholders. Replace them with account-specific
+Cloudflare IDs before deploying. V1 intentionally has no auth bindings and no R2
+media bucket.
+
+Create preview/staging resources:
 
 ```bash
-pnpm build
+pnpm wrangler d1 create projectspice-preview
+pnpm wrangler kv namespace create AI_RATE_LIMITS --env staging
+pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env staging
+```
+
+Create production resources:
+
+```bash
+pnpm wrangler d1 create projectspice-production
+pnpm wrangler kv namespace create AI_RATE_LIMITS --env production
+pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env production
+```
+
+Copy the returned D1 `database_id`, KV `id`, and KV `preview_id` values into
+`wrangler.jsonc` for the matching environment.
+
+Configure the AI secret for staging and production:
+
+```bash
+pnpm wrangler secret put OPENAI_API_KEY --env staging
+pnpm wrangler secret put OPENAI_API_KEY --env production
+```
+
+Apply D1 migrations:
+
+```bash
+pnpm wrangler d1 migrations apply projectspice-preview --remote
+pnpm wrangler d1 migrations apply projectspice-production --remote
+```
+
+Build and dry-run staging:
+
+```bash
+CLOUDFLARE_ENV=staging pnpm build
+pnpm wrangler deploy --dry-run --env staging
 ```
 
 Deploy staging:
@@ -156,11 +195,33 @@ Deploy staging:
 pnpm wrangler deploy --env staging
 ```
 
+Build and dry-run production:
+
+```bash
+CLOUDFLARE_ENV=production pnpm build
+pnpm wrangler deploy --dry-run --env production
+```
+
 Deploy production to `spice.h6nk.dev`:
 
 ```bash
 pnpm wrangler deploy --env production
 ```
+
+Verify `spice.h6nk.dev` after production deploy:
+
+```bash
+curl -I https://spice.h6nk.dev/
+curl -I https://spice.h6nk.dev/ai
+```
+
+Then open `https://spice.h6nk.dev/` in a browser and verify:
+
+- The recipe library loads.
+- A recipe detail page opens from the library.
+- Manual recipe create/edit/delete works.
+- The AI workbench returns a reviewable draft when `OPENAI_API_KEY` is set.
+- No login prompt, auth cookie flow, upload UI, or R2-backed media flow appears.
 
 ## Current Repository Layout
 
