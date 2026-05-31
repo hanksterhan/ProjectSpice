@@ -5,10 +5,10 @@ The V1 north star is a modern Paprika-style private app: clear recipe
 management, pleasant structured editing, and Codex/GPT-assisted recipe creation
 or transformation through reviewable drafts.
 
-The active delivery plan lives at:
+The delivered V1 plan lives at:
 
 ```text
-/Users/hhan/workspaces/plans/active/project-spice-v1-modular-rebuild-plan.md
+/Users/hhan/workspaces/plans/done/project-spice-v1-modular-rebuild-plan.md
 ```
 
 The previous full-featured app remains recoverable through git history. V1
@@ -80,7 +80,7 @@ should add only the files needed for their current behavior.
 
 ## V1 Scope
 
-V1 includes:
+Verified V1 behavior includes:
 
 - Create, edit, save, view, and delete recipes.
 - Store every recipe in one canonical schema.
@@ -88,14 +88,21 @@ V1 includes:
 - Optional recipe `imageUrl` strings for lightweight visual polish.
 - AI generate and transform flows that validate output and remain reviewable
   drafts until explicitly saved.
+- Paprika-derived chilled dessert fixtures for local development and smoke
+  coverage.
+- Desktop and mobile recipe detail layouts with jump navigation on small
+  screens.
 - Single-user, private operation with no login.
-- Cloudflare deployment for `spice.h6nk.dev`.
+- Cloudflare deployment for `spice.h6nk.dev` using D1 for recipes and AI audit
+  rows, plus KV for AI rate limiting.
 
 Deferred to later versions:
 
 - Imports, scraping, uploaded media pipelines, R2-backed images, shopping lists,
   meal planning, family sharing, public sharing, nutrition, pantry, cooking
   logs, login/auth, and multi-provider AI routing.
+- Durable seed/import workflows for production data beyond the current manual
+  recipe loop.
 
 ## Local Commands
 
@@ -117,6 +124,11 @@ Open the app:
 http://127.0.0.1:5173/
 ```
 
+Local development uses the fixture-backed memory recipe store through the
+development-only `PROJECTSPICE_RECIPE_STORAGE=memory` Wrangler var. Staging and
+production do not set that var, so they use the configured Cloudflare D1
+bindings.
+
 Run verification:
 
 ```bash
@@ -124,6 +136,7 @@ pnpm test
 pnpm lint
 pnpm typecheck
 pnpm build
+pnpm test:smoke
 ```
 
 Preview the production build locally:
@@ -223,16 +236,3 @@ Then open `https://spice.h6nk.dev/` in a browser and verify:
 - Manual recipe create/edit/delete works.
 - The AI workbench returns a reviewable draft when `OPENAI_API_KEY` is set.
 - No login prompt, auth cookie flow, upload UI, or R2-backed media flow appears.
-
-## Current Repository Layout
-
-```text
-app/
-  app.css
-  entry.server.tsx
-  root.tsx
-  routes.ts
-  routes/home.tsx
-workers/
-  app.ts
-```

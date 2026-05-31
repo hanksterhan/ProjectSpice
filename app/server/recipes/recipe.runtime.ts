@@ -9,6 +9,7 @@ import { RecipeService, type RecipeServiceRepository } from "./recipe.service";
 type MaybeD1Env = Record<string, unknown> & {
   DB?: RecipeRepositoryDatabase;
   RECIPE_DB?: RecipeRepositoryDatabase;
+  PROJECTSPICE_RECIPE_STORAGE?: string;
 };
 
 let memoryRepository: MemoryRecipeRepository | undefined;
@@ -29,6 +30,13 @@ function getBoundRecipeDatabase(
   context: AppLoadContext,
 ): RecipeRepositoryDatabase | undefined {
   const env = context.cloudflare.env as unknown as MaybeD1Env;
+
+  if (
+    env.PROJECTSPICE_RECIPE_STORAGE === "memory" ||
+    process.env.PROJECTSPICE_RECIPE_STORAGE === "memory"
+  ) {
+    return undefined;
+  }
 
   return env.RECIPE_DB ?? env.DB;
 }

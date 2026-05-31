@@ -25,6 +25,7 @@ type MaybeAiEnv = Record<string, unknown> & {
   OPENAI_API_KEY?: string;
   OPENAI_RECIPE_MODEL?: string;
   OPENAI_RESPONSES_URL?: string;
+  PROJECTSPICE_RECIPE_STORAGE?: string;
   RECIPE_AI_PROVIDER?: string;
 };
 
@@ -86,6 +87,15 @@ export function getRecipeAiProviderOverride(
 }
 
 function getAuditRepository(env: MaybeAiEnv) {
+  if (
+    env.PROJECTSPICE_RECIPE_STORAGE === "memory" ||
+    process.env.PROJECTSPICE_RECIPE_STORAGE === "memory"
+  ) {
+    memoryAuditRepository ??= new MemoryRecipeAiRunRepository();
+
+    return memoryAuditRepository;
+  }
+
   const database = env.RECIPE_DB ?? env.DB;
 
   if (database) {
