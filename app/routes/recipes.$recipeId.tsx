@@ -184,20 +184,108 @@ export default function RecipeDetail({
 }: Route.ComponentProps) {
   return (
     <div className="recipe-detail-route">
-      <Link className="back-link" to="/">
-        Back to library
-      </Link>
-      <Link className="button button-secondary edit-recipe-link" to="edit">
-        Edit Recipe
-      </Link>
-      <Form method="post">
-        <input name="intent" type="hidden" value="delete" />
-        <button className="button button-quiet delete-recipe-button" type="submit">
-          Delete Recipe
-        </button>
-      </Form>
+      <RecipeCommandBar recipeTitle={loaderData.recipe.title} />
       <RecipeViewer actionData={actionData} recipe={loaderData.recipe} />
     </div>
+  );
+}
+
+function RecipeCommandBar({ recipeTitle }: { recipeTitle: string }) {
+  return (
+    <header className="recipe-command-bar">
+      <Link className="icon-button" to="/" title="Back to library" aria-label="Back to library">
+        <ArrowLeftIcon />
+        <span className="sr-only">Back to library</span>
+      </Link>
+
+      <div className="recipe-command-title" aria-label={`Current recipe: ${recipeTitle}`}>
+        <span>Recipe</span>
+        <strong>{recipeTitle}</strong>
+      </div>
+
+      <nav className="recipe-command-actions" aria-label="Recipe actions">
+        <Link className="icon-button" to="edit" title="Edit recipe" aria-label="Edit Recipe">
+          <PencilIcon />
+          <span className="sr-only">Edit Recipe</span>
+        </Link>
+        <a className="icon-button" href="#ai-heading" title="Chat with assistant" aria-label="Chat with assistant">
+          <MessageIcon />
+          <span className="sr-only">Chat with assistant</span>
+        </a>
+        <details className="recipe-command-menu">
+          <summary className="icon-button" title="More recipe actions" aria-label="More recipe actions">
+            <MoreIcon />
+            <span className="sr-only">More recipe actions</span>
+          </summary>
+          <div className="recipe-command-menu-popover">
+            <Form
+              method="post"
+              onSubmit={(event) => {
+                if (!window.confirm(`Delete "${recipeTitle}" from your library?`)) {
+                  event.preventDefault();
+                }
+              }}
+            >
+              <input name="intent" type="hidden" value="delete" />
+              <button className="menu-danger-action" type="submit">
+                <TrashIcon />
+                Delete recipe
+              </button>
+            </Form>
+          </div>
+        </details>
+      </nav>
+    </header>
+  );
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
+      <path d="M8 9h8" />
+      <path d="M8 13h5" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+      <path d="M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+      <path d="M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+    </svg>
   );
 }
 
