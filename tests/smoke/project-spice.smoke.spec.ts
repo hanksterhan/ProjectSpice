@@ -49,7 +49,7 @@ test("recipe loop covers library, CRUD, responsive detail, and mocked AI transfo
   await page.setViewportSize({ width: 390, height: 820 });
   await page.goto("/recipes/classic-sundae-bombe");
   await expect(page.getByRole("navigation", { name: "Recipe sections" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "AI" })).toBeVisible();
+  await page.getByRole("button", { name: "Chat with assistant" }).click();
 
   await page.getByLabel("Transform request").fill("Make it lighter and easier.");
   await page.getByLabel("Preferences").fill("less sugar");

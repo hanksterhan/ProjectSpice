@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/recipes.$recipeId";
 import {
+  RecipeAiPanel,
   appendAiChatTurn,
   buildRecipeFromAiDraft,
   buildUpdatedRecipeFromAiDraft,
@@ -182,15 +184,42 @@ export default function RecipeDetail({
   actionData,
   loaderData,
 }: Route.ComponentProps) {
+  const [isAssistantOpen, setIsAssistantOpen] = useState(Boolean(actionData));
+
+  useEffect(() => {
+    if (actionData) {
+      setIsAssistantOpen(true);
+    }
+  }, [actionData]);
+
   return (
     <div className="recipe-detail-route">
-      <RecipeCommandBar recipeTitle={loaderData.recipe.title} />
-      <RecipeViewer actionData={actionData} recipe={loaderData.recipe} />
+      <RecipeCommandBar
+        isAssistantOpen={isAssistantOpen}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+        recipeTitle={loaderData.recipe.title}
+      />
+      <RecipeViewer recipe={loaderData.recipe} />
+      {isAssistantOpen ? (
+        <RecipeAiPanel
+          actionData={actionData}
+          onClose={() => setIsAssistantOpen(false)}
+          recipe={loaderData.recipe}
+        />
+      ) : null}
     </div>
   );
 }
 
-function RecipeCommandBar({ recipeTitle }: { recipeTitle: string }) {
+function RecipeCommandBar({
+  isAssistantOpen,
+  onOpenAssistant,
+  recipeTitle,
+}: {
+  isAssistantOpen: boolean;
+  onOpenAssistant: () => void;
+  recipeTitle: string;
+}) {
   return (
     <header className="recipe-command-bar">
       <Link className="icon-button" to="/" title="Back to library" aria-label="Back to library">
@@ -208,10 +237,18 @@ function RecipeCommandBar({ recipeTitle }: { recipeTitle: string }) {
           <PencilIcon />
           <span className="sr-only">Edit Recipe</span>
         </Link>
-        <a className="icon-button" href="#ai-heading" title="Chat with assistant" aria-label="Chat with assistant">
+        <button
+          className="icon-button"
+          type="button"
+          title="Chat with assistant"
+          aria-label="Chat with assistant"
+          aria-controls="recipe-ai-assistant"
+          aria-expanded={isAssistantOpen}
+          onClick={onOpenAssistant}
+        >
           <MessageIcon />
           <span className="sr-only">Chat with assistant</span>
-        </a>
+        </button>
         <details className="recipe-command-menu">
           <summary className="icon-button" title="More recipe actions" aria-label="More recipe actions">
             <MoreIcon />

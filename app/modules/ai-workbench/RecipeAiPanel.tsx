@@ -26,10 +26,11 @@ export type RecipeAiPanelActionData =
 
 type RecipeAiPanelProps = {
   actionData?: RecipeAiPanelActionData;
+  onClose?: () => void;
   recipe: Recipe;
 };
 
-export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
+export function RecipeAiPanel({ actionData, onClose, recipe }: RecipeAiPanelProps) {
   const navigation = useNavigation();
   const activeIntent = navigation.formData?.get("intent");
   const isTransforming =
@@ -59,13 +60,31 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
   const hasDraft = Boolean(draftRecipe);
 
   return (
-    <section className="recipe-ai-panel" aria-labelledby="ai-heading">
+    <aside
+      className="recipe-ai-panel"
+      id="recipe-ai-assistant"
+      aria-labelledby="ai-heading"
+    >
       <div className="recipe-ai-panel-header">
         <div>
-          <p className="eyebrow">Workbench</p>
-          <h2 id="ai-heading">AI</h2>
+          <p className="eyebrow">Assistant</p>
+          <h2 id="ai-heading">Recipe Chat</h2>
         </div>
-        <span>v{recipe.version}</span>
+        <div className="recipe-ai-panel-tools">
+          <span>v{recipe.version}</span>
+          {onClose ? (
+            <button
+              className="icon-button"
+              type="button"
+              title="Close assistant"
+              aria-label="Close assistant"
+              onClick={onClose}
+            >
+              <CloseIcon />
+              <span className="sr-only">Close assistant</span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <Form className="recipe-ai-transform-form" method="post">
@@ -128,7 +147,6 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
 
       {draftRecipe ? (
         <div className="recipe-ai-review">
-          <AiDraftPreview recipe={draftRecipe} changeSummary={changeSummary} />
           <div className="ai-review-actions">
             <Form method="post">
               <input name="intent" type="hidden" value="save-update" />
@@ -150,10 +168,11 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
                 {isSavingCopy ? "Saving" : "Save Copy"}
               </Button>
             </Form>
-            <a className="button button-quiet" href="#ai-heading">
-              Discard
-            </a>
+            <Button type="button" variant="quiet" onClick={onClose}>
+              Close
+            </Button>
           </div>
+          <AiDraftPreview recipe={draftRecipe} changeSummary={changeSummary} />
         </div>
       ) : (
         <section className="recipe-ai-empty" aria-label="No AI draft">
@@ -161,7 +180,16 @@ export function RecipeAiPanel({ actionData, recipe }: RecipeAiPanelProps) {
           <p>Transform this recipe, then review the draft before saving it.</p>
         </section>
       )}
-    </section>
+    </aside>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
   );
 }
 
