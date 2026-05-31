@@ -145,14 +145,15 @@ Wrangler is configured for local/preview and production Cloudflare bindings:
 - `RECIPE_DB`: D1 database for recipes, recipe versions, and AI run audit rows.
 - `AI_RATE_LIMITS`: KV namespace for AI fixed-window rate limit counters.
 
-The checked-in binding IDs are placeholders. Replace them with account-specific
-Cloudflare IDs before deploying. V1 intentionally has no auth bindings and no R2
-media bucket.
+The checked-in binding IDs point to fresh V1 Cloudflare resources. If those
+resources are ever recreated, replace the D1 `database_id`, KV `id`, and KV
+`preview_id` values in `wrangler.jsonc`. V1 intentionally has no auth bindings
+and no R2 media bucket.
 
 Create preview/staging resources:
 
 ```bash
-pnpm wrangler d1 create projectspice-preview
+pnpm wrangler d1 create projectspice-v1-staging
 pnpm wrangler kv namespace create AI_RATE_LIMITS --env staging
 pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env staging
 ```
@@ -160,13 +161,13 @@ pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env staging
 Create production resources:
 
 ```bash
-pnpm wrangler d1 create projectspice-production
+pnpm wrangler d1 create projectspice-v1-production
 pnpm wrangler kv namespace create AI_RATE_LIMITS --env production
 pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env production
 ```
 
-Copy the returned D1 `database_id`, KV `id`, and KV `preview_id` values into
-`wrangler.jsonc` for the matching environment.
+If recreating any resource, copy the returned D1 `database_id`, KV `id`, and KV
+`preview_id` values into `wrangler.jsonc` for the matching environment.
 
 Configure the AI secret for staging and production:
 
@@ -178,8 +179,8 @@ pnpm wrangler secret put OPENAI_API_KEY --env production
 Apply D1 migrations:
 
 ```bash
-pnpm wrangler d1 migrations apply projectspice-preview --remote
-pnpm wrangler d1 migrations apply projectspice-production --remote
+pnpm wrangler d1 migrations apply projectspice-v1-staging --remote
+pnpm wrangler d1 migrations apply projectspice-v1-production --remote --env production
 ```
 
 Build and dry-run staging:

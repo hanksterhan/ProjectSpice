@@ -14,16 +14,16 @@
 	"d1_databases": [
 		{
 			"binding": "RECIPE_DB",
-			"database_name": "projectspice-preview",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_name": "projectspice-v1-staging",
+			"database_id": "04269e5d-5407-4f8e-b4dc-3d05748305dc",
 			"migrations_dir": "app/server/db/migrations"
 		}
 	],
 	"kv_namespaces": [
 		{
 			"binding": "AI_RATE_LIMITS",
-			"id": "00000000000000000000000000000000",
-			"preview_id": "00000000000000000000000000000000"
+			"id": "c5fe272a5256482a9a64e81ca6409700",
+			"preview_id": "62efba64eca94083995edd538258584e"
 		}
 	],
 	"env": {
@@ -35,16 +35,16 @@
 			"d1_databases": [
 				{
 					"binding": "RECIPE_DB",
-					"database_name": "projectspice-preview",
-					"database_id": "00000000-0000-0000-0000-000000000000",
+					"database_name": "projectspice-v1-staging",
+					"database_id": "04269e5d-5407-4f8e-b4dc-3d05748305dc",
 					"migrations_dir": "app/server/db/migrations"
 				}
 			],
 			"kv_namespaces": [
 				{
 					"binding": "AI_RATE_LIMITS",
-					"id": "00000000000000000000000000000000",
-					"preview_id": "00000000000000000000000000000000"
+					"id": "c5fe272a5256482a9a64e81ca6409700",
+					"preview_id": "62efba64eca94083995edd538258584e"
 				}
 			]
 		},
@@ -64,16 +64,16 @@
 			"d1_databases": [
 				{
 					"binding": "RECIPE_DB",
-					"database_name": "projectspice-production",
-					"database_id": "00000000-0000-0000-0000-000000000000",
+					"database_name": "projectspice-v1-production",
+					"database_id": "abb4ddae-f009-4ccf-b3ce-c344995799f0",
 					"migrations_dir": "app/server/db/migrations"
 				}
 			],
 			"kv_namespaces": [
 				{
 					"binding": "AI_RATE_LIMITS",
-					"id": "00000000000000000000000000000000",
-					"preview_id": "00000000000000000000000000000000"
+					"id": "d8d4434b913c4e93b443ab0b14fc4865",
+					"preview_id": "9b98f505364b4f229aed99ccb7b68431"
 				}
 			]
 		}
