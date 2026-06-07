@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Spice"
+  short_description: "Deploy ProjectSpice main to Cloudflare production."
+  default_prompt: "Use deploy-spice to deploy current main to Cloudflare production."
