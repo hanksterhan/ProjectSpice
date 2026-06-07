@@ -16,6 +16,9 @@ Deploy the current `main` branch of ProjectSpice to Cloudflare production at
 - Stop and ask before deploying if local commits are unpushed, the branch is not `main`, verification fails, migrations fail, or `git pull --ff-only` cannot fast-forward.
 - Do not modify app code as part of deployment unless the user explicitly asks for a fix.
 - Treat production D1 migrations and `wrangler deploy --env production` as live production changes.
+- If a production D1 command fails, run read-only Wrangler diagnostics before concluding auth/resource failure:
+  `pnpm wrangler whoami`, `pnpm wrangler d1 list`, and a read-only
+  `pnpm wrangler d1 execute projectspice-v1-production --remote --command "SELECT name FROM sqlite_master LIMIT 5"`.
 
 ## Checklist
 
@@ -51,7 +54,14 @@ Deploy the current `main` branch of ProjectSpice to Cloudflare production at
    `~/Library/Preferences/.wrangler/logs/...`. Treat them as non-blocking only
    when the command exits with code `0`.
 
-3. Apply production D1 migrations.
+3. Check and apply production D1 migrations.
+
+   ```bash
+   pnpm wrangler d1 migrations list projectspice-v1-production --remote --env production
+   ```
+
+   If Wrangler reports `No migrations to apply`, record that and continue.
+   Only run apply when pending migrations are listed:
 
    ```bash
    pnpm wrangler d1 migrations apply projectspice-v1-production --remote --env production
@@ -77,12 +87,16 @@ Deploy the current `main` branch of ProjectSpice to Cloudflare production at
    curl -I https://spice.h6nk.dev/ai
    ```
 
+   Accept either:
+   - `200` responses from the Worker, or
+   - `302` redirects to `h6nk.cloudflareaccess.com` with `www-authenticate: Cloudflare-Access`, which means the Worker route is live but the domain is protected by Cloudflare Access.
+
    Then, when browser tooling is available, open `https://spice.h6nk.dev/` and verify:
    - The recipe library loads.
    - A recipe detail page opens from the library.
    - Manual recipe create/edit/delete works.
    - The AI workbench returns a reviewable draft when `OPENAI_API_KEY` is configured.
-   - No login prompt, auth cookie flow, upload UI, or R2-backed media flow appears.
+   - No app-level login prompt, auth cookie flow, upload UI, or R2-backed media flow appears. Cloudflare Access login is external and may appear before the app.
 
 ## Reporting
 
