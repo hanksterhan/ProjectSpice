@@ -2,6 +2,7 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/recipes.$recipeId.edit";
 import { RecipeEditorForm } from "~/modules/recipe-editor";
+import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import {
   buildRecipeFromEditorFormData,
   getExpectedRecipeVersion,
@@ -70,6 +71,13 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 }
 
 export default function EditRecipe({ loaderData, actionData }: Route.ComponentProps) {
+  useShellCommand({
+    backHref: getRecipeDetailPath(loaderData.recipe),
+    backLabel: "Back to recipe",
+    eyebrow: "Edit recipe",
+    title: loaderData.recipe.title,
+  });
+
   return (
     <div className="recipe-editor-route">
       <RecipeEditorForm

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -14,6 +14,7 @@ import {
 } from "~/modules/ai-workbench";
 import { RecipeViewer } from "~/modules/recipe-viewer/RecipeViewer";
 import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
+import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import {
   RecipeAiRateLimitError,
   formatOpenAiRecipeAiProviderError,
@@ -185,6 +186,7 @@ export default function RecipeDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [isAssistantOpen, setIsAssistantOpen] = useState(Boolean(actionData));
+  const recipe = loaderData.recipe;
 
   useEffect(() => {
     if (actionData) {
@@ -192,47 +194,9 @@ export default function RecipeDetail({
     }
   }, [actionData]);
 
-  return (
-    <div className="recipe-detail-route">
-      <RecipeCommandBar
-        isAssistantOpen={isAssistantOpen}
-        onOpenAssistant={() => setIsAssistantOpen(true)}
-        recipeTitle={loaderData.recipe.title}
-      />
-      <RecipeViewer recipe={loaderData.recipe} />
-      {isAssistantOpen ? (
-        <RecipeAiPanel
-          actionData={actionData}
-          onClose={() => setIsAssistantOpen(false)}
-          recipe={loaderData.recipe}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function RecipeCommandBar({
-  isAssistantOpen,
-  onOpenAssistant,
-  recipeTitle,
-}: {
-  isAssistantOpen: boolean;
-  onOpenAssistant: () => void;
-  recipeTitle: string;
-}) {
-  return (
-    <header className="recipe-command-bar">
-      <Link className="icon-button" to="/" title="Back to library" aria-label="Back to library">
-        <ArrowLeftIcon />
-        <span className="sr-only">Back to library</span>
-      </Link>
-
-      <div className="recipe-command-title" aria-label={`Current recipe: ${recipeTitle}`}>
-        <span>Recipe</span>
-        <strong>{recipeTitle}</strong>
-      </div>
-
-      <nav className="recipe-command-actions" aria-label="Recipe actions">
+  const shellActions = useMemo(
+    () => (
+      <>
         <Link className="icon-button" to="edit" title="Edit recipe" aria-label="Edit Recipe">
           <PencilIcon />
           <span className="sr-only">Edit Recipe</span>
@@ -244,7 +208,7 @@ function RecipeCommandBar({
           aria-label="Chat with assistant"
           aria-controls="recipe-ai-assistant"
           aria-expanded={isAssistantOpen}
-          onClick={onOpenAssistant}
+          onClick={() => setIsAssistantOpen(true)}
         >
           <MessageIcon />
           <span className="sr-only">Chat with assistant</span>
@@ -258,7 +222,7 @@ function RecipeCommandBar({
             <Form
               method="post"
               onSubmit={(event) => {
-                if (!window.confirm(`Delete "${recipeTitle}" from your library?`)) {
+                if (!window.confirm(`Delete "${recipe.title}" from your library?`)) {
                   event.preventDefault();
                 }
               }}
@@ -271,17 +235,30 @@ function RecipeCommandBar({
             </Form>
           </div>
         </details>
-      </nav>
-    </header>
+      </>
+    ),
+    [isAssistantOpen, recipe.title],
   );
-}
 
-function ArrowLeftIcon() {
+  useShellCommand({
+    actions: shellActions,
+    backHref: "/",
+    backLabel: "Back to library",
+    eyebrow: "Recipe",
+    title: recipe.title,
+  });
+
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M19 12H5" />
-      <path d="m12 19-7-7 7-7" />
-    </svg>
+    <div className="recipe-detail-route">
+      <RecipeViewer recipe={recipe} />
+      {isAssistantOpen ? (
+        <RecipeAiPanel
+          actionData={actionData}
+          onClose={() => setIsAssistantOpen(false)}
+          recipe={recipe}
+        />
+      ) : null}
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ import { redirect } from "react-router";
 import type { Route } from "./+types/recipes.new";
 import { createEmptyRecipeDraft } from "~/modules/recipe-domain";
 import { RecipeEditorForm } from "~/modules/recipe-editor";
+import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import { buildRecipeFromEditorFormData } from "~/server/recipes/recipe.form";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
@@ -35,6 +36,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function NewRecipe({ loaderData, actionData }: Route.ComponentProps) {
+  useShellCommand({
+    backHref: "/",
+    backLabel: "Back to library",
+    eyebrow: "Recipe",
+    title: "New Recipe",
+  });
+
   return (
     <div className="recipe-editor-route">
       <RecipeEditorForm

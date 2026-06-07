@@ -66,20 +66,32 @@ p {
   align-items: center;
   background: rgb(248 246 241 / 94%);
   border-bottom: 1px solid var(--line);
-  display: flex;
-  gap: 1.25rem;
-  justify-content: space-between;
-  min-height: 4.5rem;
+  backdrop-filter: blur(16px);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 4rem;
   padding: 0 clamp(1rem, 4vw, 2.5rem);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
+.shell-identity,
+.shell-command-cluster,
+.shell-context-actions {
+  align-items: center;
+  display: flex;
+}
+
+.shell-identity {
+  gap: 0.7rem;
+  min-width: 0;
+}
+
 .brand-mark {
   align-items: center;
   display: inline-flex;
-  gap: 0.75rem;
   min-width: max-content;
 }
 
@@ -96,8 +108,34 @@ p {
   width: 2rem;
 }
 
-.brand-mark strong {
-  font-size: 1rem;
+.shell-current-page {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.shell-current-page span {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.shell-current-page strong {
+  color: var(--ink);
+  display: block;
+  font-size: clamp(0.98rem, 1.6vw, 1.1rem);
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-command-cluster {
+  gap: 0.55rem;
+  justify-content: end;
+  min-width: 0;
 }
 
 .shell-nav {
@@ -121,6 +159,44 @@ p {
 .shell-nav-link.active {
   background: var(--surface-muted);
   color: var(--ink);
+}
+
+.shell-context-actions {
+  border-left: 1px solid var(--line);
+  gap: 0.45rem;
+  padding-left: 0.55rem;
+}
+
+.shell-mobile-menu {
+  display: none;
+  position: relative;
+}
+
+.shell-mobile-menu summary {
+  list-style: none;
+}
+
+.shell-mobile-menu-popover {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  min-width: 11rem;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 20;
+}
+
+.shell-menu-nav {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.shell-menu-nav .shell-nav-link {
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .shell-main {
@@ -796,56 +872,9 @@ p {
 
 .recipe-detail-route {
   display: grid;
-  gap: 0.65rem;
+  gap: 1rem;
   margin-inline: auto;
   width: min(100%, 1560px);
-}
-
-.recipe-command-bar {
-  align-items: center;
-  background: rgb(248 246 241 / 98%);
-  border: 1px solid rgb(221 212 197 / 80%);
-  border-radius: 8px;
-  box-shadow: 0 10px 24px rgb(32 29 25 / 7%);
-  display: flex;
-  gap: 0.7rem;
-  justify-content: space-between;
-  min-height: 3.4rem;
-  padding: 0.42rem;
-  position: sticky;
-  top: 5.1rem;
-  z-index: 8;
-}
-
-.recipe-command-title {
-  display: grid;
-  flex: 1;
-  gap: 0.05rem;
-  min-width: 0;
-}
-
-.recipe-command-title span {
-  color: var(--accent);
-  font-size: 0.68rem;
-  font-weight: 900;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.recipe-command-title strong {
-  color: var(--ink);
-  display: block;
-  font-size: clamp(0.98rem, 2vw, 1.12rem);
-  line-height: 1.08;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recipe-command-actions {
-  align-items: center;
-  display: flex;
-  gap: 0.45rem;
 }
 
 .recipe-command-menu {
@@ -1547,18 +1576,37 @@ p {
   }
 }
 
+@media (max-width: 760px) {
+  .shell-header {
+    gap: 0.65rem;
+    padding-inline: 0.85rem;
+  }
+
+  .shell-nav {
+    display: none;
+  }
+
+  .shell-mobile-menu {
+    display: block;
+  }
+
+  .shell-context-actions {
+    gap: 0.35rem;
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
 @media (max-width: 620px) {
   html {
     scroll-padding-top: 0.75rem;
   }
 
   .shell-header {
-    align-items: start;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding-bottom: 0.85rem;
-    padding-top: 0.85rem;
-    position: static;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 3.7rem;
+    padding-bottom: 0.55rem;
+    padding-top: 0.55rem;
   }
 
   .shell-main {
@@ -1599,21 +1647,12 @@ p {
     gap: 0.75rem;
   }
 
-  .recipe-command-bar {
-    gap: 0.5rem;
-    top: 0.75rem;
-  }
-
-  .recipe-command-title span {
+  .shell-current-page span {
     display: none;
   }
 
-  .recipe-command-title strong {
+  .shell-current-page strong {
     font-size: 0.95rem;
-  }
-
-  .recipe-command-actions {
-    gap: 0.35rem;
   }
 
   .icon-button {
