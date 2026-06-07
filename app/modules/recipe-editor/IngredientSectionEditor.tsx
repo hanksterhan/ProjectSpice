@@ -48,15 +48,14 @@ export function IngredientSectionEditor({
     <section className="editor-section" aria-labelledby="editor-ingredients">
       <div className="editor-section-header">
         <div>
-          <p className="eyebrow">Ingredients</p>
-          <h2 id="editor-ingredients">Ingredient Sections</h2>
+          <h2 id="editor-ingredients">Ingredients</h2>
         </div>
         <Button
           type="button"
           variant="secondary"
           onClick={() => append(createEmptyIngredientSection())}
         >
-          Add Section
+          Add Group
         </Button>
       </div>
 
@@ -67,11 +66,11 @@ export function IngredientSectionEditor({
           <div className="ingredient-editor-section" key={section.fieldId}>
             <div className="ingredient-editor-section-header">
               <label className="field">
-                <span>Section title</span>
+                <span>Group title</span>
                 <input
                   {...register(`ingredientSections.${sectionIndex}.title`)}
                   defaultValue={section.title}
-                  placeholder="Ingredients"
+                  placeholder="Optional, e.g. Sauce"
                 />
                 <NestedFieldError
                   errors={errors}

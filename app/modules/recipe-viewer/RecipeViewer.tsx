@@ -5,6 +5,12 @@ import {
 } from "~/modules/recipe-domain";
 import { RecipeImage } from "~/modules/ui-shell/primitives";
 
+import {
+  buildDirectionIngredientIndex,
+  enrichDirectionStepText,
+  getDirectionStepIngredientSummary,
+} from "./direction-ingredients";
+
 type RecipeViewerProps = {
   recipe: Recipe;
 };
@@ -13,6 +19,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
   const prepTime = formatDisplayTime(recipe.times?.prepMinutes);
   const cookTime = formatDisplayTime(recipe.times?.cookMinutes);
   const totalTime = formatDisplayTime(recipe.times?.totalMinutes);
+  const directionIngredientIndex = buildDirectionIngredientIndex(recipe.ingredients);
 
   return (
     <article className="recipe-detail-page">
@@ -67,7 +74,9 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           <h2 id="ingredients-heading">Ingredients</h2>
           {recipe.ingredients.map((section) => (
             <section className="ingredient-section" key={section.id}>
-              <h3>{section.title ?? "Ingredients"}</h3>
+              {shouldShowSectionTitle(section.title, "ingredients") ? (
+                <h3>{section.title}</h3>
+              ) : null}
               <ul>
                 {section.items.map((ingredient) => (
                   <li key={ingredient.id}>
@@ -83,7 +92,6 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
         <main className="direction-pane" aria-labelledby="directions-heading">
           <div className="direction-pane-header">
             <div>
-              <p className="eyebrow">Method</p>
               <h2 id="directions-heading">Directions</h2>
             </div>
             {recipe.source?.name ? <p>{recipe.source.name}</p> : null}
@@ -91,19 +99,66 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
 
           {recipe.directions.map((section) => (
             <section className="direction-section" key={section.id}>
-              <h3>{section.title ?? "Directions"}</h3>
+              {shouldShowSectionTitle(section.title, "directions") ? (
+                <h3>{section.title}</h3>
+              ) : null}
               <ol>
-                {section.steps.map((step) => (
-                  <li key={step.id}>
-                    <span>{step.order}</span>
-                    <div>
-                      <p>{step.text}</p>
-                      {step.timerMinutes ? (
-                        <small>{formatDisplayTime(step.timerMinutes)}</small>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
+                {section.steps.map((step) => {
+                  const textParts = enrichDirectionStepText(step, recipe.ingredients);
+                  const mentionedIngredientIds = new Set(
+                    textParts
+                      .filter((part) => part.type === "ingredient")
+                      .map((part) => part.ingredientId),
+                  );
+                  const ingredientSummary = getDirectionStepIngredientSummary(
+                    step,
+                    directionIngredientIndex,
+                  ).filter(
+                    (ingredient) => !mentionedIngredientIds.has(ingredient.id),
+                  );
+
+                  return (
+                    <li key={step.id}>
+                      <span>{step.order}</span>
+                      <div>
+                        <p>
+                          {textParts.map((part, partIndex) =>
+                            part.type === "ingredient" ? (
+                              <span
+                                className="direction-ingredient-mention"
+                                key={`${part.ingredientId}-${partIndex}`}
+                              >
+                                {part.text}
+                                <span>{part.measure}</span>
+                              </span>
+                            ) : (
+                              <span key={`text-${partIndex}`}>{part.text}</span>
+                            ),
+                          )}
+                        </p>
+                        {ingredientSummary.length > 0 ? (
+                          <div
+                            className="direction-ingredient-summary"
+                            aria-label={`Step ${step.order} ingredients`}
+                          >
+                            {ingredientSummary.map((ingredient) => (
+                              <span key={ingredient.id}>
+                                <strong>{ingredient.measure}</strong>
+                                {ingredient.displayText
+                                  .replace(ingredient.measure, "")
+                                  .trim()
+                                  .replace(/^,?\s*/, "")}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {step.timerMinutes ? (
+                          <small>{formatDisplayTime(step.timerMinutes)}</small>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             </section>
           ))}
@@ -120,4 +175,11 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
       </div>
     </article>
   );
+}
+
+function shouldShowSectionTitle(
+  title: string | undefined,
+  genericTitle: string,
+): title is string {
+  return Boolean(title && title.trim().toLowerCase() !== genericTitle);
 }

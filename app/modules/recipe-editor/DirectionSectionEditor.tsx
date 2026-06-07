@@ -48,15 +48,14 @@ export function DirectionSectionEditor({
     <section className="editor-section" aria-labelledby="editor-directions">
       <div className="editor-section-header">
         <div>
-          <p className="eyebrow">Directions</p>
-          <h2 id="editor-directions">Direction Sections</h2>
+          <h2 id="editor-directions">Directions</h2>
         </div>
         <Button
           type="button"
           variant="secondary"
           onClick={() => append(createEmptyDirectionSection())}
         >
-          Add Section
+          Add Stage
         </Button>
       </div>
 
@@ -67,11 +66,11 @@ export function DirectionSectionEditor({
           <div className="direction-editor-section" key={section.fieldId}>
             <div className="direction-editor-section-header">
               <label className="field">
-                <span>Section title</span>
+                <span>Stage title</span>
                 <input
                   {...register(`directionSections.${sectionIndex}.title`)}
                   defaultValue={section.title}
-                  placeholder="Directions"
+                  placeholder="Optional, e.g. Bake"
                 />
                 <NestedFieldError
                   errors={errors}

@@ -5,10 +5,12 @@ import {
   createRecipeSlug,
   formatDisplayTime,
   formatIngredientDisplayText,
+  formatIngredientMeasure,
   moveRecipeSection,
   normalizeDirectionSections,
   normalizeDirectionSteps,
   recipeDraftSchema,
+  seedRecipes,
   validRecipeFixture,
 } from "../index";
 
@@ -54,6 +56,39 @@ describe("formatIngredientDisplayText", () => {
         preparation: "thinly sliced",
       }),
     ).toBe("2 cups carrots, thinly sliced");
+  });
+});
+
+describe("formatIngredientMeasure", () => {
+  it("formats common decimal quantities as readable fractions", () => {
+    expect(formatIngredientMeasure(validRecipeFixture.ingredients[0].items[0])).toBe(
+      "1 1/2 lb",
+    );
+    expect(formatIngredientMeasure(validRecipeFixture.ingredients[1].items[0])).toBe(
+      "1/4 cup",
+    );
+  });
+
+  it("returns an empty measure when an ingredient has no quantity", () => {
+    expect(formatIngredientMeasure(validRecipeFixture.ingredients[1].items[2])).toBe(
+      "",
+    );
+  });
+
+  it("extracts measures from raw Paprika-style ingredient text", () => {
+    const classicBombe = seedRecipes.find(
+      (recipe) => recipe.id === "classic-sundae-bombe",
+    );
+
+    expect(formatIngredientMeasure(classicBombe!.ingredients[0].items[0])).toBe(
+      "⅔ cup",
+    );
+    expect(formatIngredientMeasure(classicBombe!.ingredients[0].items[1])).toBe(
+      "1 package",
+    );
+    expect(formatIngredientMeasure(classicBombe!.ingredients[1].items[2])).toBe(
+      "1¼ cups",
+    );
   });
 });
 

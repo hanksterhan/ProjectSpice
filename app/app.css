@@ -1118,6 +1118,48 @@ p {
   margin-bottom: 0.35rem;
 }
 
+.direction-ingredient-mention {
+  background: rgb(47 111 78 / 10%);
+  border-radius: 6px;
+  box-decoration-break: clone;
+  color: var(--ink);
+  font-weight: 800;
+  padding: 0.08rem 0.22rem;
+  -webkit-box-decoration-break: clone;
+}
+
+.direction-ingredient-mention span {
+  color: var(--leaf);
+  font-size: 0.78em;
+  font-weight: 900;
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
+.direction-ingredient-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.direction-ingredient-summary span {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.3rem;
+  line-height: 1.2;
+  padding: 0.32rem 0.45rem;
+}
+
+.direction-ingredient-summary strong {
+  color: var(--leaf);
+}
+
 .direction-section small {
   color: var(--leaf);
   font-weight: 900;
