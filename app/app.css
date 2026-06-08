@@ -895,14 +895,16 @@ p {
 
 .library-drawer-organizer {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .drawer-filter-form {
-  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-muted) 52%, transparent);
+  border: 1px solid rgb(48 72 95 / 10%);
+  border-radius: 8px;
   display: grid;
-  gap: 0.75rem;
-  padding-bottom: 0.85rem;
+  gap: 0.7rem;
+  padding: 0.7rem;
 }
 
 .drawer-filter-actions {
@@ -1050,10 +1052,12 @@ p {
 }
 
 .drawer-active-filters {
-  border-bottom: 1px solid var(--line);
+  background: rgb(185 68 47 / 7%);
+  border: 1px solid rgb(185 68 47 / 17%);
+  border-radius: 8px;
   display: grid;
-  gap: 0.45rem;
-  padding-bottom: 0.85rem;
+  gap: 0.55rem;
+  padding: 0.65rem;
 }
 
 .active-filter-list.compact {
@@ -1062,7 +1066,7 @@ p {
 
 .drawer-facet-list {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.85rem;
 }
 
 .library-filter-heading {
@@ -1081,72 +1085,144 @@ p {
 }
 
 .facet-group {
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border-left: 1px solid rgb(48 72 95 / 13%);
   min-width: 0;
-  overflow: hidden;
+  padding-left: 0.45rem;
 }
 
 .facet-group-header {
   align-items: center;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--line);
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
-  min-height: 2rem;
-  padding: 0.42rem 0.55rem;
+  min-height: 1.65rem;
+  padding: 0.15rem 0.35rem 0.3rem;
 }
 
-.facet-group-header h3 {
-  color: var(--plum);
+.drawer-section-title {
+  align-items: center;
+  color: var(--steel);
+  display: flex;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.drawer-section-title h3 {
+  color: inherit;
   font-size: 0.78rem;
   font-weight: 900;
   margin-bottom: 0;
   text-transform: uppercase;
 }
 
-.facet-group-header span {
-  background: var(--surface-muted);
+.drawer-icon {
+  color: var(--muted);
+  flex: 0 0 auto;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+  width: 1rem;
+}
+
+.drawer-section-title + span,
+.drawer-active-filters .drawer-section-title span,
+.facet-group-header > span {
+  background: color-mix(in srgb, var(--surface-muted) 70%, transparent);
   border-radius: 999px;
-  color: var(--steel);
+  color: var(--muted);
   font-size: 0.74rem;
   font-weight: 900;
-  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  padding: 0.23rem 0.45rem;
 }
 
 .facet-options {
   display: grid;
-  gap: 0.1rem;
-  padding: 0.25rem;
+  gap: 0.12rem;
+  padding: 0.05rem 0 0;
 }
 
 .facet-option {
   align-items: center;
-  border-radius: 5px;
+  border: 1px solid transparent;
+  border-radius: 7px;
   color: var(--steel);
   display: flex;
   font-size: 0.88rem;
   font-weight: 800;
   gap: 0.6rem;
   justify-content: space-between;
-  min-height: 1.8rem;
-  padding: 0.28rem 0.4rem;
+  min-height: 2rem;
+  padding: 0.32rem 0.42rem 0.32rem 0.5rem;
+  position: relative;
 }
 
-.facet-option:hover,
-.facet-option.selected {
+.facet-option:hover {
   background: var(--surface-muted);
   color: var(--ink);
 }
 
+.facet-option.selected {
+  background: rgb(255 255 255 / 78%);
+  border-color: rgb(48 72 95 / 14%);
+  box-shadow: 0 1px 0 rgb(48 72 95 / 6%);
+  color: var(--ink);
+}
+
+.facet-option.selected::before {
+  background: var(--rust);
+  border-radius: 999px;
+  content: "";
+  height: 1.15rem;
+  left: -0.56rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.18rem;
+}
+
+.facet-option-label {
+  align-items: center;
+  display: flex;
+  gap: 0.48rem;
+  min-width: 0;
+}
+
+.facet-option-label > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facet-option-indent {
+  border-bottom: 1px solid rgb(48 72 95 / 20%);
+  border-left: 1px solid rgb(48 72 95 / 20%);
+  border-bottom-left-radius: 4px;
+  flex: 0 0 auto;
+  height: 0.72rem;
+  margin-left: 0.18rem;
+  width: 0.72rem;
+}
+
+.facet-option .drawer-icon {
+  height: 0.98rem;
+  width: 0.98rem;
+}
+
+.facet-option.selected .drawer-icon {
+  color: var(--rust);
+}
+
 .facet-option strong {
-  color: var(--muted);
+  color: var(--steel);
   font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .facet-option .mode-direction {
-  background: rgb(255 255 255 / 72%);
+  background: var(--surface-muted);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--steel);
@@ -1156,9 +1232,14 @@ p {
   text-align: center;
 }
 
+.facet-option.selected .mode-direction {
+  background: rgb(185 68 47 / 10%);
+  border-color: rgb(185 68 47 / 20%);
+  color: var(--rust);
+}
+
 .facet-option.selected:hover .mode-direction {
-  border-color: rgb(48 72 95 / 30%);
-  color: var(--ink);
+  border-color: rgb(185 68 47 / 28%);
 }
 
 .active-filter-list {

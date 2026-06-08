@@ -15,6 +15,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.17.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.76.1",

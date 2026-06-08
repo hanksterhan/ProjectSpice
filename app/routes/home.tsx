@@ -1,4 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  BookOpen,
+  Clock,
+  Filter,
+  Heart,
+  History,
+  LayoutGrid,
+  Newspaper,
+  Star,
+  Tags,
+  Type,
+} from "lucide-react";
 import { Form, Link, redirect, useNavigate } from "react-router";
 
 import type { Route } from "./+types/home";
@@ -14,6 +26,7 @@ import {
   parseBulkTagText,
   parseRecipeLibraryQuery,
   removeRecipeTags,
+  type RecipeLibraryFacet,
   type RecipeLibraryQuery,
 } from "~/modules/library/recipe-library";
 import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
@@ -349,7 +362,12 @@ function LibraryOrganizerDrawer({
       <LibraryModePicker query={query} />
 
       {activeFilters.length > 0 ? (
-        <div className="drawer-active-filters" aria-label="Active filters">
+        <section className="drawer-active-filters" aria-label="Active filters">
+          <div className="drawer-section-title">
+            <Filter className="drawer-icon" />
+            <h3>Active</h3>
+            <span>{activeFilters.length}</span>
+          </div>
           <div className="active-filter-list compact">
             {activeFilters.map((filter) => (
               <Link className="active-filter-chip" key={filter.id} to={filter.href}>
@@ -361,14 +379,17 @@ function LibraryOrganizerDrawer({
               Clear all
             </Link>
           </div>
-        </div>
+        </section>
       ) : null}
 
       <div className="drawer-facet-list">
         {facets.map((group) => (
           <section className="facet-group" key={group.id}>
             <div className="facet-group-header">
-              <h3>{group.label}</h3>
+              <div className="drawer-section-title">
+                <LibraryFacetIcon id={group.id} />
+                <h3>{group.label}</h3>
+              </div>
               <span>{group.options.length}</span>
             </div>
             <div className="facet-options">
@@ -378,7 +399,10 @@ function LibraryOrganizerDrawer({
                   key={option.id}
                   to={option.href}
                 >
-                  <span>{option.label}</span>
+                  <span className="facet-option-label">
+                    <span aria-hidden="true" className="facet-option-indent" />
+                    <span>{option.label}</span>
+                  </span>
                   <strong>{option.count}</strong>
                 </Link>
               ))}
@@ -397,7 +421,10 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
   return (
     <section className="facet-group">
       <div className="facet-group-header">
-        <h3>Library Views</h3>
+        <div className="drawer-section-title">
+          <LayoutGrid className="drawer-icon" />
+          <h3>Library Views</h3>
+        </div>
         <span>{modes.length}</span>
       </div>
       <div className="facet-options">
@@ -422,7 +449,10 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
               }
               to={href}
             >
-              <span>{mode.label}</span>
+              <span className="facet-option-label">
+                <LibraryModeIcon id={mode.id} />
+                <span>{mode.label}</span>
+              </span>
               {isActive ? (
                 mode.canToggleDirection ? (
                   <strong className="mode-direction">
@@ -438,6 +468,38 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
       </div>
     </section>
   );
+}
+
+function LibraryFacetIcon({ id }: { id: RecipeLibraryFacet }) {
+  if (id === "source") {
+    return <Newspaper className="drawer-icon" />;
+  }
+
+  if (id === "cookbook") {
+    return <BookOpen className="drawer-icon" />;
+  }
+
+  return <Tags className="drawer-icon" />;
+}
+
+function LibraryModeIcon({ id }: { id: string }) {
+  if (id === "favorites") {
+    return <Heart className="drawer-icon" />;
+  }
+
+  if (id === "top-rated") {
+    return <Star className="drawer-icon" />;
+  }
+
+  if (id === "title") {
+    return <Type className="drawer-icon" />;
+  }
+
+  if (id === "time") {
+    return <Clock className="drawer-icon" />;
+  }
+
+  return <History className="drawer-icon" />;
 }
 
 function getLibraryModeId(query: RecipeLibraryQuery) {
@@ -471,12 +533,6 @@ function getLibraryModes(query: RecipeLibraryQuery) {
       label: "Top Rated",
       sort: "rating",
       topRated: true,
-    },
-    {
-      id: "rating",
-      canToggleDirection: true,
-      label: "Highest Rated",
-      sort: "rating",
     },
     {
       id: "title",
