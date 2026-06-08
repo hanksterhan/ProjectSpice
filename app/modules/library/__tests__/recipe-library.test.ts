@@ -111,6 +111,23 @@ describe("recipe library query helpers", () => {
     ]);
   });
 
+  it("keeps the full tag facet list for scalable vertical browsing", () => {
+    const manyTags = Array.from({ length: 24 }, (_, index) => `tag-${index + 1}`);
+    const facets = getRecipeLibraryFacets(
+      [
+        {
+          ...seedRecipes[0],
+          tags: manyTags,
+        },
+      ],
+      parseRecipeLibraryQuery("https://spice.test/"),
+    );
+
+    expect(facets.find((facet) => facet.id === "tag")?.options).toHaveLength(
+      manyTags.length,
+    );
+  });
+
   it("normalizes bulk tag text and adds or removes tags without duplication", () => {
     const tags = parseBulkTagText(" Favorite, weeknight, Favorite ");
     const recipeWithTags = addRecipeTags(seedRecipes[0], tags);

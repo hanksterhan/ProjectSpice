@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Form, Link, redirect } from "react-router";
 
 import type { Route } from "./+types/home";
@@ -23,6 +23,7 @@ import {
   Tabs,
   TextInput,
 } from "~/modules/ui-shell/primitives";
+import { useShellDrawer } from "~/modules/ui-shell/AppShell";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 export function meta(_args: Route.MetaArgs) {
@@ -109,21 +110,35 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     recipes = getRecipeLibraryResults(seedRecipes, fallbackQuery),
     totalRecipeCount = seedRecipes.length,
   } = loaderData ?? {};
-  const activeFilters = getActiveLibraryFilters(query);
+  const activeFilters = useMemo(() => getActiveLibraryFilters(query), [query]);
   const hasSearch = query.q.length > 0;
   const hasFilters = activeFilters.length > 0;
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [areFiltersOpen, setAreFiltersOpen] = useState(hasFilters);
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
   const resultLabel =
     recipes.length === 1 ? "1 recipe" : `${recipes.length} recipes`;
+  const organizerDrawer = useMemo(
+    () => ({
+      title: "Organize Library",
+      content: (
+        <LibraryOrganizerDrawer
+          activeFilters={activeFilters}
+          facets={facets}
+          hasSearch={hasSearch}
+          query={query}
+        />
+      ),
+    }),
+    [activeFilters, facets, hasSearch, query],
+  );
+
+  useShellDrawer(organizerDrawer);
 
   return (
     <div className="library-page">
       <section className="page-toolbar" aria-labelledby="library-heading">
         <div>
-          <p className="eyebrow">Library</p>
           <h1 id="library-heading">Recipe Library</h1>
           <p className="page-summary">
             {hasSearch || hasFilters
@@ -132,41 +147,16 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           </p>
         </div>
 
-        <form className="toolbar-actions" action="/" method="get" role="search">
-          <TextInput
-            label="Search"
-            type="search"
-            name="q"
-            placeholder="Find a recipe"
-            defaultValue={query.q}
-          />
-          <label className="field">
-            <span>Sort</span>
-            <select name="sort" defaultValue={query.sort}>
-              <option value="recent">Recently updated</option>
-              <option value="title">Title</option>
-              <option value="time">Total time</option>
-            </select>
-          </label>
-          <input type="hidden" name="view" value={query.view} />
-          {hasSearch ? (
-            <Link className="button button-secondary" to={getLibraryQueryHref({ ...query, q: "" })}>
-              Clear
-            </Link>
-          ) : null}
-          <Button type="submit" variant="secondary">
-            Apply
-          </Button>
+        <div className="toolbar-actions">
           <Link className="button button-primary" to="/recipes/new">
             New Recipe
           </Link>
-        </form>
+        </div>
       </section>
 
       <section className="library-results" aria-labelledby="results-heading">
         <div className="results-header">
           <div>
-            <p className="eyebrow">Recipes</p>
             <h2 id="results-heading">{resultLabel}</h2>
           </div>
           <div className="results-header-actions">
@@ -181,39 +171,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <Tabs tabs={getViewTabs(query)} />
           </div>
         </div>
-
-        <details
-          className="library-filter-panel"
-          onToggle={(event) => setAreFiltersOpen(event.currentTarget.open)}
-          open={areFiltersOpen}
-        >
-          <summary className="filter-panel-summary">
-            <div>
-              <p className="eyebrow">Filters</p>
-              <h3>Source, cookbook, and tags</h3>
-            </div>
-            <span>{hasFilters ? `${activeFilters.length} active` : "Filter recipes"}</span>
-          </summary>
-          <div className="filter-panel-body">
-            {facets.map((group) => (
-              <section className="facet-group" key={group.id}>
-                <h3>{group.label}</h3>
-                <div className="facet-options">
-                  {group.options.map((option) => (
-                    <Link
-                      className={option.selected ? "facet-option selected" : "facet-option"}
-                      key={option.id}
-                      to={option.href}
-                    >
-                      <span>{option.label}</span>
-                      <strong>{option.count}</strong>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </details>
 
           {activeFilters.length > 0 ? (
             <div className="active-filter-list" aria-label="Active filters">
@@ -310,7 +267,94 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               actionHref="/"
             />
           )}
-        </section>
+      </section>
+    </div>
+  );
+}
+
+type LibraryOrganizerDrawerProps = {
+  activeFilters: ReturnType<typeof getActiveLibraryFilters>;
+  facets: ReturnType<typeof getRecipeLibraryFacets>;
+  hasSearch: boolean;
+  query: RecipeLibraryQuery;
+};
+
+function LibraryOrganizerDrawer({
+  activeFilters,
+  facets,
+  hasSearch,
+  query,
+}: LibraryOrganizerDrawerProps) {
+  return (
+    <div className="library-drawer-organizer">
+      <Form className="drawer-filter-form" action="/" method="get" role="search">
+        <TextInput
+          label="Search"
+          type="search"
+          name="q"
+          placeholder="Find a recipe"
+          defaultValue={query.q}
+        />
+        <label className="field">
+          <span>Sort</span>
+          <select name="sort" defaultValue={query.sort}>
+            <option value="recent">Recently updated</option>
+            <option value="title">Title</option>
+            <option value="time">Total time</option>
+          </select>
+        </label>
+        <input type="hidden" name="view" value={query.view} />
+        <div className="drawer-filter-actions">
+          <Button type="submit" variant="primary">
+            Apply
+          </Button>
+          {hasSearch ? (
+            <Link className="button button-secondary" to={getLibraryQueryHref({ ...query, q: "" })}>
+              Clear Search
+            </Link>
+          ) : null}
+        </div>
+      </Form>
+
+      {activeFilters.length > 0 ? (
+        <div className="drawer-active-filters" aria-label="Active filters">
+          <p className="eyebrow">Active</p>
+          <div className="active-filter-list compact">
+            {activeFilters.map((filter) => (
+              <Link className="active-filter-chip" key={filter.id} to={filter.href}>
+                {filter.label}
+                <span aria-hidden="true">x</span>
+              </Link>
+            ))}
+            <Link className="active-filter-chip clear" to="/">
+              Clear all
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="drawer-facet-list">
+        {facets.map((group) => (
+          <section className="facet-group" key={group.id}>
+            <div className="facet-group-header">
+              <h3>{group.label}</h3>
+              <span>{group.options.length}</span>
+            </div>
+            <div className="facet-options">
+              {group.options.map((option) => (
+                <Link
+                  className={option.selected ? "facet-option selected" : "facet-option"}
+                  key={option.id}
+                  to={option.href}
+                >
+                  <span>{option.label}</span>
+                  <strong>{option.count}</strong>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

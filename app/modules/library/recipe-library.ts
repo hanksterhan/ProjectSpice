@@ -125,10 +125,7 @@ export function getRecipeLibraryFacets(
     },
   ];
 
-  return groups.map((group) => ({
-    ...group,
-    options: group.options.slice(0, group.id === "tag" ? 12 : 8),
-  }));
+  return groups;
 }
 
 export function getActiveLibraryFilters(

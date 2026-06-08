@@ -19,6 +19,11 @@ export type ShellCommand = {
   actions?: ReactNode;
 };
 
+export type ShellDrawer = {
+  content: ReactNode;
+  title: string;
+};
+
 const navItems = [
   { label: "Library", to: "/" },
   { label: "Workbench", to: "/ai" },
@@ -32,64 +37,92 @@ const defaultCommand: ShellCommand = {
 const ShellCommandContext = createContext<(command: ShellCommand | null) => void>(
   () => undefined,
 );
+const ShellDrawerContext = createContext<(drawer: ShellDrawer | null) => void>(
+  () => undefined,
+);
 
 export function AppShell({ children }: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
+  const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const activeCommand = command ?? defaultCommand;
 
   return (
     <div className="app-shell">
       <ShellCommandContext.Provider value={setCommand}>
-        <header className="shell-header">
-          <div className="shell-identity">
-            {activeCommand.backHref ? (
-              <Link
+        <ShellDrawerContext.Provider value={setDrawer}>
+          <header className="shell-header">
+            <div className="shell-identity">
+              <button
                 className="icon-button"
-                to={activeCommand.backHref}
-                title={activeCommand.backLabel ?? "Back"}
-                aria-label={activeCommand.backLabel ?? "Back"}
-              >
-                <ArrowLeftIcon />
-                <span className="sr-only">{activeCommand.backLabel ?? "Back"}</span>
-              </Link>
-            ) : (
-              <NavLink to="/" className="brand-mark" aria-label="ProjectSpice home">
-                <span aria-hidden="true">PS</span>
-              </NavLink>
-            )}
-
-            <div className="shell-current-page">
-              {activeCommand.eyebrow ? <span>{activeCommand.eyebrow}</span> : null}
-              <strong>{activeCommand.title}</strong>
-            </div>
-          </div>
-
-          <div className="shell-command-cluster">
-            <ShellNav className="shell-nav" />
-
-            <details className="shell-mobile-menu">
-              <summary
-                className="icon-button"
-                title="Navigation"
-                aria-label="Navigation"
+                type="button"
+                title={drawer ? drawer.title : "Navigation"}
+                aria-expanded={isDrawerOpen}
+                aria-controls="shell-drawer"
+                aria-label={drawer ? drawer.title : "Navigation"}
+                onClick={() => setIsDrawerOpen((value) => !value)}
               >
                 <MenuIcon />
-                <span className="sr-only">Navigation</span>
-              </summary>
-              <div className="shell-mobile-menu-popover">
-                <ShellNav className="shell-menu-nav" />
+                <span className="sr-only">{drawer ? drawer.title : "Navigation"}</span>
+              </button>
+
+              {activeCommand.backHref ? (
+                <Link
+                  className="icon-button"
+                  to={activeCommand.backHref}
+                  title={activeCommand.backLabel ?? "Back"}
+                  aria-label={activeCommand.backLabel ?? "Back"}
+                >
+                  <ArrowLeftIcon />
+                  <span className="sr-only">{activeCommand.backLabel ?? "Back"}</span>
+                </Link>
+              ) : (
+                <NavLink to="/" className="brand-mark" aria-label="ProjectSpice home">
+                  <span aria-hidden="true">PS</span>
+                </NavLink>
+              )}
+
+              <div className="shell-current-page">
+                {activeCommand.eyebrow ? <span>{activeCommand.eyebrow}</span> : null}
+                <strong>{activeCommand.title}</strong>
               </div>
-            </details>
+            </div>
 
-            {activeCommand.actions ? (
-              <nav className="shell-context-actions" aria-label="Page actions">
-                {activeCommand.actions}
-              </nav>
+            <div className="shell-command-cluster">
+              <ShellNav className="shell-nav" />
+
+              {activeCommand.actions ? (
+                <nav className="shell-context-actions" aria-label="Page actions">
+                  {activeCommand.actions}
+                </nav>
+              ) : null}
+            </div>
+          </header>
+
+          <div className={isDrawerOpen ? "shell-body drawer-open" : "shell-body"}>
+            {isDrawerOpen ? (
+              <aside className="shell-drawer" id="shell-drawer" aria-label={drawer?.title ?? "Navigation"}>
+                <div className="shell-drawer-header">
+                  <h2>{drawer?.title ?? "Navigation"}</h2>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label="Close menu"
+                    title="Close"
+                    onClick={() => setIsDrawerOpen(false)}
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+                <div className="shell-drawer-body">
+                  {drawer?.content ?? <ShellNav className="shell-menu-nav" />}
+                </div>
+              </aside>
             ) : null}
-          </div>
-        </header>
 
-        <main className="shell-main">{children}</main>
+            <main className="shell-main">{children}</main>
+          </div>
+        </ShellDrawerContext.Provider>
       </ShellCommandContext.Provider>
     </div>
   );
@@ -115,6 +148,16 @@ export function useShellCommand({
 
     return () => setCommand(null);
   }, [actions, backHref, backLabel, eyebrow, setCommand, title]);
+}
+
+export function useShellDrawer(drawer: ShellDrawer | null) {
+  const setDrawer = useContext(ShellDrawerContext);
+
+  useEffect(() => {
+    setDrawer(drawer);
+
+    return () => setDrawer(null);
+  }, [drawer, setDrawer]);
 }
 
 function ShellNav({ className }: { className: string }) {
@@ -150,6 +193,15 @@ function MenuIcon() {
       <path d="M4 6h16" />
       <path d="M4 12h16" />
       <path d="M4 18h16" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
     </svg>
   );
 }
