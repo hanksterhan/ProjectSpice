@@ -202,7 +202,8 @@ p {
 .shell-body {
   align-items: start;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 0 minmax(0, 1fr);
+  transition: grid-template-columns 220ms ease;
 }
 
 .shell-body.drawer-pinned {
@@ -232,15 +233,37 @@ p {
   grid-template-rows: minmax(0, 1fr);
   height: calc(100vh - 4rem);
   max-height: calc(100vh - 4rem);
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
   position: sticky;
   top: 4rem;
+  transform: translateX(-1rem);
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease;
   width: 100%;
 }
 
-.shell-drawer.peeking {
+.shell-drawer.pinned {
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.shell-drawer.closed {
+  border-right-color: transparent;
+}
+
+.shell-drawer.peek {
   box-shadow: var(--shadow);
   left: 0;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
   position: fixed;
+  transform: translateX(0);
   width: clamp(18rem, 27vw, 24rem);
   z-index: 9;
 }
@@ -2220,7 +2243,7 @@ p {
     position: static;
   }
 
-  .shell-drawer.peeking {
+  .shell-drawer.peek {
     width: min(24rem, calc(100vw - 1rem));
   }
 

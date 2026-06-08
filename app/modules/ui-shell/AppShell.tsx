@@ -6,7 +6,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useLocation } from "react-router";
 
 type AppShellProps = {
   children: ReactNode;
@@ -45,12 +45,20 @@ const ShellDrawerContext = createContext<(drawer: ShellDrawer | null) => void>(
 type DrawerMode = "closed" | "peek" | "pinned";
 
 export function AppShell({ children }: AppShellProps) {
+  const location = useLocation();
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
   const activeCommand = command ?? defaultCommand;
   const isDrawerVisible = drawerMode !== "closed";
-  const isDrawerPinned = drawerMode === "pinned";
+  const canRevealDrawer = Boolean(drawer);
+  const isLibraryRoute = location.pathname === "/";
+
+  useEffect(() => {
+    if (!isLibraryRoute) {
+      setDrawerMode("closed");
+    }
+  }, [isLibraryRoute]);
 
   const closeDrawer = () => setDrawerMode("closed");
   const closePeekDrawerOutsideBounds = (event: MouseEvent<HTMLDivElement>) => {
@@ -121,23 +129,24 @@ export function AppShell({ children }: AppShellProps) {
           <div
             className="shell-sidebar-activation-zone"
             aria-hidden="true"
-            onMouseEnter={() => setDrawerMode((mode) => (mode === "closed" ? "peek" : mode))}
+            onMouseEnter={() =>
+              setDrawerMode((mode) => (canRevealDrawer && mode === "closed" ? "peek" : mode))
+            }
           />
 
-          <div className={isDrawerPinned ? "shell-body drawer-pinned" : "shell-body"}>
-            {isDrawerVisible ? (
-              <aside
-                className={isDrawerPinned ? "shell-drawer pinned" : "shell-drawer peeking"}
-                id="shell-drawer"
-                aria-label={drawer?.title ?? "Navigation"}
-                onMouseDown={() => setDrawerMode((mode) => (mode === "peek" ? "pinned" : mode))}
-                onMouseLeave={() => setDrawerMode((mode) => (mode === "peek" ? "closed" : mode))}
-              >
-                <div className="shell-drawer-body">
-                  {drawer?.content ?? <ShellNav className="shell-menu-nav" />}
-                </div>
-              </aside>
-            ) : null}
+          <div className={`shell-body drawer-${drawerMode}`}>
+            <aside
+              aria-hidden={!isDrawerVisible}
+              className={`shell-drawer ${drawerMode}`}
+              id="shell-drawer"
+              aria-label={drawer?.title ?? "Navigation"}
+              onMouseDown={() => setDrawerMode((mode) => (mode === "peek" ? "pinned" : mode))}
+              onMouseLeave={() => setDrawerMode((mode) => (mode === "peek" ? "closed" : mode))}
+            >
+              <div className="shell-drawer-body">
+                {drawer?.content ?? <ShellNav className="shell-menu-nav" />}
+              </div>
+            </aside>
 
             <main className="shell-main">{children}</main>
           </div>
