@@ -17,9 +17,10 @@ Build only the focused recipe loop:
 - Store every recipe in one canonical schema.
 - Make ingredients and directions structured, readable, and pleasant to edit.
 - Let AI generate or transform recipes into reviewable drafts before save.
+- Track lightweight recipe metadata: favorites, 0.1-granularity ratings, and cooked dates.
 - Deploy to Cloudflare for `spice.h6nk.dev`.
 
-Defer imports, scraping, shopping lists, meal planning, family sharing, public sharing, uploaded media pipelines, nutrition, pantry, cooking logs, login, and complex AI provider routing.
+Defer imports, scraping, shopping lists, meal planning, family sharing, public sharing, uploaded media pipelines, nutrition, pantry, login, and complex AI provider routing.
 
 ## Architecture Rules
 
@@ -29,6 +30,13 @@ Defer imports, scraping, shopping lists, meal planning, family sharing, public s
 - V1 is single-user and private. Do not add users, sessions, passwords, or auth middleware.
 - Store recipe images as optional `imageUrl` strings only. Do not add R2 uploads or image transforms in V1.
 - Use one narrow Codex/GPT provider adapter. AI output must validate with Zod and remain a draft until accepted.
+
+## Recipe Intake
+
+- Recipe intake lives in `app/modules/ai-workbench/project-spice-recipe-intake.ts`; keep the system prompt, output spec, and parser in sync with `recipe-domain`.
+- The intake UI is reachable from New Recipe and must preview parsed drafts before saving.
+- Accept common ChatGPT/Claude paste artifacts where practical, including markdown JSON fences, curly quotes, omitted optional fields, and null optional fields.
+- Direction steps should keep stable ids, explicit order numbers, ingredient refs when reliable, and quantities in the step text when known.
 
 ## Recipe Fixtures
 
