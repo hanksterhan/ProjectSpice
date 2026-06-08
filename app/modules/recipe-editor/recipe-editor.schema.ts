@@ -39,6 +39,17 @@ const optionalPositiveNumberInput = optionalNumberInput.pipe(
   z.number().positive("Use a positive number.").optional(),
 );
 
+const optionalRatingInput = optionalNumberInput.pipe(
+  z
+    .number()
+    .min(0, "Rating cannot be below 0.")
+    .max(10, "Rating cannot be above 10.")
+    .refine((value) => Math.abs(value * 10 - Math.round(value * 10)) < 0.000001, {
+      message: "Use 0.1 rating increments.",
+    })
+    .optional(),
+);
+
 const ingredientEditorItemSchema = z
   .object({
     id: z.string().trim().min(1),
@@ -84,6 +95,8 @@ export const recipeEditorFormSchema = z
     description: optionalTextInput,
     imageUrl: optionalUrlInput,
     tagsText: z.string(),
+    favorite: z.boolean(),
+    rating: optionalRatingInput,
     prepMinutes: optionalMinutesInput,
     cookMinutes: optionalMinutesInput,
     totalMinutes: optionalMinutesInput,
@@ -142,6 +155,8 @@ export function validateRecipeEditorDraft(
     description: values.description,
     imageUrl: values.imageUrl,
     tags: parseRecipeEditorTags(values.tagsText),
+    favorite: values.favorite ? true : undefined,
+    rating: values.rating,
     notes: parseRecipeEditorNotes(values.notesText),
     ingredients: values.ingredientSections.map((section) => ({
       id: section.id,

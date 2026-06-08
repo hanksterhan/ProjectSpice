@@ -30,7 +30,10 @@ type EditorFieldProps = {
   defaultValue: string;
   type?: string;
   inputMode?: "decimal" | "numeric" | "text" | "url";
+  max?: string;
+  min?: string;
   placeholder?: string;
+  step?: string;
 };
 
 export function RecipeEditorForm({
@@ -128,6 +131,29 @@ export function RecipeEditorForm({
           defaultValue={defaultValues.tagsText}
           placeholder="dessert, make-ahead, chilled"
         />
+        <div className="editor-grid two-column">
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              {...register("favorite")}
+              defaultChecked={defaultValues.favorite}
+            />
+            Favorite
+          </label>
+          <EditorField
+            label="Rating"
+            name="rating"
+            register={register}
+            errors={errors}
+            defaultValue={defaultValues.rating}
+            inputMode="decimal"
+            max="10"
+            min="0"
+            step="0.1"
+            type="number"
+            placeholder="8.5"
+          />
+        </div>
       </section>
 
       <section className="editor-section" aria-labelledby="editor-timing">
@@ -264,7 +290,10 @@ function EditorField({
   defaultValue,
   type = "text",
   inputMode,
+  max,
+  min,
   placeholder,
+  step,
 }: EditorFieldProps) {
   return (
     <label className="field">
@@ -273,7 +302,10 @@ function EditorField({
         {...register(name)}
         type={type}
         inputMode={inputMode}
+        max={max}
+        min={min}
         placeholder={placeholder}
+        step={step}
         defaultValue={defaultValue}
       />
       <FieldError errors={errors} name={name} />

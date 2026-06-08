@@ -1,5 +1,9 @@
 import type { Recipe } from "~/modules/recipe-domain";
-import { createRecipeSlug } from "~/modules/recipe-domain";
+import {
+  createRecipeSlug,
+  getCookCount,
+  getLastCookedDate,
+} from "~/modules/recipe-domain";
 
 export type RecipeRepositoryStatement = {
   bind(...values: unknown[]): RecipeRepositoryStatement;
@@ -47,12 +51,16 @@ export class RecipeRepository {
           prep_minutes,
           cook_minutes,
           total_minutes,
+          favorite,
+          rating,
+          cook_count,
+          last_cooked_on,
           recipe_json,
           version,
           created_at,
           updated_at,
           deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         recipe.id,
@@ -70,6 +78,10 @@ export class RecipeRepository {
         recipe.times?.prepMinutes ?? null,
         recipe.times?.cookMinutes ?? null,
         recipe.times?.totalMinutes ?? null,
+        recipe.favorite === true ? 1 : 0,
+        recipe.rating ?? null,
+        getCookCount(recipe),
+        getLastCookedDate(recipe) ?? null,
         JSON.stringify(recipe),
         recipe.version,
         recipe.createdAt,
@@ -128,6 +140,10 @@ export class RecipeRepository {
           prep_minutes = ?,
           cook_minutes = ?,
           total_minutes = ?,
+          favorite = ?,
+          rating = ?,
+          cook_count = ?,
+          last_cooked_on = ?,
           recipe_json = ?,
           version = ?,
           updated_at = ?
@@ -148,6 +164,10 @@ export class RecipeRepository {
         recipe.times?.prepMinutes ?? null,
         recipe.times?.cookMinutes ?? null,
         recipe.times?.totalMinutes ?? null,
+        recipe.favorite === true ? 1 : 0,
+        recipe.rating ?? null,
+        getCookCount(recipe),
+        getLastCookedDate(recipe) ?? null,
         JSON.stringify(recipe),
         recipe.version,
         recipe.updatedAt,

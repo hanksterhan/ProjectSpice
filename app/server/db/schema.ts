@@ -34,6 +34,10 @@ export const recipes = sqliteTable(
     prepMinutes: integer("prep_minutes"),
     cookMinutes: integer("cook_minutes"),
     totalMinutes: integer("total_minutes"),
+    favorite: integer("favorite", { mode: "boolean" }).notNull().default(false),
+    rating: real("rating"),
+    cookCount: integer("cook_count").notNull().default(0),
+    lastCookedOn: text("last_cooked_on"),
     recipeJson: text("recipe_json", { mode: "json" }).$type<Recipe>().notNull(),
     version: integer("version").notNull().default(1),
     createdAt: text("created_at").notNull(),
@@ -46,6 +50,10 @@ export const recipes = sqliteTable(
     index("recipes_source_type_idx").on(table.sourceType),
     index("recipes_deleted_at_idx").on(table.deletedAt),
     index("recipes_updated_at_idx").on(table.updatedAt),
+    index("recipes_favorite_idx").on(table.favorite),
+    index("recipes_rating_idx").on(table.rating),
+    index("recipes_cook_count_idx").on(table.cookCount),
+    index("recipes_last_cooked_on_idx").on(table.lastCookedOn),
   ],
 );
 

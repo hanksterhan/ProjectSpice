@@ -44,7 +44,12 @@ describe("AI draft helpers", () => {
   });
 
   it("builds an updated recipe from an AI draft while preserving identity", () => {
-    const existingRecipe = structuredClone(validRecipeFixture);
+    const existingRecipe = {
+      ...structuredClone(validRecipeFixture),
+      favorite: true,
+      rating: 9.1,
+      cookedDates: ["2026-06-07"],
+    };
     const draft = {
       ...structuredClone(validRecipeDraftFixture),
       title: "Sesame Chicken Bowls with Bright Herbs",
@@ -62,8 +67,14 @@ describe("AI draft helpers", () => {
       version: existingRecipe.version + 1,
       createdAt: existingRecipe.createdAt,
       updatedAt: "2026-05-29T09:00:00.000Z",
+      favorite: true,
+      rating: 9.1,
+      cookedDates: ["2026-06-07"],
     });
-    expect(existingRecipe).toEqual(validRecipeFixture);
+    expect(existingRecipe).toMatchObject({
+      id: validRecipeFixture.id,
+      cookedDates: ["2026-06-07"],
+    });
   });
 });
 

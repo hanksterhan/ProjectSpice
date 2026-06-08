@@ -3,6 +3,7 @@ import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/recipes.$recipeId";
+import { addCookedDate } from "~/modules/recipe-domain";
 import {
   RecipeAiPanel,
   appendAiChatTurn,
@@ -34,6 +35,10 @@ const transformFormSchema = z.object({
 const saveDraftFormSchema = z.object({
   draftRecipeJson: z.string().trim().min(1, "Missing AI draft."),
   changeSummaryJson: z.string().optional(),
+});
+
+const cookedFormSchema = z.object({
+  cookedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid date."),
 });
 
 export function meta({ data }: Route.MetaArgs) {
@@ -69,6 +74,29 @@ export async function action({
     await service.softDelete(params.recipeId, new Date().toISOString());
 
     return redirect("/");
+  }
+
+  if (intent === "record-cooked") {
+    const parsed = cookedFormSchema.safeParse({
+      cookedOn: formData.get("cookedOn"),
+    });
+
+    if (!parsed.success) {
+      return redirect(getRecipeDetailPath(recipe));
+    }
+
+    const now = new Date().toISOString();
+    const updatedRecipe = await service.update(
+      {
+        ...addCookedDate(recipe, parsed.data.cookedOn),
+        version: recipe.version + 1,
+        updatedAt: now,
+      },
+      recipe.version,
+      `Recorded cooked date: ${parsed.data.cookedOn}`,
+    );
+
+    return redirect(getRecipeDetailPath(updatedRecipe));
   }
 
   if (intent === "transform") {

@@ -20,20 +20,35 @@ describe("recipe library query helpers", () => {
     ).toEqual({
       cookbooks: ["Whats for Dessert"],
       direction: "desc",
+      favorite: false,
       q: "mango",
       sort: "time",
       sources: ["Cookbook"],
       tags: ["chilled dessert"],
+      topRated: false,
       view: "list",
+    });
+
+    expect(parseRecipeLibraryQuery("https://spice.test/?view=grid")).toMatchObject({
+      view: "grid",
+    });
+
+    expect(
+      parseRecipeLibraryQuery("https://spice.test/?favorite=1&topRated=1"),
+    ).toMatchObject({
+      favorite: true,
+      topRated: false,
     });
 
     expect(parseRecipeLibraryQuery("https://spice.test/?sort=unknown&view=wide")).toEqual({
       cookbooks: [],
       direction: "desc",
+      favorite: false,
       q: "",
       sort: "recent",
       sources: [],
       tags: [],
+      topRated: false,
       view: "cards",
     });
   });
@@ -43,9 +58,11 @@ describe("recipe library query helpers", () => {
       q: "mango chilled",
       cookbooks: [],
       direction: "asc",
+      favorite: false,
       sort: "title",
       sources: [],
       tags: [],
+      topRated: false,
       view: "cards",
     });
 
@@ -56,10 +73,12 @@ describe("recipe library query helpers", () => {
     const results = getRecipeLibraryResults(seedRecipes, {
       cookbooks: ["Claire Saffitz - Whats for Dessert"],
       direction: "asc",
+      favorite: false,
       q: "",
       sort: "title",
       sources: ["Cookbook"],
       tags: ["chilled dessert"],
+      topRated: false,
       view: "cards",
     });
 
@@ -75,19 +94,23 @@ describe("recipe library query helpers", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
       cookbooks: [],
       direction: "asc",
+      favorite: false,
       q: "dessert",
       sort: "title",
       sources: [],
       tags: [],
+      topRated: false,
       view: "cards",
     });
     const timeResults = getRecipeLibraryResults(seedRecipes, {
       cookbooks: [],
       direction: "asc",
+      favorite: false,
       q: "dessert",
       sort: "time",
       sources: [],
       tags: [],
+      topRated: false,
       view: "cards",
     });
 
@@ -101,14 +124,39 @@ describe("recipe library query helpers", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
       cookbooks: [],
       direction: "desc",
+      favorite: false,
       q: "dessert",
       sort: "title",
       sources: [],
       tags: [],
+      topRated: false,
       view: "cards",
     });
 
     expect(titleResults[0]?.title).toBe("Tiramisu-y Icebox Cake");
+  });
+
+  it("filters favorites and top-rated recipes and sorts by rating", () => {
+    const recipes = [
+      { ...seedRecipes[0], id: "favorite-nine", favorite: true, rating: 9 },
+      { ...seedRecipes[1], id: "favorite-seven", favorite: true, rating: 7 },
+      { ...seedRecipes[2], id: "regular-ten", favorite: false, rating: 10 },
+    ];
+
+    expect(
+      getRecipeLibraryResults(recipes, parseRecipeLibraryQuery("https://spice.test/?favorite=1"))
+        .map((recipe) => recipe.id)
+        .sort(),
+    ).toEqual(["favorite-nine", "favorite-seven"]);
+    expect(
+      getRecipeLibraryResults(recipes, parseRecipeLibraryQuery("https://spice.test/?topRated=1"))
+        .map((recipe) => recipe.id)
+        .sort(),
+    ).toEqual(["favorite-nine", "regular-ten"]);
+    expect(
+      getRecipeLibraryResults(recipes, parseRecipeLibraryQuery("https://spice.test/?sort=rating"))
+        .map((recipe) => recipe.id),
+    ).toEqual(["regular-ten", "favorite-nine", "favorite-seven"]);
   });
 
   it("builds source, cookbook, and tag facets with active filter links", () => {

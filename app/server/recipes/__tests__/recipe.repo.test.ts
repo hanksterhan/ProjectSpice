@@ -161,7 +161,7 @@ class FakeRecipeD1PreparedStatement {
     const normalizedQuery = normalizeSql(this.query);
 
     if (normalizedQuery.startsWith("INSERT INTO recipes")) {
-      const recipe = JSON.parse(String(this.values[15])) as Recipe;
+      const recipe = JSON.parse(String(this.values[19])) as Recipe;
       this.database.rows.set(recipe.id, {
         recipe,
         version: recipe.version,
@@ -172,9 +172,9 @@ class FakeRecipeD1PreparedStatement {
     }
 
     if (normalizedQuery.startsWith("UPDATE recipes SET slug")) {
-      const recipe = JSON.parse(String(this.values[14])) as Recipe;
-      const id = String(this.values[17]);
-      const expectedVersion = Number(this.values[18]);
+      const recipe = JSON.parse(String(this.values[18])) as Recipe;
+      const id = String(this.values[21]);
+      const expectedVersion = Number(this.values[22]);
       const row = this.database.rows.get(id);
 
       if (!row || row.deletedAt || row.version !== expectedVersion) {

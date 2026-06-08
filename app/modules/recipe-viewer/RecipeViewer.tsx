@@ -1,6 +1,10 @@
+import { Form } from "react-router";
+
 import {
   formatDisplayTime,
   formatIngredientDisplayText,
+  getCookCount,
+  getLastCookedDate,
   type Recipe,
 } from "~/modules/recipe-domain";
 import { RecipeImage } from "~/modules/ui-shell/primitives";
@@ -20,6 +24,10 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
   const cookTime = formatDisplayTime(recipe.times?.cookMinutes);
   const totalTime = formatDisplayTime(recipe.times?.totalMinutes);
   const directionIngredientIndex = buildDirectionIngredientIndex(recipe.ingredients);
+  const cookCount = getCookCount(recipe);
+  const lastCookedDate = getLastCookedDate(recipe);
+  const recentCookedDates = recipe.cookedDates?.slice(0, 5) ?? [];
+  const today = getTodayDateInputValue();
 
   return (
     <article className="recipe-detail-page">
@@ -28,6 +36,10 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           <h1>{recipe.title}</h1>
           {recipe.description ? <p>{recipe.description}</p> : null}
           <div className="recipe-meta large" aria-label="Recipe tags">
+            {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
+            {recipe.rating !== undefined ? (
+              <span className="rating-chip">{recipe.rating.toFixed(1)}/10</span>
+            ) : null}
             {recipe.tags.slice(0, 5).map((tag) => (
               <span className="tag" key={tag}>
                 {tag}
@@ -61,6 +73,47 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           <dd>{totalTime || "Not specified"}</dd>
         </div>
       </dl>
+
+      <section className="cook-history-panel" aria-labelledby="cook-history-heading">
+        <div>
+          <h2 id="cook-history-heading">Cook History</h2>
+          <p>
+            {cookCount > 0
+              ? `Cooked ${cookCount} ${cookCount === 1 ? "time" : "times"}${
+                  lastCookedDate ? `, last on ${formatCookedDate(lastCookedDate)}` : ""
+                }.`
+              : "No cooked dates recorded yet."}
+          </p>
+        </div>
+
+        <div className="cook-history-actions">
+          <Form method="post">
+            <input name="intent" type="hidden" value="record-cooked" />
+            <input name="cookedOn" type="hidden" value={today} />
+            <button className="button button-primary" type="submit">
+              Cooked Today
+            </button>
+          </Form>
+          <Form className="cook-date-form" method="post">
+            <input name="intent" type="hidden" value="record-cooked" />
+            <label className="field">
+              <span>Past date</span>
+              <input name="cookedOn" type="date" max={today} defaultValue={today} />
+            </label>
+            <button className="button button-secondary" type="submit">
+              Add Date
+            </button>
+          </Form>
+        </div>
+
+        {recentCookedDates.length > 0 ? (
+          <div className="cook-history-dates" aria-label="Recent cooked dates">
+            {recentCookedDates.map((date) => (
+              <span key={date}>{formatCookedDate(date)}</span>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
@@ -174,6 +227,29 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
       </div>
     </article>
   );
+}
+
+function getTodayDateInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatCookedDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return date;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day));
 }
 
 function shouldShowSectionTitle(

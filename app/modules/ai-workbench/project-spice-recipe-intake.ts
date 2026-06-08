@@ -21,8 +21,11 @@ export const projectSpiceRecipeOutputSpec = {
       cookMinutes: "integer >= 0 | optional",
       totalMinutes: "integer >= 0 | optional",
     },
-    imageUrl: "valid URL string | optional",
-    ingredients: [
+  imageUrl: "valid URL string | optional",
+  favorite: "boolean | optional",
+  rating: "number from 0 to 10 using 0.1 granularity | optional",
+  cookedDates: ["YYYY-MM-DD date string | optional"],
+  ingredients: [
       {
         id: "stable slug-like string",
         title: "string | optional",

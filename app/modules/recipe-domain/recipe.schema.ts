@@ -10,6 +10,8 @@ const requiredTrimmedTextSchema = z.string().trim().min(1);
 
 const recipeIdSchema = requiredTrimmedTextSchema;
 
+const dateOnlySchema = z.iso.date();
+
 export const recipeSourceTypeSchema = z.enum([
   "manual",
   "ai",
@@ -32,6 +34,14 @@ export const recipeTimesSchema = z
     totalMinutes: z.number().int().nonnegative().optional(),
   })
   .strict();
+
+export const recipeRatingSchema = z
+  .number()
+  .min(0, "Rating cannot be below 0.")
+  .max(10, "Rating cannot be above 10.")
+  .refine((value) => Math.abs(value * 10 - Math.round(value * 10)) < 0.000001, {
+    message: "Rating must use 0.1 granularity.",
+  });
 
 export const recipeSourceSchema = z
   .object({
@@ -92,6 +102,9 @@ export const recipeSchema = z
     notes: z.array(requiredTrimmedTextSchema).optional(),
     source: recipeSourceSchema.optional(),
     tags: z.array(requiredTrimmedTextSchema),
+    favorite: z.boolean().optional(),
+    rating: recipeRatingSchema.optional(),
+    cookedDates: z.array(dateOnlySchema).optional(),
     version: z.number().int().positive(),
     createdAt: z.iso.datetime({ offset: true }),
     updatedAt: z.iso.datetime({ offset: true }),

@@ -114,6 +114,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const activeFilters = useMemo(() => getActiveLibraryFilters(query), [query]);
   const hasSearch = query.q.length > 0;
   const hasFilters = activeFilters.length > 0;
+  const isGridView = query.view === "grid";
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
@@ -204,7 +205,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 </div>
               ) : null}
 
-              <div className={isListView ? "recipe-list large" : "recipe-card-grid"}>
+              <div
+                className={
+                  isListView
+                    ? "recipe-list large"
+                    : isGridView
+                      ? "recipe-dense-grid"
+                      : "recipe-card-grid"
+                }
+              >
                 {recipes.map((recipe) =>
                   isListView ? (
                     <article className="recipe-row large selectable-recipe" key={recipe.id}>
@@ -217,6 +226,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                         <p>{getRecipeDescription(recipe.description)}</p>
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
+                    </article>
+                  ) : isGridView ? (
+                    <article className="recipe-dense-card selectable-recipe" key={recipe.id}>
+                      {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
+                      <p>{recipe.source?.name ?? recipe.yield?.notes ?? "Recipe"}</p>
+                      <h3>
+                        <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                      </h3>
+                      <RecipeMeta query={query} recipe={recipe} />
                     </article>
                   ) : (
                     <article className="recipe-card selectable-recipe" key={recipe.id}>
@@ -302,6 +320,8 @@ function LibraryOrganizerDrawer({
           onChange={(event) => setSearchValue(event.currentTarget.value)}
         />
         <input type="hidden" name="view" value={query.view} />
+        {query.favorite ? <input type="hidden" name="favorite" value="1" /> : null}
+        {query.topRated ? <input type="hidden" name="topRated" value="1" /> : null}
         {query.sort !== "recent" ? (
           <input type="hidden" name="sort" value={query.sort} />
         ) : null}
@@ -326,7 +346,7 @@ function LibraryOrganizerDrawer({
         ) : null}
       </Form>
 
-      <SortPicker query={query} />
+      <LibraryModePicker query={query} />
 
       {activeFilters.length > 0 ? (
         <div className="drawer-active-filters" aria-label="Active filters">
@@ -370,61 +390,162 @@ function LibraryOrganizerDrawer({
   );
 }
 
-function SortPicker({ query }: { query: RecipeLibraryQuery }) {
-  const nextDirection = query.direction === "asc" ? "desc" : "asc";
+function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
+  const activeModeId = getLibraryModeId(query);
+  const modes = getLibraryModes(query);
 
   return (
-    <div className="sort-picker field">
-      <span>Sort</span>
-      <div className="sort-control-row">
-        <details className="sort-menu">
-          <summary>
-            <span>{getSortLabel(query.sort)}</span>
-          </summary>
-          <div className="sort-menu-options">
-            {(["recent", "title", "time"] as const).map((sort) => (
-              <Link
-                className={query.sort === sort ? "sort-menu-option selected" : "sort-menu-option"}
-                key={sort}
-                to={getLibraryQueryHref({
-                  ...query,
-                  direction: getDefaultSortDirection(sort),
-                  sort,
-                })}
-              >
-                <span>{getSortLabel(sort)}</span>
-                {query.sort === sort ? <strong aria-hidden="true">Selected</strong> : null}
-              </Link>
-            ))}
-          </div>
-        </details>
-        <Link
-          aria-label={`Switch to ${getSortDirectionLabel(nextDirection).toLowerCase()} sort`}
-          className={`sort-direction-toggle ${query.direction}`}
-          title={`Switch to ${getSortDirectionLabel(nextDirection).toLowerCase()} sort`}
-          to={getLibraryQueryHref({ ...query, direction: nextDirection })}
-        >
-          <span className="sr-only">{getSortDirectionLabel(query.direction)}</span>
-        </Link>
+    <section className="facet-group">
+      <div className="facet-group-header">
+        <h3>Library Views</h3>
+        <span>{modes.length}</span>
       </div>
-    </div>
+      <div className="facet-options">
+        {modes.map((mode) => {
+          const isActive = activeModeId === mode.id;
+          const href =
+            isActive && mode.canToggleDirection
+              ? getLibraryModeHref(query, {
+                  ...mode,
+                  direction: getNextSortDirection(query.direction),
+                })
+              : mode.href;
+
+          return (
+            <Link
+              className={isActive ? "facet-option selected" : "facet-option"}
+              key={mode.id}
+              title={
+                isActive && mode.canToggleDirection
+                  ? `Switch to ${getDirectionPillLabel(mode.sort, getNextSortDirection(query.direction))}`
+                  : undefined
+              }
+              to={href}
+            >
+              <span>{mode.label}</span>
+              {isActive ? (
+                mode.canToggleDirection ? (
+                  <strong className="mode-direction">
+                    {getDirectionPillLabel(mode.sort, query.direction)}
+                  </strong>
+                ) : (
+                  <strong aria-hidden="true">Selected</strong>
+                )
+              ) : null}
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
-function getSortDirectionLabel(direction: RecipeLibraryQuery["direction"]) {
-  return direction === "asc" ? "Asc" : "Desc";
+function getLibraryModeId(query: RecipeLibraryQuery) {
+  if (query.favorite) {
+    return "favorites";
+  }
+
+  if (query.topRated) {
+    return "top-rated";
+  }
+
+  return query.sort;
 }
 
-function getSortLabel(sort: RecipeLibraryQuery["sort"]) {
+function getLibraryModes(query: RecipeLibraryQuery) {
+  const modes: LibraryMode[] = [
+    {
+      id: "recent",
+      canToggleDirection: true,
+      label: "Most Recent",
+      sort: "recent",
+    },
+    {
+      id: "favorites",
+      favorite: true,
+      label: "Favorites",
+      sort: "recent",
+    },
+    {
+      id: "top-rated",
+      label: "Top Rated",
+      sort: "rating",
+      topRated: true,
+    },
+    {
+      id: "rating",
+      canToggleDirection: true,
+      label: "Highest Rated",
+      sort: "rating",
+    },
+    {
+      id: "title",
+      canToggleDirection: true,
+      label: "Title",
+      sort: "title",
+    },
+    {
+      id: "time",
+      canToggleDirection: true,
+      label: "Total Time",
+      sort: "time",
+    },
+  ];
+
+  return modes.map((mode) => ({
+    ...mode,
+    href: getLibraryModeHref(query, mode),
+  }));
+}
+
+type LibraryMode = {
+  canToggleDirection?: boolean;
+  favorite?: boolean;
+  id: string;
+  label: string;
+  sort: RecipeLibraryQuery["sort"];
+  topRated?: boolean;
+};
+
+function getLibraryModeHref(
+  query: RecipeLibraryQuery,
+  mode: {
+    direction?: RecipeLibraryQuery["direction"];
+    favorite?: boolean;
+    sort: RecipeLibraryQuery["sort"];
+    topRated?: boolean;
+  },
+) {
+  return getLibraryQueryHref({
+    ...query,
+    direction: mode.direction ?? getDefaultSortDirection(mode.sort),
+    favorite: mode.favorite ?? false,
+    sort: mode.sort,
+    topRated: mode.topRated ?? false,
+  });
+}
+
+function getNextSortDirection(direction: RecipeLibraryQuery["direction"]) {
+  return direction === "asc" ? "desc" : "asc";
+}
+
+function getDirectionPillLabel(
+  sort: RecipeLibraryQuery["sort"],
+  direction: RecipeLibraryQuery["direction"],
+) {
   if (sort === "title") {
-    return "Title";
+    return direction === "asc" ? "A-Z" : "Z-A";
   }
 
   if (sort === "time") {
-    return "Total time";
+    return direction === "asc" ? "Short" : "Long";
   }
 
-  return "Recently updated";
+  if (sort === "rating") {
+    return direction === "asc" ? "Low" : "High";
+  }
+
+  return direction === "asc" ? "Oldest" : "Newest";
 }
 
 type RecipeMetaProps = {
@@ -435,6 +556,10 @@ type RecipeMetaProps = {
 function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   return (
     <div className="recipe-meta">
+      {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
+      {recipe.rating !== undefined ? (
+        <span className="rating-chip">{recipe.rating.toFixed(1)}/10</span>
+      ) : null}
       <span>{formatDisplayTime(recipe.times?.totalMinutes) || "No time"}</span>
       {recipe.source?.type === "imported" && recipe.source.name ? (
         <Link
@@ -469,6 +594,12 @@ function getViewTabs(query: RecipeLibraryQuery) {
       label: "Cards",
       href: getLibraryQueryHref({ ...query, view: "cards" }),
       selected: query.view === "cards",
+    },
+    {
+      id: "grid",
+      label: "Grid",
+      href: getLibraryQueryHref({ ...query, view: "grid" }),
+      selected: query.view === "grid",
     },
     {
       id: "list",

@@ -1,8 +1,8 @@
 import type { Recipe } from "~/modules/recipe-domain";
 
-export const recipeLibrarySortOptions = ["recent", "title", "time"] as const;
+export const recipeLibrarySortOptions = ["recent", "title", "time", "rating"] as const;
 export const recipeLibrarySortDirectionOptions = ["asc", "desc"] as const;
-export const recipeLibraryViewOptions = ["cards", "list"] as const;
+export const recipeLibraryViewOptions = ["cards", "grid", "list"] as const;
 export const maxRecipeTags = 12;
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
@@ -35,10 +35,12 @@ export type RecipeLibraryActiveFilter = {
 export type RecipeLibraryQuery = {
   cookbooks: string[];
   direction: RecipeLibrarySortDirection;
+  favorite: boolean;
   q: string;
   sort: RecipeLibrarySort;
   sources: string[];
   tags: string[];
+  topRated: boolean;
   view: RecipeLibraryView;
 };
 
@@ -48,16 +50,19 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const direction = searchParams.get("dir");
   const view = searchParams.get("view");
   const safeSort = isRecipeLibrarySort(sort) ? sort : "recent";
+  const favorite = searchParams.get("favorite") === "1";
 
   return {
     cookbooks: parseQueryList(searchParams.getAll("cookbook")),
     direction: isRecipeLibrarySortDirection(direction)
       ? direction
       : getDefaultSortDirection(safeSort),
+    favorite,
     q: searchParams.get("q")?.trim() ?? "",
     sort: safeSort,
     sources: parseQueryList(searchParams.getAll("source")),
     tags: parseQueryList(searchParams.getAll("tag")),
+    topRated: !favorite && searchParams.get("topRated") === "1",
     view: isRecipeLibraryView(view) ? view : "cards",
   };
 }
@@ -75,7 +80,9 @@ export function getRecipeLibraryResults(
     terms.length === 0 &&
     query.tags.length === 0 &&
     query.sources.length === 0 &&
-    query.cookbooks.length === 0
+    query.cookbooks.length === 0 &&
+    !query.favorite &&
+    !query.topRated
       ? [...recipes]
       : recipes.filter((recipe) => {
           const haystack = [
@@ -91,6 +98,8 @@ export function getRecipeLibraryResults(
 
           return (
             terms.every((term) => haystack.includes(term)) &&
+            (!query.favorite || recipe.favorite === true) &&
+            (!query.topRated || (recipe.rating ?? -1) >= 8) &&
             matchesSelectedValues(recipe.tags, query.tags) &&
             matchesSelectedValues([getSourceTypeLabel(recipe)], query.sources) &&
             matchesSelectedValues([getCookbookLabel(recipe)].filter(Boolean), query.cookbooks)
@@ -164,6 +173,14 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
 
   if (query.q) {
     params.set("q", query.q);
+  }
+
+  if (query.favorite) {
+    params.set("favorite", "1");
+  }
+
+  if (!query.favorite && query.topRated) {
+    params.set("topRated", "1");
   }
 
   for (const value of query.tags) {
@@ -257,6 +274,10 @@ function compareRecipes(
     );
   }
 
+  if (sort === "rating") {
+    return multiplier * ((left.rating ?? -1) - (right.rating ?? -1));
+  }
+
   return left.updatedAt.localeCompare(right.updatedAt) * multiplier;
 }
 
@@ -279,7 +300,7 @@ function isRecipeLibraryView(value: string | null): value is RecipeLibraryView {
 export function getDefaultSortDirection(
   sort: RecipeLibrarySort,
 ): RecipeLibrarySortDirection {
-  return sort === "recent" ? "desc" : "asc";
+  return sort === "recent" || sort === "rating" ? "desc" : "asc";
 }
 
 function getFacetOptions(

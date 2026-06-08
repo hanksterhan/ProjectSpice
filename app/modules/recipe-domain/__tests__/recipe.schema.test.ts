@@ -23,6 +23,45 @@ describe("recipeSchema", () => {
     );
   });
 
+  it("accepts favorite and 0.1-granularity rating metadata", () => {
+    expect(
+      recipeSchema.parse({
+        ...validRecipeFixture,
+        favorite: true,
+        rating: 9.4,
+      }),
+    ).toMatchObject({
+      favorite: true,
+      rating: 9.4,
+    });
+  });
+
+  it("accepts date-only cook history", () => {
+    expect(
+      recipeSchema.parse({
+        ...validRecipeFixture,
+        cookedDates: ["2026-06-07", "2026-05-31"],
+      }),
+    ).toMatchObject({
+      cookedDates: ["2026-06-07", "2026-05-31"],
+    });
+  });
+
+  it("rejects recipe ratings outside 0 to 10 or finer than 0.1", () => {
+    expect(recipeSchema.safeParse({ ...validRecipeFixture, rating: 10.1 }).success).toBe(
+      false,
+    );
+    expect(recipeSchema.safeParse({ ...validRecipeFixture, rating: 8.25 }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects invalid cook history dates", () => {
+    expect(
+      recipeSchema.safeParse({ ...validRecipeFixture, cookedDates: ["June 7"] }).success,
+    ).toBe(false);
+  });
+
   it("rejects an invalid image URL", () => {
     const result = recipeSchema.safeParse({
       ...validRecipeFixture,

@@ -33,6 +33,8 @@ describe("recipe editor schema", () => {
       description: "Bright and chilled.",
       imageUrl: "https://images.example.com/lemon-pie.jpg",
       tagsText: "dessert, citrus",
+      favorite: true,
+      rating: "9.3",
       prepMinutes: "20",
       cookMinutes: "",
       totalMinutes: "260",
@@ -93,6 +95,8 @@ describe("recipe editor schema", () => {
     const draft = validateRecipeEditorDraft(values, createEmptyRecipeDraft());
 
     expect(draft.title).toBe("Lemon Icebox Pie");
+    expect(draft.favorite).toBe(true);
+    expect(draft.rating).toBe(9.3);
     expect(draft.tags).toEqual(["dessert", "citrus"]);
     expect(draft.times).toEqual({ prepMinutes: 20, totalMinutes: 260 });
     expect(draft.yield).toEqual({
@@ -151,6 +155,8 @@ describe("recipe editor schema", () => {
       description: "",
       imageUrl: "not-a-url",
       tagsText: "",
+      favorite: false,
+      rating: "8.25",
       prepMinutes: "-1",
       cookMinutes: "",
       totalMinutes: "",

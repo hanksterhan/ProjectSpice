@@ -46,9 +46,14 @@ export function buildUpdatedRecipeFromAiDraft({
   existingRecipe: Recipe;
   now: string;
 }): Recipe {
+  const parsedDraft = recipeDraftSchema.parse(draftRecipe);
+
   return recipeSchema.parse({
-    ...recipeDraftSchema.parse(draftRecipe),
+    ...parsedDraft,
     id: existingRecipe.id,
+    favorite: parsedDraft.favorite ?? existingRecipe.favorite,
+    rating: parsedDraft.rating ?? existingRecipe.rating,
+    cookedDates: parsedDraft.cookedDates ?? existingRecipe.cookedDates,
     version: existingRecipe.version + 1,
     createdAt: existingRecipe.createdAt,
     updatedAt: now,

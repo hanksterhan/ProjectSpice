@@ -21,6 +21,8 @@ export function parseRecipeEditorFormData(
     description: getFormString(formData, "description"),
     imageUrl: getFormString(formData, "imageUrl"),
     tagsText: getFormString(formData, "tagsText"),
+    favorite: formData.get("favorite") === "on",
+    rating: getFormString(formData, "rating"),
     prepMinutes: getFormString(formData, "prepMinutes"),
     cookMinutes: getFormString(formData, "cookMinutes"),
     totalMinutes: getFormString(formData, "totalMinutes"),
@@ -98,6 +100,9 @@ function toRecipeDraft(recipe: RecipeDraft): RecipeDraft {
     notes: recipe.notes,
     source: recipe.source,
     tags: recipe.tags,
+    favorite: recipe.favorite,
+    rating: recipe.rating,
+    cookedDates: recipe.cookedDates,
   };
 }
 

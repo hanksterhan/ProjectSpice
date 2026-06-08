@@ -39,6 +39,8 @@ describe("recipe editor form actions", () => {
     if (result.ok) {
       expect(result.recipe).toMatchObject({
         title: "Test Cake",
+        favorite: true,
+        rating: 8.7,
         version: 1,
         createdAt: "2026-05-28T08:00:00.000Z",
         updatedAt: "2026-05-28T08:00:00.000Z",
@@ -101,6 +103,8 @@ function createRecipeFormData() {
   formData.set("description", "A testable cake.");
   formData.set("imageUrl", "");
   formData.set("tagsText", "dessert, test");
+  formData.set("favorite", "on");
+  formData.set("rating", "8.7");
   formData.set("prepMinutes", "10");
   formData.set("cookMinutes", "20");
   formData.set("totalMinutes", "30");

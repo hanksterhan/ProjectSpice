@@ -10,6 +10,8 @@ export function getRecipeEditorDefaults(
     description: recipe.description ?? "",
     imageUrl: recipe.imageUrl ?? "",
     tagsText: recipe.tags.join(", "),
+    favorite: recipe.favorite ?? false,
+    rating: recipe.rating?.toString() ?? "",
     prepMinutes: recipe.times?.prepMinutes?.toString() ?? "",
     cookMinutes: recipe.times?.cookMinutes?.toString() ?? "",
     totalMinutes: recipe.times?.totalMinutes?.toString() ?? "",
@@ -60,5 +62,8 @@ export function getRecipeEditorBaseDraft(recipe: Recipe | RecipeDraft): RecipeDr
     notes: recipe.notes,
     source: recipe.source ?? { type: "manual" },
     tags: recipe.tags,
+    favorite: recipe.favorite,
+    rating: recipe.rating,
+    cookedDates: recipe.cookedDates,
   };
 }

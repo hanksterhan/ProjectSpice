@@ -1,6 +1,7 @@
 import {
   useState,
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type ImgHTMLAttributes,
   type InputHTMLAttributes,
 } from "react";
@@ -67,7 +68,12 @@ export function TextInput({
 
 export function Tabs({ tabs }: TabsProps) {
   return (
-    <div className="tabs" role="tablist" aria-label="Recipe view">
+    <div
+      className="tabs"
+      role="tablist"
+      aria-label="Recipe view"
+      style={{ "--tab-count": tabs.length } as CSSProperties}
+    >
       {tabs.map((tab) => (
         tab.href ? (
           <a
