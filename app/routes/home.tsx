@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Form, Link, redirect } from "react-router";
+import { Form, Link, redirect, useSubmit } from "react-router";
 
 import type { Route } from "./+types/home";
 import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-domain";
@@ -285,6 +285,8 @@ function LibraryOrganizerDrawer({
   hasSearch,
   query,
 }: LibraryOrganizerDrawerProps) {
+  const submit = useSubmit();
+
   return (
     <div className="library-drawer-organizer">
       <Form className="drawer-filter-form" action="/" method="get" role="search">
@@ -297,23 +299,37 @@ function LibraryOrganizerDrawer({
         />
         <label className="field">
           <span>Sort</span>
-          <select name="sort" defaultValue={query.sort}>
+          <select
+            name="sort"
+            defaultValue={query.sort}
+            onChange={(event) => {
+              if (event.currentTarget.form) {
+                submit(event.currentTarget.form);
+              }
+            }}
+          >
             <option value="recent">Recently updated</option>
             <option value="title">Title</option>
             <option value="time">Total time</option>
           </select>
         </label>
         <input type="hidden" name="view" value={query.view} />
-        <div className="drawer-filter-actions">
-          <Button type="submit" variant="primary">
-            Apply
-          </Button>
-          {hasSearch ? (
+        {query.tags.map((tag) => (
+          <input key={`tag:${tag}`} type="hidden" name="tag" value={tag} />
+        ))}
+        {query.sources.map((source) => (
+          <input key={`source:${source}`} type="hidden" name="source" value={source} />
+        ))}
+        {query.cookbooks.map((cookbook) => (
+          <input key={`cookbook:${cookbook}`} type="hidden" name="cookbook" value={cookbook} />
+        ))}
+        {hasSearch ? (
+          <div className="drawer-filter-actions">
             <Link className="button button-secondary" to={getLibraryQueryHref({ ...query, q: "" })}>
               Clear Search
             </Link>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </Form>
 
       {activeFilters.length > 0 ? (

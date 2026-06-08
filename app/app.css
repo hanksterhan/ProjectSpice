@@ -229,7 +229,7 @@ p {
   background: var(--surface-raised);
   border-right: 1px solid var(--line);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: calc(100vh - 4rem);
   max-height: calc(100vh - 4rem);
   position: sticky;
@@ -243,22 +243,6 @@ p {
   position: fixed;
   width: clamp(18rem, 27vw, 24rem);
   z-index: 9;
-}
-
-.shell-drawer-header {
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-  min-height: 4rem;
-  padding: 0.8rem 0.9rem;
-}
-
-.shell-drawer-header h2 {
-  font-size: 1.25rem;
-  line-height: 1.1;
-  margin-bottom: 0;
 }
 
 .shell-drawer-body {
