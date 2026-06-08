@@ -46,8 +46,8 @@ export const projectSpiceRecipeOutputSpec = {
         steps: [
           {
             id: "stable slug-like string",
-            order: "positive integer starting at 1",
-            text: "direction text",
+            order: "positive integer step number starting at 1",
+            text: "direction text that includes ingredient quantities used in this step",
             timerMinutes: "positive integer | optional",
             ingredientRefs: ["ingredient item ids | optional"],
           },
@@ -74,6 +74,9 @@ export const projectSpiceRecipeSystemPrompt = [
   "- Write ingredients as readable lines while also splitting quantity, unit, item, preparation, and optional when known.",
   "- Use stable, slug-like ids for ingredient sections, ingredient items, direction sections, and steps.",
   "- Keep direction steps specific enough for a home cook to follow.",
+  "- Every direction step must include an order value. Use 1, 2, 3, and so on within each direction section.",
+  "- Direction step text must display the ingredient quantities used in that step when quantities are known.",
+  "- If an ingredient is split across multiple steps, state the partial quantity used in each relevant step. For example, if the recipe has 2 tablespoons butter and 1 tablespoon is used early, write the step text with \"1 tablespoon butter\" rather than only \"butter\".",
   "- Add timerMinutes on steps where a meaningful timer applies.",
   "- Add ingredientRefs on steps when you can confidently reference ingredient item ids.",
   "- Use source.type = \"ai\".",
@@ -97,7 +100,7 @@ export function parseProjectSpiceRecipeIntakeJson(
   value: string,
 ): IntakeParseResult {
   try {
-    const parsedJson = JSON.parse(value);
+    const parsedJson = JSON.parse(normalizeRecipeIntakeJsonText(value));
     const envelope = getDraftEnvelope(parsedJson);
     const draftRecipe = recipeDraftSchema.parse(
       removeNullObjectValues(envelope.draftRecipe),
@@ -115,6 +118,16 @@ export function parseProjectSpiceRecipeIntakeJson(
       errors: formatIntakeParseErrors(error),
     };
   }
+}
+
+export function normalizeRecipeIntakeJsonText(value: string): string {
+  return stripMarkdownCodeFence(value.trim()).replace(/[“”]/g, "\"");
+}
+
+function stripMarkdownCodeFence(value: string): string {
+  const match = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(value);
+
+  return match ? match[1].trim() : value;
 }
 
 function getDraftEnvelope(value: unknown): {

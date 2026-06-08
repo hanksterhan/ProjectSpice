@@ -377,6 +377,34 @@ p {
   line-height: 1.45;
 }
 
+.ai-draft-panel .ai-draft-step-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ai-draft-panel .ai-draft-step-list li {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+}
+
+.ai-draft-panel .ai-draft-step-list li > span {
+  align-items: center;
+  background: var(--surface-muted);
+  border-radius: 6px;
+  color: var(--accent);
+  display: inline-flex;
+  font-size: 0.86rem;
+  font-weight: 900;
+  height: 2rem;
+  justify-content: center;
+}
+
+.ai-draft-panel .ai-draft-step-list p {
+  color: var(--ink);
+  margin-bottom: 0;
+}
+
 .ai-draft-section + .ai-draft-section {
   border-top: 1px solid var(--line);
   margin-top: 1rem;

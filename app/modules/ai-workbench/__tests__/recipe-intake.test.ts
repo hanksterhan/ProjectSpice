@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validRecipeDraftFixture } from "~/modules/recipe-domain";
 
 import {
+  normalizeRecipeIntakeJsonText,
   parseProjectSpiceRecipeIntakeJson,
   projectSpiceRecipeSystemPrompt,
 } from "../project-spice-recipe-intake";
@@ -13,6 +14,8 @@ describe("Project Spice recipe intake", () => {
     expect(projectSpiceRecipeSystemPrompt).toContain("draftRecipe");
     expect(projectSpiceRecipeSystemPrompt).toContain("changeSummary");
     expect(projectSpiceRecipeSystemPrompt).toContain("id, version, createdAt, and updatedAt");
+    expect(projectSpiceRecipeSystemPrompt).toContain("Every direction step must include an order value");
+    expect(projectSpiceRecipeSystemPrompt).toContain("partial quantity used in each relevant step");
   });
 
   it("parses a ChatGPT or Claude recipe envelope", () => {
@@ -22,6 +25,26 @@ describe("Project Spice recipe intake", () => {
         changeSummary: ["Created a structured recipe draft."],
       }),
     );
+
+    expect(parsed).toEqual({
+      ok: true,
+      draftRecipe: validRecipeDraftFixture,
+      changeSummary: ["Created a structured recipe draft."],
+    });
+  });
+
+  it("normalizes common ChatGPT paste formatting", () => {
+    expect(normalizeRecipeIntakeJsonText("```json\n{“draftRecipe”:{}}\n```")).toBe(
+      "{\"draftRecipe\":{}}",
+    );
+  });
+
+  it("accepts a curly-quoted ChatGPT recipe envelope", () => {
+    const json = JSON.stringify({
+      draftRecipe: validRecipeDraftFixture,
+      changeSummary: ["Created a structured recipe draft."],
+    }).replace(/"/g, "”");
+    const parsed = parseProjectSpiceRecipeIntakeJson(`\`\`\`json\n${json}\n\`\`\``);
 
     expect(parsed).toEqual({
       ok: true,

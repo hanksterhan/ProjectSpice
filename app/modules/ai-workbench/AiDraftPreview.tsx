@@ -57,9 +57,12 @@ export function AiDraftPreview({ recipe, changeSummary }: AiDraftPreviewProps) {
           {recipe.directions.map((section) => (
             <div className="ai-draft-section" key={section.id}>
               {section.title ? <h4>{section.title}</h4> : null}
-              <ol>
+              <ol className="ai-draft-step-list">
                 {section.steps.map((step) => (
-                  <li key={step.id}>{step.text}</li>
+                  <li key={step.id}>
+                    <span>{step.order}</span>
+                    <p>{step.text}</p>
+                  </li>
                 ))}
               </ol>
             </div>

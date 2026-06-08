@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 
 import type { RecipeDraft } from "~/modules/recipe-domain";
@@ -30,6 +30,7 @@ type RecipeIntakeProps = {
 
 export function RecipeIntake({ actionData }: RecipeIntakeProps) {
   const promptTextAreaRef = useRef<HTMLTextAreaElement>(null);
+  const previewPanelRef = useRef<HTMLElement>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
@@ -42,6 +43,17 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
     navigation.formData?.get("intent") === "save-intake";
   const draftRecipe = actionData?.draftRecipe;
   const changeSummary = actionData?.changeSummary ?? [];
+
+  useEffect(() => {
+    if (!draftRecipe) {
+      return;
+    }
+
+    previewPanelRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [draftRecipe]);
 
   return (
     <div className="recipe-intake-page">
@@ -144,7 +156,11 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
         </section>
       </div>
 
-      <section className="intake-preview-panel" aria-labelledby="intake-preview-heading">
+      <section
+        className="intake-preview-panel"
+        ref={previewPanelRef}
+        aria-labelledby="intake-preview-heading"
+      >
         <div className="intake-preview-header">
           <div>
             <h2 id="intake-preview-heading">Recipe Preview</h2>
