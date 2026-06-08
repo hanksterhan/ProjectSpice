@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { Link, NavLink } from "react-router";
@@ -41,14 +42,32 @@ const ShellDrawerContext = createContext<(drawer: ShellDrawer | null) => void>(
   () => undefined,
 );
 
+type DrawerMode = "closed" | "peek" | "pinned";
+
 export function AppShell({ children }: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
   const activeCommand = command ?? defaultCommand;
+  const isDrawerVisible = drawerMode !== "closed";
+  const isDrawerPinned = drawerMode === "pinned";
+
+  const closeDrawer = () => setDrawerMode("closed");
+  const closePeekDrawerOutsideBounds = (event: MouseEvent<HTMLDivElement>) => {
+    if (drawerMode !== "peek") {
+      return;
+    }
+
+    const drawerElement = event.currentTarget.querySelector("#shell-drawer");
+    const drawerRight = drawerElement?.getBoundingClientRect().right ?? 0;
+
+    if (event.clientX > drawerRight + 4 || event.clientY < 64) {
+      closeDrawer();
+    }
+  };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" onMouseMove={closePeekDrawerOutsideBounds}>
       <ShellCommandContext.Provider value={setCommand}>
         <ShellDrawerContext.Provider value={setDrawer}>
           <header className="shell-header">
@@ -57,10 +76,10 @@ export function AppShell({ children }: AppShellProps) {
                 className="icon-button"
                 type="button"
                 title={drawer ? drawer.title : "Navigation"}
-                aria-expanded={isDrawerOpen}
+                aria-expanded={isDrawerVisible}
                 aria-controls="shell-drawer"
                 aria-label={drawer ? drawer.title : "Navigation"}
-                onClick={() => setIsDrawerOpen((value) => !value)}
+                onClick={() => setDrawerMode((mode) => (mode === "pinned" ? "closed" : "pinned"))}
               >
                 <MenuIcon />
                 <span className="sr-only">{drawer ? drawer.title : "Navigation"}</span>
@@ -99,9 +118,21 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </header>
 
-          <div className={isDrawerOpen ? "shell-body drawer-open" : "shell-body"}>
-            {isDrawerOpen ? (
-              <aside className="shell-drawer" id="shell-drawer" aria-label={drawer?.title ?? "Navigation"}>
+          <div
+            className="shell-sidebar-activation-zone"
+            aria-hidden="true"
+            onMouseEnter={() => setDrawerMode((mode) => (mode === "closed" ? "peek" : mode))}
+          />
+
+          <div className={isDrawerPinned ? "shell-body drawer-pinned" : "shell-body"}>
+            {isDrawerVisible ? (
+              <aside
+                className={isDrawerPinned ? "shell-drawer pinned" : "shell-drawer peeking"}
+                id="shell-drawer"
+                aria-label={drawer?.title ?? "Navigation"}
+                onMouseDown={() => setDrawerMode((mode) => (mode === "peek" ? "pinned" : mode))}
+                onMouseLeave={() => setDrawerMode((mode) => (mode === "peek" ? "closed" : mode))}
+              >
                 <div className="shell-drawer-header">
                   <h2>{drawer?.title ?? "Navigation"}</h2>
                   <button
@@ -109,7 +140,7 @@ export function AppShell({ children }: AppShellProps) {
                     type="button"
                     aria-label="Close menu"
                     title="Close"
-                    onClick={() => setIsDrawerOpen(false)}
+                    onClick={closeDrawer}
                   >
                     <CloseIcon />
                   </button>

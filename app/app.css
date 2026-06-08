@@ -205,8 +205,17 @@ p {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.shell-body.drawer-open {
+.shell-body.drawer-pinned {
   grid-template-columns: clamp(18rem, 27vw, 24rem) minmax(0, 1fr);
+}
+
+.shell-sidebar-activation-zone {
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  top: 4rem;
+  width: 0.65rem;
+  z-index: 8;
 }
 
 .shell-main {
@@ -226,6 +235,14 @@ p {
   position: sticky;
   top: 4rem;
   width: 100%;
+}
+
+.shell-drawer.peeking {
+  box-shadow: var(--shadow);
+  left: 0;
+  position: fixed;
+  width: clamp(18rem, 27vw, 24rem);
+  z-index: 9;
 }
 
 .shell-drawer-header {
@@ -1785,7 +1802,7 @@ p {
   .recipe-ai-review .ai-draft-hero,
   .toolbar-actions,
   .shell-grid,
-  .shell-body.drawer-open,
+  .shell-body.drawer-pinned,
   .library-browser,
   .recipe-detail-hero,
   .recipe-detail-layout,
@@ -1824,6 +1841,10 @@ p {
     height: auto;
     max-height: 26rem;
     position: static;
+  }
+
+  .shell-drawer.peeking {
+    width: min(24rem, calc(100vw - 1rem));
   }
 
   .library-filter-sidebar {
