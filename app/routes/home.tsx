@@ -184,7 +184,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               {showBulkTools ? (
                 <div className="bulk-tag-toolbar">
                   <div>
-                    <p className="eyebrow">Selection</p>
                     <strong>Add or remove comma-separated tags from selected recipes</strong>
                   </div>
                   <label className="field">
@@ -331,7 +330,6 @@ function LibraryOrganizerDrawer({
 
       {activeFilters.length > 0 ? (
         <div className="drawer-active-filters" aria-label="Active filters">
-          <p className="eyebrow">Active</p>
           <div className="active-filter-list compact">
             {activeFilters.map((filter) => (
               <Link className="active-filter-chip" key={filter.id} to={filter.href}>

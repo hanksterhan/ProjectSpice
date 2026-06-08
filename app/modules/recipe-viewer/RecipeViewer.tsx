@@ -25,7 +25,6 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
     <article className="recipe-detail-page">
       <header className="recipe-detail-hero">
         <div>
-          <p className="eyebrow">Recipe</p>
           <h1>{recipe.title}</h1>
           {recipe.description ? <p>{recipe.description}</p> : null}
           <div className="recipe-meta large" aria-label="Recipe tags">

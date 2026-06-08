@@ -67,7 +67,6 @@ export function RecipeAiPanel({ actionData, onClose, recipe }: RecipeAiPanelProp
     >
       <div className="recipe-ai-panel-header">
         <div>
-          <p className="eyebrow">Assistant</p>
           <h2 id="ai-heading">Recipe Chat</h2>
         </div>
         <div className="recipe-ai-panel-tools">

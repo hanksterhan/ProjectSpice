@@ -1711,6 +1711,100 @@ p {
   width: min(100%, 1120px);
 }
 
+.recipe-intake-page {
+  display: grid;
+  gap: 1rem;
+  margin-inline: auto;
+  width: min(100%, 1500px);
+}
+
+.recipe-intake-layout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(18rem, 0.92fr) minmax(0, 1.08fr);
+}
+
+.intake-prompt-panel,
+.intake-json-panel,
+.intake-preview-panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.35rem);
+}
+
+.intake-prompt-panel {
+  position: sticky;
+  top: 5.5rem;
+}
+
+.intake-prompt-panel h2,
+.intake-json-panel h2,
+.intake-preview-panel h2 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+.intake-panel-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.copy-status {
+  color: var(--leaf);
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 900;
+  min-height: 0;
+  padding-top: 0.35rem;
+  text-transform: uppercase;
+}
+
+.copy-status.idle {
+  display: none;
+}
+
+.copy-status.failed {
+  color: var(--accent-strong);
+}
+
+.intake-prompt-panel textarea,
+.intake-json-panel textarea {
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.intake-prompt-panel textarea {
+  background: var(--surface);
+}
+
+.intake-json-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.intake-preview-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+}
+
+.intake-preview-panel .ai-draft-preview,
+.intake-preview-panel .ai-draft-empty {
+  box-shadow: none;
+}
+
 .recipe-editor-form {
   display: grid;
   gap: 1rem;
@@ -1929,6 +2023,7 @@ p {
   .recipe-detail-hero,
   .recipe-detail-layout,
   .bulk-tag-toolbar,
+  .recipe-intake-layout,
   .editor-header,
   .editor-section-header,
   .ingredient-editor-section-header,
@@ -1985,6 +2080,10 @@ p {
   }
 
   .ai-prompt-panel {
+    position: static;
+  }
+
+  .intake-prompt-panel {
     position: static;
   }
 
@@ -2164,14 +2263,25 @@ p {
     flex-direction: column;
   }
 
+  .intake-preview-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .editor-actions {
     justify-content: stretch;
   }
 
   .editor-actions .button,
+  .intake-preview-header .button,
+  .intake-preview-header form,
   .ai-review-actions .button,
   .ai-review-actions form {
     flex: 1;
+  }
+
+  .intake-preview-header form .button {
+    width: 100%;
   }
 
   .ai-review-actions {

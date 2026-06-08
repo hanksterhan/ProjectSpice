@@ -60,7 +60,6 @@ export function RecipeEditorForm({
       ) : null}
       <header className="editor-header">
         <div>
-          <p className="eyebrow">{mode === "new" ? "New recipe" : "Edit recipe"}</p>
           <h1>{mode === "new" ? "Create Recipe" : "Edit Recipe"}</h1>
           <p>
             Shape the recipe basics now. Ingredients and directions stay with the
@@ -90,7 +89,6 @@ export function RecipeEditorForm({
 
       <section className="editor-section" aria-labelledby="editor-metadata">
         <div>
-          <p className="eyebrow">Metadata</p>
           <h2 id="editor-metadata">Recipe Details</h2>
         </div>
         <div className="editor-grid two-column">
@@ -134,7 +132,6 @@ export function RecipeEditorForm({
 
       <section className="editor-section" aria-labelledby="editor-timing">
         <div>
-          <p className="eyebrow">Timing</p>
           <h2 id="editor-timing">Prep, Cook, and Total</h2>
         </div>
         <div className="editor-grid three-column">
@@ -167,7 +164,6 @@ export function RecipeEditorForm({
 
       <section className="editor-section" aria-labelledby="editor-yield">
         <div>
-          <p className="eyebrow">Yield</p>
           <h2 id="editor-yield">Servings and Notes</h2>
         </div>
         <div className="editor-grid three-column">
@@ -200,7 +196,6 @@ export function RecipeEditorForm({
 
       <section className="editor-section" aria-labelledby="editor-notes-source">
         <div>
-          <p className="eyebrow">Notes</p>
           <h2 id="editor-notes-source">Notes and Source</h2>
         </div>
         <label className="field field-wide">

@@ -74,7 +74,6 @@ export default function EditRecipe({ loaderData, actionData }: Route.ComponentPr
   useShellCommand({
     backHref: getRecipeDetailPath(loaderData.recipe),
     backLabel: "Back to recipe",
-    eyebrow: "Edit recipe",
     title: loaderData.recipe.title,
   });
 

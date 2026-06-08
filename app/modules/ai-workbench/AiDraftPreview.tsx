@@ -11,7 +11,6 @@ export function AiDraftPreview({ recipe, changeSummary }: AiDraftPreviewProps) {
     <section className="ai-draft-preview" aria-labelledby="ai-draft-heading">
       <div className="ai-draft-hero">
         <div>
-          <p className="eyebrow">Draft</p>
           <h2 id="ai-draft-heading">{recipe.title}</h2>
           {recipe.description ? <p>{recipe.description}</p> : null}
           <div className="recipe-meta">

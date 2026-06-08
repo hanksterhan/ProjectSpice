@@ -244,7 +244,6 @@ export default function RecipeDetail({
     actions: shellActions,
     backHref: "/",
     backLabel: "Back to library",
-    eyebrow: "Recipe",
     title: recipe.title,
   });
 

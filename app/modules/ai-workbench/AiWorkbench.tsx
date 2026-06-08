@@ -44,7 +44,6 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
     <div className="ai-workbench-page">
       <section className="ai-workbench-toolbar">
         <div>
-          <p className="eyebrow">AI Workbench</p>
           <h1>Recipe Chat</h1>
           <p className="page-summary">
             Start with an idea, then keep tuning the draft before it enters the

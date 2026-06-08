@@ -61,7 +61,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <main className="app-frame">
       <section className="empty-state" aria-labelledby="error-title">
-        <p className="eyebrow">ProjectSpice</p>
         <h1 id="error-title">{title}</h1>
         <p>{message}</p>
       </section>
