@@ -117,16 +117,6 @@ export function getRecipeLibraryFacets(
 ): RecipeLibraryFacetGroup[] {
   const groups: RecipeLibraryFacetGroup[] = [
     {
-      id: "source",
-      label: "Source",
-      options: getFacetOptions(
-        recipes,
-        query,
-        "source",
-        (recipe) => [getSourceTypeLabel(recipe)],
-      ),
-    },
-    {
       id: "cookbook",
       label: "Cookbooks",
       options: getFacetOptions(

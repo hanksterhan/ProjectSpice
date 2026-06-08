@@ -6,7 +6,6 @@ import {
   Heart,
   History,
   LayoutGrid,
-  Newspaper,
   Star,
   Tags,
   Type,
@@ -158,7 +157,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <p className="page-summary">
             {hasSearch || hasFilters
               ? `${resultLabel} in the current view`
-              : `${totalRecipeCount} recipes organized by source, cookbook, and tags`}
+              : `${totalRecipeCount} recipes organized by cookbook and tags`}
           </p>
         </div>
 
@@ -279,7 +278,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           ) : (
             <EmptyState
               title="No recipes found"
-              body="Try another title, tag, source, or yield search."
+              body="Try another title, tag, cookbook, or yield search."
               actionLabel="Show all recipes"
               actionHref="/"
             />
@@ -471,10 +470,6 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
 }
 
 function LibraryFacetIcon({ id }: { id: RecipeLibraryFacet }) {
-  if (id === "source") {
-    return <Newspaper className="drawer-icon" />;
-  }
-
   if (id === "cookbook") {
     return <BookOpen className="drawer-icon" />;
   }

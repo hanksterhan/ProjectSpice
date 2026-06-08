@@ -159,17 +159,14 @@ describe("recipe library query helpers", () => {
     ).toEqual(["regular-ten", "favorite-nine", "favorite-seven"]);
   });
 
-  it("builds source, cookbook, and tag facets with active filter links", () => {
+  it("builds cookbook and tag facets with active filter links", () => {
     const query = parseRecipeLibraryQuery(
       "https://spice.test/?source=Cookbook&tag=seed",
     );
     const facets = getRecipeLibraryFacets(seedRecipes, query);
     const activeFilters = getActiveLibraryFilters(query);
 
-    expect(facets.find((facet) => facet.id === "source")?.options[0]).toMatchObject({
-      label: "Cookbook",
-      selected: true,
-    });
+    expect(facets.map((facet) => facet.id)).toEqual(["cookbook", "tag"]);
     expect(facets.find((facet) => facet.id === "cookbook")?.options[0]?.label).toBe(
       "Claire Saffitz - Whats for Dessert",
     );
