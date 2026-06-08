@@ -671,6 +671,13 @@ p {
   min-height: 7rem;
 }
 
+.recipe-row.large h3 {
+  font-size: clamp(1.28rem, 1.8vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1.08;
+  margin-bottom: 0.4rem;
+}
+
 .recipe-row.large .image-fallback {
   height: 6rem;
   width: 6rem;
@@ -769,6 +776,174 @@ p {
   width: min(100%, 1500px);
 }
 
+.library-filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+}
+
+.filter-panel-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.filter-panel-summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-panel-summary span {
+  background: var(--surface-muted);
+  border-radius: 999px;
+  color: var(--steel);
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.35rem 0.55rem;
+}
+
+.filter-panel-summary h3 {
+  font-size: 1rem;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+.filter-panel-body {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.75rem;
+  padding-top: 0.85rem;
+}
+
+.facet-group {
+  min-width: 0;
+}
+
+.facet-group h3 {
+  color: var(--plum);
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
+.facet-options {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.facet-option {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--steel);
+  display: flex;
+  font-size: 0.88rem;
+  font-weight: 800;
+  gap: 0.6rem;
+  justify-content: space-between;
+  min-height: 2.15rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.facet-option:hover,
+.facet-option.selected {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.facet-option strong {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.active-filter-list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.active-filter-chip {
+  align-items: center;
+  background: rgb(47 111 78 / 10%);
+  border-radius: 999px;
+  color: var(--leaf);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.active-filter-chip.clear {
+  background: var(--surface-muted);
+  color: var(--steel);
+}
+
+.library-organizer-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.bulk-tag-toolbar {
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.55fr) auto;
+  padding: 0.85rem;
+}
+
+.bulk-tag-toolbar strong {
+  color: var(--ink);
+  display: block;
+  line-height: 1.25;
+}
+
+.selectable-recipe {
+  position: relative;
+}
+
+.recipe-select-checkbox {
+  align-items: center;
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+  width: 2rem;
+  z-index: 2;
+}
+
+.recipe-select-checkbox input {
+  accent-color: var(--accent);
+  height: 1rem;
+  width: 1rem;
+}
+
+.recipe-select-checkbox span {
+  position: absolute;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  width: 1px;
+}
+
 .results-header {
   align-items: center;
   border-bottom: 1px solid var(--line);
@@ -786,9 +961,18 @@ p {
 }
 
 .results-header .tabs {
+  flex: 0 0 16rem;
   margin-bottom: 0;
   max-width: 16rem;
-  width: 100%;
+  width: 16rem;
+}
+
+.results-header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
 }
 
 .recipe-card-grid {
@@ -868,6 +1052,11 @@ p {
 .tag {
   background: rgb(47 111 78 / 10%);
   color: var(--leaf);
+}
+
+.source-tag {
+  background: rgb(48 72 95 / 10%);
+  color: var(--steel);
 }
 
 .recipe-detail-route {
@@ -1505,6 +1694,7 @@ p {
   .shell-grid,
   .recipe-detail-hero,
   .recipe-detail-layout,
+  .bulk-tag-toolbar,
   .editor-header,
   .editor-section-header,
   .ingredient-editor-section-header,
@@ -1533,6 +1723,20 @@ p {
 
   .ingredient-rail {
     position: static;
+  }
+
+  .filter-panel-body {
+    grid-template-columns: 1fr;
+  }
+
+  .results-header-actions {
+    flex-wrap: wrap;
+  }
+
+  .results-header .tabs {
+    flex-basis: 100%;
+    max-width: none;
+    width: 100%;
   }
 
   .ai-prompt-panel {
