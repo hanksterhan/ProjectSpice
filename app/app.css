@@ -955,17 +955,47 @@ p {
   border-radius: 6px;
   color: var(--steel);
   display: inline-flex;
-  font-size: 0.82rem;
-  font-weight: 900;
   justify-content: center;
   min-height: 2.7rem;
-  min-width: 4.25rem;
-  padding: 0 0.65rem;
+  min-width: 2.7rem;
+  padding: 0;
+  position: relative;
 }
 
 .sort-direction-toggle:hover {
   background: var(--surface-muted);
   color: var(--ink);
+}
+
+.sort-direction-toggle::before {
+  background: currentColor;
+  content: "";
+  height: 0.95rem;
+  left: 50%;
+  position: absolute;
+  top: 0.88rem;
+  transform: translateX(-50%);
+  width: 2px;
+}
+
+.sort-direction-toggle::after {
+  border-left: 2px solid currentColor;
+  border-top: 2px solid currentColor;
+  content: "";
+  height: 0.48rem;
+  left: 50%;
+  position: absolute;
+  width: 0.48rem;
+}
+
+.sort-direction-toggle.asc::after {
+  top: 0.74rem;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.sort-direction-toggle.desc::after {
+  top: 1.32rem;
+  transform: translateX(-50%) rotate(225deg);
 }
 
 .drawer-active-filters {
@@ -1075,7 +1105,7 @@ p {
 .active-filter-chip {
   align-items: center;
   background: rgb(47 111 78 / 10%);
-  border-radius: 999px;
+  border-radius: 5px;
   color: var(--leaf);
   display: inline-flex;
   font-size: 0.78rem;

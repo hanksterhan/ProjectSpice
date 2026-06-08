@@ -173,20 +173,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           </div>
         </div>
 
-          {activeFilters.length > 0 ? (
-            <div className="active-filter-list" aria-label="Active filters">
-              {activeFilters.map((filter) => (
-                <Link className="active-filter-chip" key={filter.id} to={filter.href}>
-                  {filter.label}
-                  <span aria-hidden="true">x</span>
-                </Link>
-              ))}
-              <Link className="active-filter-chip clear" to="/">
-                Clear all
-              </Link>
-            </div>
-          ) : null}
-
           {actionData?.errors?.length ? (
             <div className="form-status error" role="alert">
               <p>{actionData.errors.join(" ")}</p>
@@ -415,11 +401,12 @@ function SortPicker({ query }: { query: RecipeLibraryQuery }) {
           </div>
         </details>
         <Link
-          aria-label={`Sort ${getSortDirectionLabel(nextDirection)}`}
-          className="sort-direction-toggle"
+          aria-label={`Switch to ${getSortDirectionLabel(nextDirection).toLowerCase()} sort`}
+          className={`sort-direction-toggle ${query.direction}`}
+          title={`Switch to ${getSortDirectionLabel(nextDirection).toLowerCase()} sort`}
           to={getLibraryQueryHref({ ...query, direction: nextDirection })}
         >
-          {getSortDirectionLabel(query.direction)}
+          <span className="sr-only">{getSortDirectionLabel(query.direction)}</span>
         </Link>
       </div>
     </div>
