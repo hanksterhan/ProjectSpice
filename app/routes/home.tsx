@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
-import { Form, Link, redirect, useSubmit } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Form, Link, redirect, useNavigate } from "react-router";
 
 import type { Route } from "./+types/home";
 import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
   getActiveLibraryFilters,
+  getDefaultSortDirection,
   getLibraryQueryHref,
   getRecipeLibraryFacets,
   getRecipeLibraryResults,
@@ -285,7 +286,24 @@ function LibraryOrganizerDrawer({
   hasSearch,
   query,
 }: LibraryOrganizerDrawerProps) {
-  const submit = useSubmit();
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState(query.q);
+
+  useEffect(() => {
+    setSearchValue(query.q);
+  }, [query.q]);
+
+  useEffect(() => {
+    if (searchValue === query.q) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      navigate(getLibraryQueryHref({ ...query, q: searchValue }), { replace: true });
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [navigate, query, searchValue]);
 
   return (
     <div className="library-drawer-organizer">
@@ -295,25 +313,16 @@ function LibraryOrganizerDrawer({
           type="search"
           name="q"
           placeholder="Find a recipe"
-          defaultValue={query.q}
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.currentTarget.value)}
         />
-        <label className="field">
-          <span>Sort</span>
-          <select
-            name="sort"
-            defaultValue={query.sort}
-            onChange={(event) => {
-              if (event.currentTarget.form) {
-                submit(event.currentTarget.form);
-              }
-            }}
-          >
-            <option value="recent">Recently updated</option>
-            <option value="title">Title</option>
-            <option value="time">Total time</option>
-          </select>
-        </label>
         <input type="hidden" name="view" value={query.view} />
+        {query.sort !== "recent" ? (
+          <input type="hidden" name="sort" value={query.sort} />
+        ) : null}
+        {query.direction !== getDefaultSortDirection(query.sort) ? (
+          <input type="hidden" name="dir" value={query.direction} />
+        ) : null}
         {query.tags.map((tag) => (
           <input key={`tag:${tag}`} type="hidden" name="tag" value={tag} />
         ))}
@@ -331,6 +340,8 @@ function LibraryOrganizerDrawer({
           </div>
         ) : null}
       </Form>
+
+      <SortPicker query={query} />
 
       {activeFilters.length > 0 ? (
         <div className="drawer-active-filters" aria-label="Active filters">
@@ -373,6 +384,62 @@ function LibraryOrganizerDrawer({
       </div>
     </div>
   );
+}
+
+function SortPicker({ query }: { query: RecipeLibraryQuery }) {
+  const nextDirection = query.direction === "asc" ? "desc" : "asc";
+
+  return (
+    <div className="sort-picker field">
+      <span>Sort</span>
+      <div className="sort-control-row">
+        <details className="sort-menu">
+          <summary>
+            <span>{getSortLabel(query.sort)}</span>
+          </summary>
+          <div className="sort-menu-options">
+            {(["recent", "title", "time"] as const).map((sort) => (
+              <Link
+                className={query.sort === sort ? "sort-menu-option selected" : "sort-menu-option"}
+                key={sort}
+                to={getLibraryQueryHref({
+                  ...query,
+                  direction: getDefaultSortDirection(sort),
+                  sort,
+                })}
+              >
+                <span>{getSortLabel(sort)}</span>
+                {query.sort === sort ? <strong aria-hidden="true">Selected</strong> : null}
+              </Link>
+            ))}
+          </div>
+        </details>
+        <Link
+          aria-label={`Sort ${getSortDirectionLabel(nextDirection)}`}
+          className="sort-direction-toggle"
+          to={getLibraryQueryHref({ ...query, direction: nextDirection })}
+        >
+          {getSortDirectionLabel(query.direction)}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function getSortDirectionLabel(direction: RecipeLibraryQuery["direction"]) {
+  return direction === "asc" ? "Asc" : "Desc";
+}
+
+function getSortLabel(sort: RecipeLibraryQuery["sort"]) {
+  if (sort === "title") {
+    return "Title";
+  }
+
+  if (sort === "time") {
+    return "Total time";
+  }
+
+  return "Recently updated";
 }
 
 type RecipeMetaProps = {

@@ -860,6 +860,114 @@ p {
   gap: 0.45rem;
 }
 
+.sort-picker {
+  position: relative;
+}
+
+.sort-control-row {
+  align-items: start;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.sort-menu {
+  position: relative;
+}
+
+.sort-menu summary {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 1rem;
+  justify-content: space-between;
+  line-height: 1.15;
+  list-style: none;
+  min-height: 2.7rem;
+  padding: 0 0.85rem;
+}
+
+.sort-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.sort-menu summary::after {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  content: "";
+  height: 0.5rem;
+  margin-left: 1rem;
+  transform: rotate(45deg) translateY(-0.12rem);
+  width: 0.5rem;
+}
+
+.sort-menu[open] summary {
+  border-color: rgb(185 68 47 / 45%);
+}
+
+.sort-menu[open] summary::after {
+  transform: rotate(225deg) translate(-0.05rem, -0.05rem);
+}
+
+.sort-menu-options {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.35rem;
+  padding: 0.3rem;
+}
+
+.sort-menu-option {
+  align-items: center;
+  border-radius: 5px;
+  color: var(--steel);
+  display: flex;
+  font-size: 0.92rem;
+  font-weight: 800;
+  justify-content: space-between;
+  min-height: 2.15rem;
+  padding: 0.4rem 0.55rem;
+}
+
+.sort-menu-option:hover,
+.sort-menu-option.selected {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.sort-menu-option strong {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.sort-direction-toggle {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--steel);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 2.7rem;
+  min-width: 4.25rem;
+  padding: 0 0.65rem;
+}
+
+.sort-direction-toggle:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
 .drawer-active-filters {
   border-bottom: 1px solid var(--line);
   display: grid;

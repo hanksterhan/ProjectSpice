@@ -15,10 +15,11 @@ describe("recipe library query helpers", () => {
   it("parses URL-backed search, sort, and view state with safe defaults", () => {
     expect(
       parseRecipeLibraryQuery(
-        "https://spice.test/?q=  mango  &sort=time&view=list&tag=chilled%20dessert&source=Cookbook&cookbook=Whats%20for%20Dessert",
+        "https://spice.test/?q=  mango  &sort=time&dir=desc&view=list&tag=chilled%20dessert&source=Cookbook&cookbook=Whats%20for%20Dessert",
       ),
     ).toEqual({
       cookbooks: ["Whats for Dessert"],
+      direction: "desc",
       q: "mango",
       sort: "time",
       sources: ["Cookbook"],
@@ -28,6 +29,7 @@ describe("recipe library query helpers", () => {
 
     expect(parseRecipeLibraryQuery("https://spice.test/?sort=unknown&view=wide")).toEqual({
       cookbooks: [],
+      direction: "desc",
       q: "",
       sort: "recent",
       sources: [],
@@ -40,6 +42,7 @@ describe("recipe library query helpers", () => {
     const results = getRecipeLibraryResults(seedRecipes, {
       q: "mango chilled",
       cookbooks: [],
+      direction: "asc",
       sort: "title",
       sources: [],
       tags: [],
@@ -52,6 +55,7 @@ describe("recipe library query helpers", () => {
   it("filters by tag, source, and cookbook facets", () => {
     const results = getRecipeLibraryResults(seedRecipes, {
       cookbooks: ["Claire Saffitz - Whats for Dessert"],
+      direction: "asc",
       q: "",
       sort: "title",
       sources: ["Cookbook"],
@@ -70,6 +74,7 @@ describe("recipe library query helpers", () => {
   it("sorts matching recipes by title and total time", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
       cookbooks: [],
+      direction: "asc",
       q: "dessert",
       sort: "title",
       sources: [],
@@ -78,6 +83,7 @@ describe("recipe library query helpers", () => {
     });
     const timeResults = getRecipeLibraryResults(seedRecipes, {
       cookbooks: [],
+      direction: "asc",
       q: "dessert",
       sort: "time",
       sources: [],
@@ -89,6 +95,20 @@ describe("recipe library query helpers", () => {
     expect(timeResults[0]?.times?.totalMinutes).toBeLessThanOrEqual(
       timeResults[1]?.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER,
     );
+  });
+
+  it("sorts in descending direction when requested", () => {
+    const titleResults = getRecipeLibraryResults(seedRecipes, {
+      cookbooks: [],
+      direction: "desc",
+      q: "dessert",
+      sort: "title",
+      sources: [],
+      tags: [],
+      view: "cards",
+    });
+
+    expect(titleResults[0]?.title).toBe("Tiramisu-y Icebox Cake");
   });
 
   it("builds source, cookbook, and tag facets with active filter links", () => {

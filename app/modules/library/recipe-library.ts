@@ -1,10 +1,13 @@
 import type { Recipe } from "~/modules/recipe-domain";
 
 export const recipeLibrarySortOptions = ["recent", "title", "time"] as const;
+export const recipeLibrarySortDirectionOptions = ["asc", "desc"] as const;
 export const recipeLibraryViewOptions = ["cards", "list"] as const;
 export const maxRecipeTags = 12;
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
+export type RecipeLibrarySortDirection =
+  (typeof recipeLibrarySortDirectionOptions)[number];
 export type RecipeLibraryView = (typeof recipeLibraryViewOptions)[number];
 export type RecipeLibraryFacet = "tag" | "source" | "cookbook";
 
@@ -31,6 +34,7 @@ export type RecipeLibraryActiveFilter = {
 
 export type RecipeLibraryQuery = {
   cookbooks: string[];
+  direction: RecipeLibrarySortDirection;
   q: string;
   sort: RecipeLibrarySort;
   sources: string[];
@@ -41,12 +45,17 @@ export type RecipeLibraryQuery = {
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const searchParams = new URL(url).searchParams;
   const sort = searchParams.get("sort");
+  const direction = searchParams.get("dir");
   const view = searchParams.get("view");
+  const safeSort = isRecipeLibrarySort(sort) ? sort : "recent";
 
   return {
     cookbooks: parseQueryList(searchParams.getAll("cookbook")),
+    direction: isRecipeLibrarySortDirection(direction)
+      ? direction
+      : getDefaultSortDirection(safeSort),
     q: searchParams.get("q")?.trim() ?? "",
-    sort: isRecipeLibrarySort(sort) ? sort : "recent",
+    sort: safeSort,
     sources: parseQueryList(searchParams.getAll("source")),
     tags: parseQueryList(searchParams.getAll("tag")),
     view: isRecipeLibraryView(view) ? view : "cards",
@@ -89,7 +98,7 @@ export function getRecipeLibraryResults(
         });
 
   return filteredRecipes.sort((left, right) =>
-    compareRecipes(left, right, query.sort),
+    compareRecipes(left, right, query.sort, query.direction),
   );
 }
 
@@ -173,6 +182,10 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
     params.set("sort", query.sort);
   }
 
+  if (query.direction !== getDefaultSortDirection(query.sort)) {
+    params.set("dir", query.direction);
+  }
+
   if (query.view !== "cards") {
     params.set("view", query.view);
   }
@@ -229,27 +242,44 @@ function compareRecipes(
   left: Recipe,
   right: Recipe,
   sort: RecipeLibrarySort,
+  direction: RecipeLibrarySortDirection,
 ): number {
+  const multiplier = direction === "asc" ? 1 : -1;
+
   if (sort === "title") {
-    return left.title.localeCompare(right.title);
+    return left.title.localeCompare(right.title) * multiplier;
   }
 
   if (sort === "time") {
-    return (
+    return multiplier * (
       (left.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER) -
       (right.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER)
     );
   }
 
-  return right.updatedAt.localeCompare(left.updatedAt);
+  return left.updatedAt.localeCompare(right.updatedAt) * multiplier;
 }
 
 function isRecipeLibrarySort(value: string | null): value is RecipeLibrarySort {
   return recipeLibrarySortOptions.includes(value as RecipeLibrarySort);
 }
 
+function isRecipeLibrarySortDirection(
+  value: string | null,
+): value is RecipeLibrarySortDirection {
+  return recipeLibrarySortDirectionOptions.includes(
+    value as RecipeLibrarySortDirection,
+  );
+}
+
 function isRecipeLibraryView(value: string | null): value is RecipeLibraryView {
   return recipeLibraryViewOptions.includes(value as RecipeLibraryView);
+}
+
+export function getDefaultSortDirection(
+  sort: RecipeLibrarySort,
+): RecipeLibrarySortDirection {
+  return sort === "recent" ? "desc" : "asc";
 }
 
 function getFacetOptions(
