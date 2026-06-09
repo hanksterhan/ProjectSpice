@@ -61,11 +61,7 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
         <section className="intake-prompt-panel" aria-labelledby="prompt-heading">
           <div className="intake-panel-header">
             <div>
-              <h2 id="prompt-heading">System Prompt</h2>
-              <p className="intake-panel-note">
-                Copy this into ChatGPT or Claude when you want it to return a
-                structured Project Spice draft.
-              </p>
+              <h2 id="prompt-heading">Copy System Prompt</h2>
               <span
                 className={`copy-status ${copyStatus}`}
                 aria-live="polite"
@@ -98,7 +94,7 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
             </button>
           </div>
           <label className="field">
-            <span>Copy into ChatGPT or Claude</span>
+            <span className="sr-only">System prompt for ChatGPT or Claude</span>
             <textarea
               ref={promptTextAreaRef}
               readOnly
@@ -111,16 +107,12 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
         <section className="intake-json-panel" aria-labelledby="json-heading">
           <div>
             <h2 id="json-heading">Paste Recipe JSON</h2>
-            <p className="intake-panel-note">
-              Paste the chat output here, preview the parsed draft, then save it
-              after review.
-            </p>
           </div>
 
           <Form className="intake-json-form" method="post">
             <input name="intent" type="hidden" value="preview-intake" />
             <label className="field">
-              <span>Chat output</span>
+              <span className="sr-only">Chat output</span>
               <textarea
                 name="recipeJson"
                 placeholder='{"draftRecipe":{"title":"..."}, "changeSummary":["..."]}'

@@ -126,7 +126,7 @@ export function RecipeEditorForm({
           <RecipeImage
             className="recipe-compose-image"
             src={defaultValues.imageUrl}
-            title={defaultValues.title || "Recipe"}
+            title={defaultValues.imageUrl ? defaultValues.title || "Recipe" : "URL"}
           />
           <details className="recipe-compose-image-url">
             <summary>Change image URL</summary>

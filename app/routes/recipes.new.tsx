@@ -194,9 +194,6 @@ function NewRecipeModeHeader({ mode }: { mode: NewRecipeMode }) {
           </Link>
         </nav>
       </div>
-      <Link className="button button-secondary" to="/">
-        Cancel
-      </Link>
     </header>
   );
 }

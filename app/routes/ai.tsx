@@ -17,6 +17,7 @@ import {
   getRecipeAiService,
 } from "~/server/ai";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
+import { useShellCommand } from "~/modules/ui-shell/AppShell";
 
 const generateFormSchema = z.object({
   prompt: z.string().trim().min(1, "Add a prompt before generating."),
@@ -132,6 +133,10 @@ export async function action({
 }
 
 export default function AiWorkbenchRoute({ actionData }: Route.ComponentProps) {
+  useShellCommand({
+    title: "Workbench",
+  });
+
   return <AiWorkbench actionData={actionData} />;
 }
 

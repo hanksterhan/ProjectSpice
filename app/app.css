@@ -133,7 +133,7 @@ p {
   backdrop-filter: blur(16px);
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, 1.1fr) minmax(12rem, 1fr);
   min-height: 4rem;
   padding: 0 clamp(1rem, 4vw, 2.5rem) 0 clamp(0.5rem, 1.4vw, 0.85rem);
   position: sticky;
@@ -153,13 +153,25 @@ p {
   min-width: 0;
 }
 
-.brand-mark {
+.brand-link {
   align-items: center;
+  color: var(--ink);
   display: inline-flex;
+  gap: 0.6rem;
+  font-weight: 900;
   min-width: max-content;
 }
 
-.brand-mark span {
+.brand-link:hover {
+  color: var(--ink);
+}
+
+.brand-link strong {
+  font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+  line-height: 1;
+}
+
+.brand-mark {
   align-items: center;
   background: var(--ink);
   border-radius: 6px;
@@ -175,7 +187,13 @@ p {
 .shell-current-page {
   display: grid;
   gap: 0.05rem;
+  justify-items: center;
   min-width: 0;
+  text-align: center;
+}
+
+.shell-current-page.empty {
+  visibility: hidden;
 }
 
 .shell-current-page span {
@@ -727,12 +745,14 @@ p {
 
 .icon-button {
   align-items: center;
+  aspect-ratio: 1;
   background: var(--icon-surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--steel);
   cursor: pointer;
   display: inline-flex;
+  flex: 0 0 2.55rem;
   height: 2.55rem;
   justify-content: center;
   padding: 0;
@@ -2359,12 +2379,8 @@ p {
 
 .intake-mode-header {
   align-items: end;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   padding: clamp(0.85rem, 2vw, 1rem);
-}
-
-.intake-mode-header > .button {
-  justify-self: end;
 }
 
 .intake-mode-picker {
@@ -2607,7 +2623,6 @@ p {
   gap: 0.45rem;
   grid-template-rows: minmax(12rem, 1fr) auto;
   min-height: 12rem;
-  overflow: hidden;
   padding: 0.65rem;
 }
 
@@ -2617,7 +2632,9 @@ p {
   border-radius: 6px;
   height: 100%;
   min-height: 12rem;
+  min-width: 0;
   object-fit: cover;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -3229,6 +3246,7 @@ p {
 @media (max-width: 760px) {
   .shell-header {
     gap: 0.65rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     padding-left: 0.5rem;
     padding-right: 0.85rem;
   }
@@ -3254,7 +3272,7 @@ p {
   }
 
   .shell-header {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     min-height: 3.7rem;
     padding-bottom: 0.55rem;
     padding-left: 0.5rem;
@@ -3309,6 +3327,7 @@ p {
   }
 
   .icon-button {
+    flex-basis: 2.45rem;
     height: 2.45rem;
     width: 2.45rem;
   }
@@ -3384,11 +3403,6 @@ p {
 
   .editor-actions {
     justify-content: stretch;
-  }
-
-  .intake-mode-header > .button {
-    justify-self: stretch;
-    width: 100%;
   }
 
   .intake-mode-toggle {

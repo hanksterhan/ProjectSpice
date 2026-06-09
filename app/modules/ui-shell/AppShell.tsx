@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -9,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 
 type AppShellProps = {
   children: ReactNode;
@@ -38,6 +39,8 @@ const navItems = [
 const defaultCommand: ShellCommand = {
   title: "ProjectSpice",
 };
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const ShellCommandContext = createContext<(command: ShellCommand | null) => void>(
   () => undefined,
@@ -174,27 +177,20 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
                 <span className="sr-only">{activeDrawer ? activeDrawer.title : "Navigation"}</span>
               </button>
 
-              {activeCommand.backHref ? (
-                <Link
-                  className="icon-button"
-                  to={activeCommand.backHref}
-                  title={activeCommand.backLabel ?? "Back"}
-                  aria-label={activeCommand.backLabel ?? "Back"}
-                >
-                  <ArrowLeftIcon />
-                  <span className="sr-only">{activeCommand.backLabel ?? "Back"}</span>
-                </Link>
-              ) : (
-                <NavLink to="/" className="brand-mark" aria-label="ProjectSpice home">
-                  <span aria-hidden="true">PS</span>
-                </NavLink>
-              )}
+              <NavLink to="/" className="brand-link" aria-label="ProjectSpice recipe library">
+                <span className="brand-mark" aria-hidden="true">PS</span>
+                <strong>ProjectSpice</strong>
+              </NavLink>
+            </div>
 
-              <div className="shell-current-page">
+            {activeCommand.title !== defaultCommand.title ? (
+              <div className="shell-current-page" aria-live="polite">
                 {activeCommand.eyebrow ? <span>{activeCommand.eyebrow}</span> : null}
                 <strong>{activeCommand.title}</strong>
               </div>
-            </div>
+            ) : (
+              <div className="shell-current-page empty" aria-hidden="true" />
+            )}
 
             <div className="shell-command-cluster">
               <ShellNav className="shell-nav" />
@@ -279,7 +275,7 @@ export function useShellCommand({
 }: ShellCommand) {
   const setCommand = useContext(ShellCommandContext);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     setCommand({
       actions,
       backHref,
@@ -295,7 +291,7 @@ export function useShellCommand({
 export function useShellDrawer(drawer: ShellDrawer | null) {
   const setDrawer = useContext(ShellDrawerContext);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     setDrawer(drawer);
 
     return () => setDrawer(null);
@@ -341,15 +337,6 @@ function ThemeToggle({
       {isDark ? <MoonIcon /> : <SunIcon />}
       <span className="sr-only">{isDark ? "Dark mode enabled" : "Light mode enabled"}</span>
     </button>
-  );
-}
-
-function ArrowLeftIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M19 12H5" />
-      <path d="m12 19-7-7 7-7" />
-    </svg>
   );
 }
 

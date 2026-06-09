@@ -141,17 +141,20 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
   const [hasError, setHasError] = useState(false);
   const displaySrc = getDisplayImageSrc(src);
   const shouldUseFallback = !displaySrc || hasError || displaySrc.includes("/mock-images/");
-  const initials = title
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join("");
+  const fallbackLabel =
+    title.length <= 3
+      ? title.toUpperCase()
+      : title
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((word) => word[0]?.toUpperCase())
+          .join("");
 
   if (shouldUseFallback) {
     return (
       <div className={`image-fallback ${className}`.trim()} aria-label={`${title} image`}>
-        <span>{initials || "PS"}</span>
+        <span>{fallbackLabel || "PS"}</span>
       </div>
     );
   }
