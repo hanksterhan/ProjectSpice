@@ -80,10 +80,6 @@ export function RecipeUrlIntake({ actionData }: RecipeUrlIntakeProps) {
       <section className="editor-section" aria-labelledby="url-import-heading">
         <div>
           <h2 id="url-import-heading">Recipe URL</h2>
-          <p className="intake-panel-note">
-            Paste a public recipe URL, preview the imported draft, then adjust
-            anything before saving it.
-          </p>
         </div>
         <Form className="recipe-url-form" method="post">
           <input name="intent" type="hidden" value="preview-url" />

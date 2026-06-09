@@ -32,7 +32,6 @@ export type ShellDrawer = {
 
 const navItems = [
   { label: "Library", to: "/" },
-  { label: "Workbench", to: "/ai" },
   { label: "New", to: "/recipes/new" },
 ];
 

@@ -8,7 +8,7 @@ import type { AiChatMessage } from "./ai-chat";
 import { serializeAiChatHistory } from "./ai-chat";
 import { serializeAiDraft } from "./ai-draft";
 
-export type AiWorkbenchActionData =
+export type AiChatIntakeActionData =
   | {
       intent: "generate";
       draftRecipe?: RecipeDraft;
@@ -21,11 +21,11 @@ export type AiWorkbenchActionData =
       errors?: string[];
     };
 
-type AiWorkbenchProps = {
-  actionData?: AiWorkbenchActionData;
+type AiChatIntakeProps = {
+  actionData?: AiChatIntakeActionData;
 };
 
-export function AiWorkbench({ actionData }: AiWorkbenchProps) {
+export function AiChatIntake({ actionData }: AiChatIntakeProps) {
   const navigation = useNavigation();
   const isGenerating =
     navigation.state !== "idle" &&
@@ -42,16 +42,6 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
 
   return (
     <div className="ai-workbench-page">
-      <section className="ai-workbench-toolbar">
-        <div>
-          <h1>Recipe Chat</h1>
-          <p className="page-summary">
-            Start with an idea, then keep tuning the draft before it enters the
-            library.
-          </p>
-        </div>
-      </section>
-
       <div className="ai-workbench-layout">
         <Form className="ai-prompt-panel" method="post">
           <input name="intent" type="hidden" value="generate" />
@@ -132,7 +122,7 @@ export function AiWorkbench({ actionData }: AiWorkbenchProps) {
                     {isSaving ? "Saving" : "Save to Library"}
                   </Button>
                 </Form>
-                <Link className="button button-secondary" to="/ai">
+                <Link className="button button-secondary" to="/recipes/new?mode=chat">
                   Discard
                 </Link>
               </div>
