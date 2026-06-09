@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -47,6 +47,21 @@ describe("joshuaWeissmanPaprikaRecipes", () => {
     }
   });
 
+  it("uses large Paprika photo assets instead of 280px thumbnails", () => {
+    for (const recipe of joshuaWeissmanPaprikaRecipes) {
+      const imageName = recipe.imageUrl?.split("/").at(-1);
+      const imagePath = join(
+        process.cwd(),
+        "public/recipe-images/joshua-weissman",
+        imageName ?? "",
+      );
+      const { height, width } = readJpegSize(readFileSync(imagePath));
+
+      expect(width).toBeGreaterThan(280);
+      expect(height).toBeGreaterThan(280);
+    }
+  });
+
   it("preserves expected Joshua Weissman cookbook coverage", () => {
     expect(
       joshuaWeissmanPaprikaRecipes.filter((recipe) =>
@@ -60,3 +75,38 @@ describe("joshuaWeissmanPaprikaRecipes", () => {
     ).toHaveLength(78);
   });
 });
+
+function readJpegSize(buffer: Buffer): { height: number; width: number } {
+  let offset = 2;
+
+  while (offset < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+
+    while (buffer[offset] === 0xff) {
+      offset += 1;
+    }
+
+    const marker = buffer[offset];
+    offset += 1;
+
+    if (marker === 0xd8 || marker === 0xd9) {
+      continue;
+    }
+
+    const segmentLength = buffer.readUInt16BE(offset);
+
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return {
+        height: buffer.readUInt16BE(offset + 3),
+        width: buffer.readUInt16BE(offset + 5),
+      };
+    }
+
+    offset += segmentLength;
+  }
+
+  throw new Error("Could not read JPEG dimensions");
+}

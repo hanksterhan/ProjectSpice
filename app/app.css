@@ -1778,14 +1778,15 @@ p {
 
 .recipe-detail-image,
 .recipe-detail-hero .image-fallback {
-  height: 100%;
-  min-height: 24rem;
+  background: var(--surface-muted);
+  height: clamp(22rem, 36vw, 34rem);
+  min-height: 0;
   width: 100%;
 }
 
 .recipe-detail-image {
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .recipe-detail-stats {
@@ -2691,7 +2692,7 @@ p {
 
   .recipe-detail-image,
   .recipe-detail-hero .image-fallback {
-    min-height: 12rem;
+    height: clamp(16rem, 72vw, 24rem);
   }
 
   .recipe-detail-stats div,
