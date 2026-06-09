@@ -10,9 +10,11 @@ import {
   type RecipeIntakeActionData,
 } from "~/modules/ai-workbench";
 import { RecipeEditorForm } from "~/modules/recipe-editor";
+import { RecipeUrlIntake, type RecipeUrlIntakeActionData } from "~/modules/recipe-scraper";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import { buildRecipeFromEditorFormData } from "~/server/recipes/recipe.form";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
+import { scrapeRecipeFromUrl } from "~/server/recipe-scraper";
 
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "New Recipe | ProjectSpice" }];
@@ -22,7 +24,7 @@ export function loader({ request }: Route.LoaderArgs) {
   const mode = new URL(request.url).searchParams.get("mode");
 
   return {
-    mode: mode === "manual" ? "manual" : "intake",
+    mode: mode === "manual" || mode === "url" ? mode : "intake",
     recipe: createEmptyRecipeDraft(),
   };
 }
@@ -30,9 +32,32 @@ export function loader({ request }: Route.LoaderArgs) {
 export async function action({
   request,
   context,
-}: Route.ActionArgs): Promise<Response | RecipeIntakeActionData | { errors: string[] }> {
+}: Route.ActionArgs): Promise<
+  Response | RecipeIntakeActionData | RecipeUrlIntakeActionData | { errors: string[] }
+> {
   const formData = await request.formData();
   const intent = formData.get("intent");
+
+  if (intent === "preview-url") {
+    const recipeUrl = getFormString(formData, "recipeUrl");
+
+    try {
+      const scraped = await scrapeRecipeFromUrl(recipeUrl);
+
+      return {
+        intent: "preview-url",
+        recipeUrl,
+        draftRecipe: scraped.draftRecipe,
+        warnings: scraped.warnings,
+      } satisfies RecipeUrlIntakeActionData;
+    } catch (error) {
+      return {
+        intent: "preview-url",
+        recipeUrl,
+        errors: [error instanceof Error ? error.message : "Could not import recipe."],
+      } satisfies RecipeUrlIntakeActionData;
+    }
+  }
 
   if (intent === "preview-intake") {
     const rawRecipeJson = getFormString(formData, "recipeJson");
@@ -100,7 +125,12 @@ export default function NewRecipe({ loaderData, actionData }: Route.ComponentPro
   useShellCommand({
     backHref: "/",
     backLabel: "Back to library",
-    title: loaderData.mode === "manual" ? "New Recipe" : "Recipe Intake",
+    title:
+      loaderData.mode === "manual"
+        ? "New Recipe"
+        : loaderData.mode === "url"
+          ? "Import From URL"
+          : "Recipe Intake",
   });
 
   if (loaderData.mode === "manual") {
@@ -113,6 +143,14 @@ export default function NewRecipe({ loaderData, actionData }: Route.ComponentPro
           errors={actionData?.errors}
         />
       </div>
+    );
+  }
+
+  if (loaderData.mode === "url") {
+    return (
+      <RecipeUrlIntake
+        actionData={actionData as RecipeUrlIntakeActionData | undefined}
+      />
     );
   }
 

@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { recipeDraftSchema } from "~/modules/recipe-domain";
+import {
+  createRecipeSlug,
+  recipeDraftSchema,
+  recipeSourceTypeSchema,
+} from "~/modules/recipe-domain";
 
 const optionalTextInput = z
   .string()
@@ -56,7 +60,7 @@ const ingredientEditorItemSchema = z
     raw: z.string().trim().min(1, "Preserve the ingredient text."),
     quantity: optionalPositiveNumberInput,
     unit: optionalTextInput,
-    item: z.string().trim().min(1, "Name the ingredient."),
+    item: optionalTextInput,
     preparation: optionalTextInput,
     optional: z.boolean(),
   })
@@ -66,7 +70,11 @@ const ingredientEditorSectionSchema = z
   .object({
     id: z.string().trim().min(1),
     title: optionalTextInput,
-    items: z.array(ingredientEditorItemSchema).min(1, "Add at least one ingredient."),
+    itemsText: z.string().optional(),
+    items: z.array(ingredientEditorItemSchema).optional(),
+  })
+  .refine((section) => getIngredientLines(section).length > 0, {
+    message: "Add at least one ingredient.",
   })
   .strict();
 
@@ -85,7 +93,11 @@ const directionEditorSectionSchema = z
   .object({
     id: z.string().trim().min(1),
     title: optionalTextInput,
-    steps: z.array(directionEditorStepSchema).min(1, "Add at least one step."),
+    stepsText: z.string().optional(),
+    steps: z.array(directionEditorStepSchema).optional(),
+  })
+  .refine((section) => getDirectionLines(section).length > 0, {
+    message: "Add at least one step.",
   })
   .strict();
 
@@ -104,6 +116,7 @@ export const recipeEditorFormSchema = z
     yieldUnit: optionalTextInput,
     yieldNotes: optionalTextInput,
     notesText: z.string(),
+    sourceType: recipeSourceTypeSchema.default("manual"),
     sourceName: optionalTextInput,
     sourceUrl: optionalUrlInput,
     ingredientSections: z
@@ -161,12 +174,12 @@ export function validateRecipeEditorDraft(
     ingredients: values.ingredientSections.map((section) => ({
       id: section.id,
       title: section.title,
-      items: section.items.map((item) => ({
-        id: item.id,
+      items: getIngredientLines(section).map((item, itemIndex) => ({
+        id: item.id || createRecipeEditorLineId("ingredient", item.raw, itemIndex),
         raw: item.raw,
         quantity: item.quantity,
         unit: item.unit,
-        item: item.item,
+        item: item.item ?? item.raw,
         preparation: item.preparation,
         optional: item.optional ? true : undefined,
       })),
@@ -174,8 +187,8 @@ export function validateRecipeEditorDraft(
     directions: values.directionSections.map((section) => ({
       id: section.id,
       title: section.title,
-      steps: section.steps.map((step, stepIndex) => ({
-        id: step.id,
+      steps: getDirectionLines(section).map((step, stepIndex) => ({
+        id: step.id || createRecipeEditorLineId("step", step.text, stepIndex),
         order: stepIndex + 1,
         text: step.text,
         timerMinutes: step.timerMinutes,
@@ -201,9 +214,9 @@ export function validateRecipeEditorDraft(
           }
         : undefined,
     source:
-      values.sourceName || values.sourceUrl
+      values.sourceName || values.sourceUrl || values.sourceType !== "manual"
         ? {
-            type: baseDraft.source?.type ?? "manual",
+            type: values.sourceType,
             name: values.sourceName,
             url: values.sourceUrl,
           }
@@ -211,4 +224,80 @@ export function validateRecipeEditorDraft(
   });
 
   return draft;
+}
+
+function getIngredientLines(section: {
+  itemsText?: string;
+  items?: Array<{
+    id: string;
+    raw: string;
+    quantity?: number;
+    unit?: string;
+    item?: string;
+    preparation?: string;
+    optional: boolean;
+  }>;
+}): Array<{
+  id: string;
+  raw: string;
+  quantity?: number;
+  unit?: string;
+  item?: string;
+  preparation?: string;
+  optional: boolean;
+}> {
+  const textLines = splitEditableLines(section.itemsText).map((raw) => ({
+    id: "",
+    raw,
+    quantity: undefined,
+    unit: undefined,
+    item: raw,
+    preparation: undefined,
+    optional: false,
+  }));
+
+  if (textLines.length > 0) {
+    return textLines;
+  }
+
+  return section.items ?? [];
+}
+
+function getDirectionLines(section: {
+  stepsText?: string;
+  steps?: Array<{
+    id: string;
+    text: string;
+    timerMinutes?: number;
+    ingredientRefsText: string;
+  }>;
+}): Array<{
+  id: string;
+  text: string;
+  timerMinutes?: number;
+  ingredientRefsText: string;
+}> {
+  const textLines = splitEditableLines(section.stepsText).map((text) => ({
+    id: "",
+    text,
+    timerMinutes: undefined,
+    ingredientRefsText: "",
+  }));
+
+  if (textLines.length > 0) {
+    return textLines;
+  }
+
+  return section.steps ?? [];
+}
+
+function splitEditableLines(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function createRecipeEditorLineId(prefix: string, line: string, index: number): string {
+  return createRecipeSlug(`${prefix}-${line}`).slice(0, 64) || `${prefix}-${index + 1}`;
 }

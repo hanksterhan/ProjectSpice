@@ -2130,6 +2130,31 @@ p {
   margin-bottom: 0;
 }
 
+.recipe-source-link a {
+  align-items: center;
+  background: var(--chip-steel-bg);
+  border: 1px solid color-mix(in srgb, var(--steel) 25%, var(--line));
+  border-radius: 999px;
+  color: var(--steel);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.recipe-source-link a:hover {
+  background: color-mix(in srgb, var(--steel) 16%, var(--surface-raised));
+  border-color: color-mix(in srgb, var(--steel) 40%, var(--line));
+  color: var(--steel);
+}
+
+.recipe-source-link svg {
+  flex: 0 0 auto;
+}
+
 .direction-section + .direction-section,
 .recipe-notes {
   border-top: 1px solid var(--line);
@@ -2408,6 +2433,281 @@ p {
 .recipe-editor-form {
   display: grid;
   gap: 1rem;
+  margin-inline: auto;
+  width: min(100%, 1680px);
+}
+
+.recipe-compose-toolbar {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+}
+
+.recipe-compose-toolbar > div:first-child {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.recipe-compose-toolbar span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recipe-compose-toolbar strong {
+  font-size: 1.05rem;
+}
+
+.recipe-compose-hero {
+  align-items: stretch;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.3fr);
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.recipe-compose-title-block {
+  align-content: center;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.compose-title-field textarea,
+.compose-description-field textarea,
+.compose-section-title-field input,
+.compose-text-block textarea {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink);
+  width: 100%;
+}
+
+.compose-title-field textarea {
+  font-size: clamp(2.1rem, 4vw, 4rem);
+  font-weight: 900;
+  line-height: 1;
+  min-height: 2.3em;
+  overflow-wrap: anywhere;
+  padding: 0.2rem 0;
+  resize: vertical;
+}
+
+.compose-description-field textarea {
+  color: var(--muted);
+  font-size: 1.04rem;
+  line-height: 1.55;
+  min-height: 5.5rem;
+  padding: 0.35rem 0;
+  resize: vertical;
+}
+
+.compose-title-field textarea:focus,
+.compose-description-field textarea:focus,
+.compose-section-title-field input:focus,
+.compose-text-block textarea:focus {
+  background: var(--surface);
+  border-color: var(--accent-border);
+  outline: 3px solid var(--focus-ring);
+  padding-inline: 0.5rem;
+}
+
+.recipe-compose-image-panel {
+  align-content: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-rows: minmax(12rem, 1fr) auto;
+  min-height: 12rem;
+  overflow: hidden;
+  padding: 0.65rem;
+}
+
+.recipe-compose-image,
+.recipe-compose-image-panel .image-fallback {
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  height: 100%;
+  min-height: 12rem;
+  object-fit: cover;
+  width: 100%;
+}
+
+.recipe-compose-image-panel .field {
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.65rem;
+}
+
+.recipe-compose-stats,
+.recipe-compose-meta {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.recipe-compose-stats {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.recipe-compose-meta {
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.5fr) minmax(16rem, 0.8fr);
+}
+
+.compose-stat-toggle {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 0.5rem;
+  min-height: 2.7rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.compose-stat-toggle input {
+  accent-color: var(--accent);
+}
+
+.source-url-field > div {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.source-url-field a {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--steel);
+  display: inline-flex;
+  height: 2.7rem;
+  justify-content: center;
+  width: 2.7rem;
+}
+
+.recipe-compose-layout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(18rem, 0.38fr) minmax(0, 1fr);
+}
+
+.recipe-compose-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.recipe-compose-ingredients {
+  position: sticky;
+  top: 5rem;
+}
+
+.recipe-compose-ingredients,
+.recipe-compose-directions,
+.recipe-compose-notes {
+  box-shadow: var(--shadow);
+}
+
+.recipe-url-intake-page {
+  display: grid;
+  gap: 1rem;
+  margin-inline: auto;
+  width: min(100%, 1680px);
+}
+
+.recipe-url-intake-page.imported {
+  gap: 0.75rem;
+}
+
+.recipe-import-summary {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.recipe-import-summary > div:first-child {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.recipe-import-summary span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recipe-import-summary a,
+.recipe-import-summary strong {
+  color: var(--steel);
+  font-size: 0.92rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-url-intake-page > .editor-header {
+  align-items: center;
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.recipe-url-intake-page > .editor-header h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin-bottom: 0.45rem;
+}
+
+.recipe-url-intake-page > .editor-header p {
+  max-width: 42rem;
+}
+
+.recipe-url-intake-page .editor-actions .button {
+  font-size: 0.92rem;
+  min-height: 2.35rem;
+  padding-inline: 0.85rem;
+}
+
+.recipe-url-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.recipe-url-form .button {
+  font-size: 0.95rem;
+  justify-self: start;
+  min-height: 2.45rem;
+  padding-inline: 1rem;
 }
 
 .editor-header,
@@ -2467,6 +2767,12 @@ p {
   background: var(--accent-wash);
   border-color: var(--accent-border);
   color: var(--accent-strong);
+}
+
+.form-status.warning {
+  background: color-mix(in srgb, var(--star) 14%, var(--surface-raised));
+  border-color: color-mix(in srgb, var(--star) 35%, transparent);
+  color: color-mix(in srgb, var(--ink) 78%, var(--star));
 }
 
 .form-status p,
@@ -2555,6 +2861,45 @@ p {
   padding: 0.85rem;
 }
 
+.recipe-compose-ingredients .ingredient-editor-section,
+.recipe-compose-directions .direction-editor-section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+.recipe-compose-ingredients .ingredient-editor-section + .ingredient-editor-section,
+.recipe-compose-directions .direction-editor-section + .direction-editor-section {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.compose-section-title-field input {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+  padding: 0.1rem 0;
+}
+
+.recipe-compose-ingredients .ingredient-item-list,
+.recipe-compose-directions .direction-step-list {
+  gap: 0.6rem;
+}
+
+.compose-text-block textarea {
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.35;
+  padding: 0.2rem 0;
+  resize: vertical;
+}
+
+.compose-directions-text textarea {
+  line-height: 1.55;
+}
+
 .ingredient-fields {
   grid-template-columns:
     minmax(5rem, 0.45fr) minmax(6rem, 0.65fr) minmax(0, 1fr)
@@ -2622,6 +2967,10 @@ p {
   .library-browser,
   .recipe-detail-hero,
   .recipe-detail-layout,
+  .recipe-compose-hero,
+  .recipe-compose-layout,
+  .recipe-compose-stats,
+  .recipe-compose-meta,
   .cook-history-panel,
   .bulk-tag-toolbar,
   .recipe-intake-layout,
@@ -2636,6 +2985,15 @@ p {
   .ingredient-fields,
   .direction-fields {
     grid-template-columns: 1fr;
+  }
+
+  .recipe-compose-ingredients {
+    position: static;
+  }
+
+  .recipe-compose-toolbar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .editor-section-header,

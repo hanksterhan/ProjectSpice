@@ -19,11 +19,13 @@ export function getRecipeEditorDefaults(
     yieldUnit: recipe.yield?.unit ?? "",
     yieldNotes: recipe.yield?.notes ?? "",
     notesText: recipe.notes?.join("\n") ?? "",
+    sourceType: recipe.source?.type ?? "manual",
     sourceName: recipe.source?.name ?? "",
     sourceUrl: recipe.source?.url ?? "",
     ingredientSections: recipe.ingredients.map((section) => ({
       id: section.id,
       title: section.title ?? "",
+      itemsText: section.items.map((item) => item.raw).join("\n"),
       items: section.items.map((item) => ({
         id: item.id,
         raw: item.raw,
@@ -37,6 +39,11 @@ export function getRecipeEditorDefaults(
     directionSections: recipe.directions.map((section) => ({
       id: section.id,
       title: section.title ?? "",
+      stepsText: section.steps
+        .slice()
+        .sort((firstStep, secondStep) => firstStep.order - secondStep.order)
+        .map((step) => step.text)
+        .join("\n\n"),
       steps: section.steps
         .slice()
         .sort((firstStep, secondStep) => firstStep.order - secondStep.order)

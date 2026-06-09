@@ -30,6 +30,7 @@ export function parseRecipeEditorFormData(
     yieldUnit: getFormString(formData, "yieldUnit"),
     yieldNotes: getFormString(formData, "yieldNotes"),
     notesText: getFormString(formData, "notesText"),
+    sourceType: parseSourceType(getFormString(formData, "sourceType")),
     sourceName: getFormString(formData, "sourceName"),
     sourceUrl: getFormString(formData, "sourceUrl"),
     ingredientSections: [],
@@ -127,6 +128,12 @@ function getFormString(formData: FormData, name: string): string {
   return typeof value === "string" ? value : "";
 }
 
+function parseSourceType(value: string): RecipeEditorFormValues["sourceType"] {
+  return value === "ai" || value === "imported" || value === "scraped"
+    ? value
+    : "manual";
+}
+
 function applyIngredientValue(
   values: RecipeEditorFormValues,
   name: string,
@@ -146,18 +153,20 @@ function applyIngredientValue(
   const section = (values.ingredientSections[sectionIndex] ??= {
     id: "",
     title: "",
+    itemsText: "",
     items: [],
   });
 
   if (itemIndex === undefined) {
-    if (field === "id" || field === "title") {
+    if (field === "id" || field === "title" || field === "itemsText") {
       section[field] = value;
     }
 
     return;
   }
 
-  const item = (section.items[itemIndex] ??= {
+  const items = (section.items ??= []);
+  const item = (items[itemIndex] ??= {
     id: "",
     raw: "",
     quantity: "",
@@ -203,18 +212,20 @@ function applyDirectionValue(
   const section = (values.directionSections[sectionIndex] ??= {
     id: "",
     title: "",
+    stepsText: "",
     steps: [],
   });
 
   if (stepIndex === undefined) {
-    if (field === "id" || field === "title") {
+    if (field === "id" || field === "title" || field === "stepsText") {
       section[field] = value;
     }
 
     return;
   }
 
-  const step = (section.steps[stepIndex] ??= {
+  const steps = (section.steps ??= []);
+  const step = (steps[stepIndex] ??= {
     id: "",
     text: "",
     timerMinutes: "",

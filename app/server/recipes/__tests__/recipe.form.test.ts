@@ -13,7 +13,7 @@ describe("recipe editor form actions", () => {
     const formData = createRecipeFormData();
     const parsedValues = parseRecipeEditorFormData(formData);
 
-    expect(parsedValues.ingredientSections[0].items[0]).toMatchObject({
+    expect(parsedValues.ingredientSections[0]?.items?.[0]).toMatchObject({
       id: "flour",
       raw: "2 cups flour",
       quantity: "2",
@@ -21,7 +21,7 @@ describe("recipe editor form actions", () => {
       item: "flour",
       optional: false,
     });
-    expect(parsedValues.directionSections[0].steps[0]).toMatchObject({
+    expect(parsedValues.directionSections[0]?.steps?.[0]).toMatchObject({
       id: "mix",
       text: "Mix the batter.",
       timerMinutes: "5",

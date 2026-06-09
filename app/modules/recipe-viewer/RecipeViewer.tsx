@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import { Form } from "react-router";
 
 import {
@@ -112,7 +113,16 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
             <div>
               <h2 id="directions-heading">Directions</h2>
             </div>
-            {recipe.source?.name ? <p>{recipe.source.name}</p> : null}
+            {recipe.source?.url ? (
+              <p className="recipe-source-link">
+                <a href={recipe.source.url} rel="noreferrer" target="_blank">
+                  <ExternalLink aria-hidden="true" size={16} strokeWidth={2.5} />
+                  <span>{recipe.source.name ?? "Open source"}</span>
+                </a>
+              </p>
+            ) : recipe.source?.name ? (
+              <p>{recipe.source.name}</p>
+            ) : null}
           </div>
 
           {recipe.directions.map((section) => (

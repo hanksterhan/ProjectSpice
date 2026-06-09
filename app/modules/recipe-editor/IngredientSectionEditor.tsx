@@ -23,21 +23,12 @@ type IngredientSectionEditorProps = {
   errors: FieldErrors<RecipeEditorFormValues>;
 };
 
-type IngredientItemsEditorProps = IngredientSectionEditorProps & {
-  sectionIndex: number;
-};
-
 export function IngredientSectionEditor({
   control,
   register,
   errors,
 }: IngredientSectionEditorProps) {
-  const {
-    fields: sections,
-    append,
-    remove,
-    move,
-  } = useFieldArray({
+  const { fields: sections, append } = useFieldArray({
     control,
     name: "ingredientSections",
     keyName: "fieldId",
@@ -45,7 +36,10 @@ export function IngredientSectionEditor({
   const sectionError = errors.ingredientSections?.message;
 
   return (
-    <section className="editor-section" aria-labelledby="editor-ingredients">
+    <section
+      className="editor-section recipe-compose-ingredients"
+      aria-labelledby="editor-ingredients"
+    >
       <div className="editor-section-header">
         <div>
           <h2 id="editor-ingredients">Ingredients</h2>
@@ -55,7 +49,7 @@ export function IngredientSectionEditor({
           variant="secondary"
           onClick={() => append(createEmptyIngredientSection())}
         >
-          Add Group
+          Add Section
         </Button>
       </div>
 
@@ -64,60 +58,46 @@ export function IngredientSectionEditor({
       <div className="ingredient-editor-list">
         {sections.map((section, sectionIndex) => (
           <div className="ingredient-editor-section" key={section.fieldId}>
-            <div className="ingredient-editor-section-header">
-              <label className="field">
-                <span>Group title</span>
-                <input
-                  {...register(`ingredientSections.${sectionIndex}.title`)}
-                  defaultValue={section.title}
-                  placeholder="Optional, e.g. Sauce"
-                />
-                <NestedFieldError
-                  errors={errors}
-                  path={["ingredientSections", sectionIndex, "title"]}
-                />
-              </label>
-
-              <div className="editor-actions compact">
-                <Button
-                  type="button"
-                  variant="quiet"
-                  disabled={sectionIndex === 0}
-                  onClick={() => move(sectionIndex, sectionIndex - 1)}
-                >
-                  Up
-                </Button>
-                <Button
-                  type="button"
-                  variant="quiet"
-                  disabled={sectionIndex === sections.length - 1}
-                  onClick={() => move(sectionIndex, sectionIndex + 1)}
-                >
-                  Down
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={sections.length === 1}
-                  onClick={() => remove(sectionIndex)}
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-
             <input
               type="hidden"
               {...register(`ingredientSections.${sectionIndex}.id`)}
               defaultValue={section.id}
             />
 
-            <IngredientItemsEditor
-              control={control}
-              register={register}
-              errors={errors}
-              sectionIndex={sectionIndex}
-            />
+            {section.title || sectionIndex > 0 ? (
+              <label className="compose-section-title-field">
+                <span className="sr-only">Ingredient section title</span>
+                <input
+                  {...register(`ingredientSections.${sectionIndex}.title`)}
+                  defaultValue={section.title}
+                  placeholder="Section title"
+                />
+                <NestedFieldError
+                  errors={errors}
+                  path={["ingredientSections", sectionIndex, "title"]}
+                />
+              </label>
+            ) : (
+              <input
+                type="hidden"
+                {...register(`ingredientSections.${sectionIndex}.title`)}
+                defaultValue={section.title}
+              />
+            )}
+
+            <label className="compose-text-block">
+              <span className="sr-only">Ingredients</span>
+              <textarea
+                {...register(`ingredientSections.${sectionIndex}.itemsText`)}
+                defaultValue={section.itemsText}
+                placeholder={"1 cup sugar\n2 eggs\nCilantro (optional)"}
+                rows={Math.max(5, section.itemsText?.split("\n").length ?? 5)}
+              />
+              <NestedFieldError
+                errors={errors}
+                path={["ingredientSections", sectionIndex]}
+              />
+            </label>
           </div>
         ))}
       </div>
@@ -125,186 +105,12 @@ export function IngredientSectionEditor({
   );
 }
 
-function IngredientItemsEditor({
-  control,
-  register,
-  errors,
-  sectionIndex,
-}: IngredientItemsEditorProps) {
-  const {
-    fields: items,
-    append,
-    remove,
-    move,
-  } = useFieldArray({
-    control,
-    name: `ingredientSections.${sectionIndex}.items`,
-    keyName: "fieldId",
-  });
-  const itemListError = errors.ingredientSections?.[sectionIndex]?.items?.message;
-
-  return (
-    <div className="ingredient-item-list">
-      {itemListError ? <small className="field-error">{itemListError}</small> : null}
-
-      {items.map((item, itemIndex) => (
-        <div className="ingredient-item-editor" key={item.fieldId}>
-          <input
-            type="hidden"
-            {...register(`ingredientSections.${sectionIndex}.items.${itemIndex}.id`)}
-            defaultValue={item.id}
-          />
-
-          <label className="field field-wide">
-            <span>Raw text</span>
-            <input
-              {...register(`ingredientSections.${sectionIndex}.items.${itemIndex}.raw`)}
-              defaultValue={item.raw}
-              placeholder="1 cup sugar, divided"
-            />
-            <NestedFieldError
-              errors={errors}
-              path={["ingredientSections", sectionIndex, "items", itemIndex, "raw"]}
-            />
-          </label>
-
-          <div className="editor-grid ingredient-fields">
-            <label className="field">
-              <span>Qty</span>
-              <input
-                {...register(
-                  `ingredientSections.${sectionIndex}.items.${itemIndex}.quantity`,
-                )}
-                defaultValue={item.quantity}
-                inputMode="decimal"
-              />
-              <NestedFieldError
-                errors={errors}
-                path={[
-                  "ingredientSections",
-                  sectionIndex,
-                  "items",
-                  itemIndex,
-                  "quantity",
-                ]}
-              />
-            </label>
-
-            <label className="field">
-              <span>Unit</span>
-              <input
-                {...register(`ingredientSections.${sectionIndex}.items.${itemIndex}.unit`)}
-                defaultValue={item.unit}
-                placeholder="cup"
-              />
-              <NestedFieldError
-                errors={errors}
-                path={["ingredientSections", sectionIndex, "items", itemIndex, "unit"]}
-              />
-            </label>
-
-            <label className="field">
-              <span>Item</span>
-              <input
-                {...register(`ingredientSections.${sectionIndex}.items.${itemIndex}.item`)}
-                defaultValue={item.item}
-                placeholder="sugar"
-              />
-              <NestedFieldError
-                errors={errors}
-                path={["ingredientSections", sectionIndex, "items", itemIndex, "item"]}
-              />
-            </label>
-
-            <label className="field">
-              <span>Prep</span>
-              <input
-                {...register(
-                  `ingredientSections.${sectionIndex}.items.${itemIndex}.preparation`,
-                )}
-                defaultValue={item.preparation}
-                placeholder="divided"
-              />
-              <NestedFieldError
-                errors={errors}
-                path={[
-                  "ingredientSections",
-                  sectionIndex,
-                  "items",
-                  itemIndex,
-                  "preparation",
-                ]}
-              />
-            </label>
-          </div>
-
-          <div className="ingredient-item-actions">
-            <label className="checkbox-field">
-              <input
-                type="checkbox"
-                {...register(`ingredientSections.${sectionIndex}.items.${itemIndex}.optional`)}
-                defaultChecked={item.optional}
-              />
-              <span>Optional</span>
-            </label>
-            <div className="editor-actions compact">
-              <Button
-                type="button"
-                variant="quiet"
-                disabled={itemIndex === 0}
-                onClick={() => move(itemIndex, itemIndex - 1)}
-              >
-                Up
-              </Button>
-              <Button
-                type="button"
-                variant="quiet"
-                disabled={itemIndex === items.length - 1}
-                onClick={() => move(itemIndex, itemIndex + 1)}
-              >
-                Down
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={items.length === 1}
-                onClick={() => remove(itemIndex)}
-              >
-                Remove
-              </Button>
-            </div>
-          </div>
-        </div>
-      ))}
-
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => append(createEmptyIngredientItem())}
-      >
-        Add Ingredient
-      </Button>
-    </div>
-  );
-}
-
 function createEmptyIngredientSection() {
   return {
     id: createRecipeEditorId("ingredient-section"),
     title: "",
-    items: [createEmptyIngredientItem()],
-  };
-}
-
-function createEmptyIngredientItem() {
-  return {
-    id: createRecipeEditorId("ingredient"),
-    raw: "",
-    quantity: "",
-    unit: "",
-    item: "",
-    preparation: "",
-    optional: false,
+    itemsText: "",
+    items: [],
   };
 }
 

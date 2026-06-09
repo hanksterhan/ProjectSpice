@@ -66,6 +66,9 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
           </p>
         </div>
         <div className="editor-actions">
+          <Link className="button button-secondary" to="/recipes/new?mode=url">
+            Import URL
+          </Link>
           <Link className="button button-secondary" to="/recipes/new?mode=manual">
             Manual Entry
           </Link>
