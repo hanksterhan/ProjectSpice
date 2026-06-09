@@ -1525,9 +1525,10 @@ p {
 }
 
 .recipe-grid-tile {
+  align-content: start;
   display: grid;
   gap: 0.45rem;
-  grid-template-rows: auto minmax(2.3rem, auto) 1.1rem;
+  grid-template-rows: auto auto 1.1rem;
   min-width: 0;
 }
 
@@ -1701,12 +1702,13 @@ p {
   z-index: 20;
 }
 
+.menu-action,
 .menu-danger-action {
   align-items: center;
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: var(--accent-strong);
+  color: var(--steel);
   cursor: pointer;
   display: flex;
   gap: 0.55rem;
@@ -1717,12 +1719,24 @@ p {
   width: 100%;
 }
 
+.menu-action:hover,
+.menu-action:focus-visible {
+  background: var(--surface-muted);
+  color: var(--ink);
+  outline: none;
+}
+
+.menu-danger-action {
+  color: var(--accent-strong);
+}
+
 .menu-danger-action:hover,
 .menu-danger-action:focus-visible {
   background: rgb(185 68 47 / 10%);
   outline: none;
 }
 
+.menu-action svg,
 .menu-danger-action svg {
   fill: none;
   flex: 0 0 auto;
@@ -1786,7 +1800,7 @@ p {
   border-radius: 8px;
   display: grid;
   gap: 1px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0;
   overflow: hidden;
 }
@@ -1807,56 +1821,101 @@ p {
 
 .recipe-detail-stats dd {
   color: var(--ink);
+  display: grid;
+  gap: 0.25rem;
   font-weight: 900;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.cook-history-panel {
-  align-items: start;
+.recipe-stat-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.recipe-side-panel {
   background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  bottom: 0;
+  box-shadow: -18px 0 36px rgb(32 29 25 / 12%);
   display: grid;
+  gap: 1.1rem;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  overflow: auto;
+  padding: clamp(1rem, 2vw, 1.25rem);
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: min(26rem, 100vw);
+  z-index: 50;
+}
+
+.recipe-side-panel-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 1rem;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
 }
 
-.cook-history-panel h2 {
-  font-size: 1.25rem;
-  line-height: 1.1;
-  margin-bottom: 0.35rem;
+.recipe-side-panel-header span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
-.cook-history-panel p {
+.recipe-side-panel h2 {
+  font-size: 1.3rem;
   margin-bottom: 0;
 }
 
+.cook-history-summary {
+  background: var(--surface-muted);
+  border: 1px solid rgb(48 72 95 / 8%);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+}
+
+.cook-history-summary strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.cook-history-summary span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .cook-history-actions {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  justify-content: end;
+  display: grid;
+  gap: 0.75rem;
 }
 
 .cook-date-form {
-  align-items: end;
-  display: flex;
-  gap: 0.55rem;
+  align-items: stretch;
+  display: grid;
+  gap: 0.65rem;
 }
 
 .cook-date-form .field input {
-  min-width: 10rem;
+  width: 100%;
 }
 
 .cook-history-dates {
+  align-content: start;
+  align-items: flex-start;
   border-top: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  grid-column: 1 / -1;
   padding-top: 0.85rem;
 }
 
@@ -1864,8 +1923,10 @@ p {
   background: var(--surface-muted);
   border-radius: 999px;
   color: var(--steel);
+  display: inline-flex;
   font-size: 0.76rem;
   font-weight: 800;
+  line-height: 1;
   padding: 0.42rem 0.55rem;
 }
 
@@ -2503,6 +2564,25 @@ p {
     height: auto;
     max-height: 26rem;
     position: static;
+  }
+
+  .shell-body.drawer-pinned {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  .shell-body.drawer-pinned .shell-main {
+    grid-column: 1 / -1;
+  }
+
+  .shell-drawer.pinned {
+    box-shadow: var(--shadow);
+    height: calc(100vh - 4rem);
+    left: 0;
+    max-height: calc(100vh - 4rem);
+    position: fixed;
+    top: 4rem;
+    width: min(var(--shell-drawer-width, 22.5rem), calc(100vw - 1rem));
+    z-index: 9;
   }
 
   .shell-drawer.peek {

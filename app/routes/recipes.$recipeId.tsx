@@ -13,7 +13,10 @@ import {
   parseAiDraftJson,
   type RecipeAiPanelActionData,
 } from "~/modules/ai-workbench";
-import { RecipeViewer } from "~/modules/recipe-viewer/RecipeViewer";
+import {
+  CookHistoryDrawer,
+  RecipeViewer,
+} from "~/modules/recipe-viewer/RecipeViewer";
 import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import {
@@ -214,6 +217,7 @@ export default function RecipeDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [isAssistantOpen, setIsAssistantOpen] = useState(Boolean(actionData));
+  const [isCookHistoryOpen, setIsCookHistoryOpen] = useState(false);
   const recipe = loaderData.recipe;
 
   useEffect(() => {
@@ -247,6 +251,19 @@ export default function RecipeDetail({
             <span className="sr-only">More recipe actions</span>
           </summary>
           <div className="recipe-command-menu-popover">
+            <button
+              className="menu-action"
+              type="button"
+              aria-controls="cook-history-drawer"
+              aria-expanded={isCookHistoryOpen}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+                setIsCookHistoryOpen(true);
+              }}
+            >
+              <HistoryIcon />
+              Cook history
+            </button>
             <Form
               method="post"
               onSubmit={(event) => {
@@ -265,7 +282,7 @@ export default function RecipeDetail({
         </details>
       </>
     ),
-    [isAssistantOpen, recipe.title],
+    [isAssistantOpen, isCookHistoryOpen, recipe.title],
   );
 
   useShellCommand({
@@ -282,6 +299,12 @@ export default function RecipeDetail({
         <RecipeAiPanel
           actionData={actionData}
           onClose={() => setIsAssistantOpen(false)}
+          recipe={recipe}
+        />
+      ) : null}
+      {isCookHistoryOpen ? (
+        <CookHistoryDrawer
+          onClose={() => setIsCookHistoryOpen(false)}
           recipe={recipe}
         />
       ) : null}
@@ -316,6 +339,16 @@ function MessageIcon() {
       <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
       <path d="M8 9h8" />
       <path d="M8 13h5" />
+    </svg>
+  );
+}
+
+function HistoryIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

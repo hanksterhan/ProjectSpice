@@ -26,8 +26,6 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
   const directionIngredientIndex = buildDirectionIngredientIndex(recipe.ingredients);
   const cookCount = getCookCount(recipe);
   const lastCookedDate = getLastCookedDate(recipe);
-  const recentCookedDates = recipe.cookedDates?.slice(0, 5) ?? [];
-  const today = getTodayDateInputValue();
 
   return (
     <article className="recipe-detail-page">
@@ -72,48 +70,16 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           <dt>Total</dt>
           <dd>{totalTime || "Not specified"}</dd>
         </div>
-      </dl>
-
-      <section className="cook-history-panel" aria-labelledby="cook-history-heading">
         <div>
-          <h2 id="cook-history-heading">Cook History</h2>
-          <p>
-            {cookCount > 0
-              ? `Cooked ${cookCount} ${cookCount === 1 ? "time" : "times"}${
-                  lastCookedDate ? `, last on ${formatCookedDate(lastCookedDate)}` : ""
-                }.`
-              : "No cooked dates recorded yet."}
-          </p>
+          <dt>Cooked</dt>
+          <dd>
+            {cookCount > 0 ? `${cookCount}x` : "Not yet"}
+            {lastCookedDate ? (
+              <span className="recipe-stat-note">Last {formatCookedDate(lastCookedDate)}</span>
+            ) : null}
+          </dd>
         </div>
-
-        <div className="cook-history-actions">
-          <Form method="post">
-            <input name="intent" type="hidden" value="record-cooked" />
-            <input name="cookedOn" type="hidden" value={today} />
-            <button className="button button-primary" type="submit">
-              Cooked Today
-            </button>
-          </Form>
-          <Form className="cook-date-form" method="post">
-            <input name="intent" type="hidden" value="record-cooked" />
-            <label className="field">
-              <span>Past date</span>
-              <input name="cookedOn" type="date" max={today} defaultValue={today} />
-            </label>
-            <button className="button button-secondary" type="submit">
-              Add Date
-            </button>
-          </Form>
-        </div>
-
-        {recentCookedDates.length > 0 ? (
-          <div className="cook-history-dates" aria-label="Recent cooked dates">
-            {recentCookedDates.map((date) => (
-              <span key={date}>{formatCookedDate(date)}</span>
-            ))}
-          </div>
-        ) : null}
-      </section>
+      </dl>
 
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
@@ -226,6 +192,88 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
         </main>
       </div>
     </article>
+  );
+}
+
+type CookHistoryDrawerProps = {
+  onClose: () => void;
+  recipe: Recipe;
+};
+
+export function CookHistoryDrawer({ onClose, recipe }: CookHistoryDrawerProps) {
+  const cookCount = getCookCount(recipe);
+  const lastCookedDate = getLastCookedDate(recipe);
+  const recentCookedDates = recipe.cookedDates?.slice(0, 12) ?? [];
+  const today = getTodayDateInputValue();
+
+  return (
+    <aside
+      aria-labelledby="cook-history-drawer-heading"
+      className="recipe-side-panel cook-history-drawer"
+      id="cook-history-drawer"
+    >
+      <div className="recipe-side-panel-header">
+        <div>
+          <span>Recipe activity</span>
+          <h2 id="cook-history-drawer-heading">Cook History</h2>
+        </div>
+        <button
+          className="icon-button"
+          type="button"
+          title="Close cook history"
+          aria-label="Close cook history"
+          onClick={onClose}
+        >
+          <CloseIcon />
+        </button>
+      </div>
+
+      <div className="cook-history-summary">
+        <strong>
+          {cookCount > 0
+            ? `Cooked ${cookCount} ${cookCount === 1 ? "time" : "times"}`
+            : "No cooked dates recorded yet"}
+        </strong>
+        {lastCookedDate ? <span>Last cooked {formatCookedDate(lastCookedDate)}</span> : null}
+      </div>
+
+      <div className="cook-history-actions">
+        <Form method="post">
+          <input name="intent" type="hidden" value="record-cooked" />
+          <input name="cookedOn" type="hidden" value={today} />
+          <button className="button button-primary" type="submit">
+            Cooked Today
+          </button>
+        </Form>
+        <Form className="cook-date-form" method="post">
+          <input name="intent" type="hidden" value="record-cooked" />
+          <label className="field">
+            <span>Past date</span>
+            <input name="cookedOn" type="date" max={today} defaultValue={today} />
+          </label>
+          <button className="button button-secondary" type="submit">
+            Add Date
+          </button>
+        </Form>
+      </div>
+
+      {recentCookedDates.length > 0 ? (
+        <div className="cook-history-dates" aria-label="Recent cooked dates">
+          {recentCookedDates.map((date) => (
+            <span key={date}>{formatCookedDate(date)}</span>
+          ))}
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
   );
 }
 
