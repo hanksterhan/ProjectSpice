@@ -161,7 +161,7 @@ export default function NewRecipe({ loaderData, actionData }: Route.ComponentPro
 
 function NewRecipeModeHeader({ mode }: { mode: NewRecipeMode }) {
   return (
-    <header className="editor-header intake-mode-header">
+    <header className={`editor-header intake-mode-header intake-mode-header-${mode}`}>
       <div className="intake-mode-picker">
         <span className="intake-mode-label">Intake mode</span>
         <nav className="intake-mode-toggle" aria-label="Recipe intake mode">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { Star, Tag } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import type { Route } from "./+types/home";
@@ -131,7 +131,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         </div>
 
           {actionData?.errors?.length ? (
-            <div className="form-status error" role="alert">
+            <div className="form-status error library-bulk-error" role="alert">
               <p>{actionData.errors.join(" ")}</p>
             </div>
           ) : null}
@@ -141,10 +141,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               {showBulkTools ? (
                 <div className="bulk-tag-toolbar">
                   <div>
-                    <strong>Add or remove comma-separated tags from selected recipes</strong>
+                    <strong>Bulk tags</strong>
                   </div>
-                  <label className="field">
-                    <span>Tags</span>
+                  <label className="bulk-tag-field">
+                    <span className="sr-only">Tags to add or remove</span>
+                    <Tag aria-hidden="true" size={17} strokeWidth={2.4} />
                     <input name="tagsText" placeholder="weeknight, favorite" />
                   </label>
                   <div className="editor-actions compact">

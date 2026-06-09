@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ExternalLink } from "lucide-react";
 import { Form, Link } from "react-router";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
@@ -46,6 +46,7 @@ export function RecipeEditorForm({
   chrome = "full",
 }: RecipeEditorFormProps) {
   const defaultValues = useMemo(() => getRecipeEditorDefaults(recipe), [recipe]);
+  const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const {
     register,
     control,
@@ -54,6 +55,11 @@ export function RecipeEditorForm({
     defaultValues,
     resolver: zodResolver(recipeEditorFormSchema),
   });
+  const titleField = register("title");
+
+  useEffect(() => {
+    resizeTextareaToContent(titleTextareaRef.current);
+  }, [defaultValues.title]);
 
   return (
     <Form className="recipe-editor-form" method="post">
@@ -102,11 +108,17 @@ export function RecipeEditorForm({
           <label className="compose-title-field">
             <span className="sr-only">Title</span>
             <textarea
-              {...register("title")}
+              {...titleField}
               defaultValue={defaultValues.title}
               id="editor-metadata"
+              onInput={(event) => resizeTextareaToContent(event.currentTarget)}
               placeholder="Recipe title"
-              rows={2}
+              ref={(element) => {
+                titleField.ref(element);
+                titleTextareaRef.current = element;
+                resizeTextareaToContent(element);
+              }}
+              rows={1}
             />
           </label>
           <FieldError errors={errors} name="title" />
@@ -298,6 +310,15 @@ export function RecipeEditorForm({
       </footer>
     </Form>
   );
+}
+
+function resizeTextareaToContent(element: HTMLTextAreaElement | null) {
+  if (!element) {
+    return;
+  }
+
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
 }
 
 function EditorField({
