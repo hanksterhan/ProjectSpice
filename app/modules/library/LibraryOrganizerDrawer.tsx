@@ -84,6 +84,9 @@ export function LibraryOrganizerDrawer({
         {query.tags.map((tag) => (
           <input key={`tag:${tag}`} type="hidden" name="tag" value={tag} />
         ))}
+        {query.chapters.map((chapter) => (
+          <input key={`chapter:${chapter}`} type="hidden" name="chapter" value={chapter} />
+        ))}
         {query.sources.map((source) => (
           <input key={`source:${source}`} type="hidden" name="source" value={source} />
         ))}
@@ -472,6 +475,7 @@ function getDirectionPillLabel(
 function getClearFiltersHref(query: RecipeLibraryQuery) {
   return getLibraryQueryHref({
     ...query,
+    chapters: [],
     cookbooks: [],
     favorite: false,
     q: "",

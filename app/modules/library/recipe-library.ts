@@ -1,9 +1,11 @@
 import type { Recipe } from "~/modules/recipe-domain";
+import { getCookbookChapterOverrides } from "~/modules/library/cookbook-chapter-overrides";
 
 export const recipeLibrarySortOptions = ["recent", "title", "time", "rating"] as const;
 export const recipeLibrarySortDirectionOptions = ["asc", "desc"] as const;
 export const recipeLibraryViewOptions = ["cards", "grid", "list"] as const;
 export const maxRecipeTags = 12;
+const internalFixtureTags = new Set(["seed", "chilled dessert"]);
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
 export type RecipeLibrarySortDirection =
@@ -43,6 +45,7 @@ export type RecipeLibraryActiveFilter = {
 };
 
 export type RecipeLibraryQuery = {
+  chapters: string[];
   cookbooks: string[];
   direction: RecipeLibrarySortDirection;
   favorite: boolean;
@@ -63,6 +66,7 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const favorite = searchParams.get("favorite") === "1";
 
   return {
+    chapters: parseQueryList(searchParams.getAll("chapter")),
     cookbooks: parseQueryList(searchParams.getAll("cookbook")),
     direction: isRecipeLibrarySortDirection(direction)
       ? direction
@@ -89,6 +93,7 @@ export function getRecipeLibraryResults(
   const filteredRecipes =
     terms.length === 0 &&
     query.tags.length === 0 &&
+    query.chapters.length === 0 &&
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
     !query.favorite &&
@@ -111,6 +116,7 @@ export function getRecipeLibraryResults(
             (!query.favorite || recipe.favorite === true) &&
             (!query.topRated || (recipe.rating ?? -1) >= 8) &&
             matchesSelectedValues(recipe.tags, query.tags) &&
+            matchesSelectedValues(getCookbookChapterLabelsForRecipe(recipe), query.chapters) &&
             matchesSelectedValues([getSourceTypeLabel(recipe)], query.sources) &&
             matchesSelectedValues([getCookbookLabel(recipe)].filter(Boolean), query.cookbooks)
           );
@@ -125,15 +131,15 @@ export function getRecipeLibraryFacets(
   recipes: readonly Recipe[],
   query: RecipeLibraryQuery,
 ): RecipeLibraryFacetGroup[] {
-  const groups: RecipeLibraryFacetGroup[] = [
+  const groups = [
     {
       id: "tag",
       label: "Tags",
-      options: getFacetOptions(recipes, query, "tag", (recipe) => recipe.tags),
+      options: getFacetOptions(recipes, query, "tag", getVisibleTagLabels),
     },
-  ];
+  ] satisfies RecipeLibraryFacetGroup[];
 
-  return groups;
+  return groups.filter((group) => group.options.length > 0);
 }
 
 export function getRecipeCookbookTree(
@@ -189,6 +195,7 @@ export function getRecipeCookbookTree(
       const authorHref = getLibraryQueryHref({
         ...query,
         cookbooks: cookbookLabels,
+        chapters: [],
         tags: [],
       });
       const cookbooks = [...authorGroup.cookbooks.entries()]
@@ -197,23 +204,28 @@ export function getRecipeCookbookTree(
           href: getLibraryQueryHref({
             ...query,
             cookbooks: [cookbook],
+            chapters: [],
             tags: [],
           }),
           id: `cookbook:${cookbook}`,
           label: getCookbookTitleLabel(cookbook),
-          selected: query.cookbooks.includes(cookbook) && query.tags.length === 0,
+          selected:
+            query.cookbooks.includes(cookbook) &&
+            query.tags.length === 0 &&
+            query.chapters.length === 0,
           value: cookbook,
           chapters: [...cookbookGroup.chapters.entries()]
             .map(([chapter, count]) => ({
               count,
               href: getLibraryQueryHref({
                 ...query,
+                chapters: [chapter],
                 cookbooks: [cookbook],
-                tags: [chapter],
+                tags: [],
               }),
               id: `chapter:${cookbook}:${chapter}`,
               label: chapter,
-              selected: query.cookbooks.includes(cookbook) && query.tags.includes(chapter),
+              selected: query.cookbooks.includes(cookbook) && query.chapters.includes(chapter),
               value: chapter,
             }))
             .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label)),
@@ -228,6 +240,7 @@ export function getRecipeCookbookTree(
         selected:
           cookbookLabels.length > 0 &&
           query.tags.length === 0 &&
+          query.chapters.length === 0 &&
           cookbookLabels.every((cookbook) => query.cookbooks.includes(cookbook)),
         value: author,
         cookbooks,
@@ -249,6 +262,11 @@ export function getActiveLibraryFilters(
       href: getLibraryQueryHref(toggleFacetValue(query, "cookbook", value)),
       id: `cookbook:${value}`,
       label: `Cookbook: ${getCookbookTitleLabel(value)}`,
+    })),
+    ...query.chapters.map((value) => ({
+      href: getLibraryQueryHref({ ...query, chapters: toggleValue(query.chapters, value) }),
+      id: `chapter:${value}`,
+      label: `Chapter: ${value}`,
     })),
     ...query.tags.map((value) => ({
       href: getLibraryQueryHref(toggleFacetValue(query, "tag", value)),
@@ -275,6 +293,10 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
 
   for (const value of query.tags) {
     params.append("tag", value);
+  }
+
+  for (const value of query.chapters) {
+    params.append("chapter", value);
   }
 
   for (const value of query.sources) {
@@ -461,6 +483,12 @@ function getCookbookChapterLabels(
   author: string,
   cookbook: string,
 ): string[] {
+  const chapterOverrides = getCookbookChapterOverrides(recipe);
+
+  if (chapterOverrides.length > 0) {
+    return chapterOverrides.map(normalizeTag).filter(Boolean);
+  }
+
   const cookbookTitle = getCookbookTitleLabel(cookbook);
   const excludedTags = new Set([
     normalizeTag(author),
@@ -469,6 +497,7 @@ function getCookbookChapterLabels(
     "Easy",
     "Medium",
     "Hard",
+    ...internalFixtureTags,
   ]);
 
   return [
@@ -478,6 +507,48 @@ function getCookbookChapterLabels(
         .filter((tag) => tag && !excludedTags.has(tag)),
     ),
   ];
+}
+
+function getCookbookChapterLabelsForRecipe(recipe: Recipe): string[] {
+  const cookbook = getCookbookLabel(recipe);
+
+  if (!cookbook) {
+    return [];
+  }
+
+  return getCookbookChapterLabels(
+    recipe,
+    getCookbookAuthorLabel(cookbook),
+    cookbook,
+  );
+}
+
+function getVisibleTagLabels(recipe: Recipe): string[] {
+  const tags = recipe.tags.map(normalizeTag).filter(Boolean);
+
+  if (tags.length === 0) {
+    return [];
+  }
+
+  const cookbook = getCookbookLabel(recipe);
+
+  if (!cookbook) {
+    return tags;
+  }
+
+  const cookbookTitle = getCookbookTitleLabel(cookbook);
+  const hiddenTags = new Set([
+    normalizeTag(getCookbookAuthorLabel(cookbook)),
+    normalizeTag(cookbook),
+    normalizeTag(cookbookTitle),
+    "Easy",
+    "Medium",
+    "Hard",
+    ...internalFixtureTags,
+    ...getCookbookChapterLabelsForRecipe(recipe),
+  ]);
+
+  return tags.filter((tag) => !hiddenTags.has(tag));
 }
 
 function matchesSelectedValues(values: string[], selectedValues: string[]): boolean {

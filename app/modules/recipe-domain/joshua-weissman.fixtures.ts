@@ -90,12 +90,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -211,12 +206,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -329,12 +319,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -438,13 +423,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -569,12 +548,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -672,12 +646,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -796,12 +765,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -906,12 +870,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1010,12 +969,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Appetizers/Snacks",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1170,12 +1124,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1305,12 +1254,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1466,12 +1410,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1571,12 +1510,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -1697,12 +1631,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -1819,12 +1748,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -2040,12 +1964,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -2213,12 +2132,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -2418,12 +2332,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -2573,12 +2482,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -2673,12 +2577,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -2783,12 +2682,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -2882,12 +2776,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3028,12 +2917,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -3168,12 +3052,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3267,12 +3146,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3331,12 +3205,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3516,12 +3385,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -3631,12 +3495,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3780,12 +3639,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -3883,12 +3737,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -3972,12 +3821,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -4150,12 +3994,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -4286,12 +4125,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -4389,12 +4223,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -4503,12 +4332,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -4603,12 +4427,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -4727,12 +4546,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -4821,12 +4635,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Appetizers/Snacks",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -4920,12 +4729,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -5058,12 +4862,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -5153,12 +4952,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -5297,12 +5091,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -5429,12 +5218,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -5644,12 +5428,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -5808,12 +5587,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -5943,12 +5717,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -6118,12 +5887,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -6293,12 +6057,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -6480,12 +6239,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -6560,13 +6314,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Cheese",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -6707,12 +6455,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -6805,12 +6548,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -6942,12 +6680,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -7055,12 +6788,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -7253,12 +6981,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -7367,12 +7090,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -7582,12 +7300,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -7667,12 +7380,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -7800,12 +7508,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -7930,12 +7633,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8018,12 +7716,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8164,12 +7857,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -8254,12 +7942,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8378,12 +8061,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -8488,12 +8166,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8632,12 +8305,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8756,12 +8424,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -8875,12 +8538,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -9019,12 +8677,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -9144,12 +8797,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -9210,12 +8858,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -9415,12 +9058,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -9608,13 +9246,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -9721,12 +9353,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -9835,12 +9462,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -9995,12 +9617,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -10144,12 +9761,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -10238,12 +9850,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -10382,12 +9989,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -10511,12 +10113,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -10687,12 +10284,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -10812,12 +10404,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -10936,12 +10523,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -11062,12 +10644,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -11202,12 +10779,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -11382,12 +10954,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -11471,12 +11038,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -11662,12 +11224,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -11782,12 +11339,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -11954,12 +11506,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -12169,12 +11716,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -12390,12 +11932,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -12520,12 +12057,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -12740,12 +12272,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -12824,13 +12351,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -12894,12 +12415,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -12983,13 +12499,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -13212,12 +12722,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -13332,12 +12837,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -13432,13 +12932,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -13597,12 +13091,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -13727,12 +13216,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -13871,12 +13355,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -13949,13 +13428,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -14042,13 +13515,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -14187,12 +13654,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -14280,12 +13742,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -14392,12 +13849,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -14551,12 +14003,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -14656,12 +14103,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -14801,12 +14243,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -14961,12 +14398,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -15071,12 +14503,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -15278,12 +14705,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -15363,13 +14785,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -15471,12 +14887,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -15606,12 +15017,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -15756,12 +15162,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -15916,12 +15317,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -16060,12 +15456,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -16189,12 +15580,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -16322,12 +15708,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -16450,13 +15831,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Cheese",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -16594,12 +15969,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -16703,12 +16073,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -16877,12 +16242,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -17064,12 +16424,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -17147,12 +16502,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -17232,12 +16582,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -17365,12 +16710,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -17509,12 +16849,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -17627,12 +16962,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -17732,12 +17062,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -17801,12 +17126,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -17925,12 +17245,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -18005,12 +17320,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -18104,13 +17414,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -18195,12 +17499,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -18298,12 +17597,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -18393,12 +17687,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -18502,12 +17791,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -18662,12 +17946,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -18818,12 +18097,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Appetizers/Snacks",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -18911,12 +18185,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -19031,12 +18300,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -19129,13 +18393,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -19204,12 +18462,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -19288,13 +18541,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Cheese",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -19444,12 +18691,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -19539,12 +18781,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -19711,12 +18948,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -19840,12 +19072,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -19974,12 +19201,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -20069,12 +19291,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -20149,12 +19366,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breakfast",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -20254,13 +19466,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Condiments",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -20394,12 +19600,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -20570,12 +19771,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -20745,12 +19941,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -20824,12 +20015,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -20992,12 +20178,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -21136,12 +20317,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Appetizers/Snacks",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -21258,12 +20434,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "chewy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -21361,12 +20532,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Breads & Starches",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -21523,12 +20689,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "aerated",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -21646,12 +20807,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -21779,12 +20935,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -22013,12 +21164,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -22177,12 +21323,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -22358,12 +21499,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "crunchy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:20.000Z",
     "updatedAt": "2024-09-18T10:32:20.000Z",
@@ -22454,12 +21590,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -22610,12 +21741,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -22713,12 +21839,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Fish",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -22867,12 +21988,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Vegetables & Salad",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -22991,12 +22107,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -23096,12 +22207,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -23243,12 +22349,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -23343,12 +22444,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Meat",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -23537,12 +22633,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -23672,12 +22763,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -23831,12 +22917,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Dessert",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:13.000Z",
     "updatedAt": "2024-09-17T22:05:13.000Z",
@@ -23981,12 +23062,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -24099,12 +23175,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -24233,12 +23304,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fluid",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -24410,12 +23476,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "creamy",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:21.000Z",
     "updatedAt": "2024-09-18T10:32:21.000Z",
@@ -24530,12 +23591,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Pasta & Sandwiches",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -24650,12 +23706,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - Texture Over Taste"
     },
-    "tags": [
-      "Joshua Weissman",
-      "Texture Over Taste",
-      "fatty",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-18T10:32:22.000Z",
     "updatedAt": "2024-09-18T10:32:22.000Z",
@@ -24728,12 +23779,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Staples From Scratch",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:11.000Z",
     "updatedAt": "2024-09-17T22:05:11.000Z",
@@ -24840,12 +23886,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Joshua Weissman",
-      "Soup",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",
@@ -24969,12 +24010,7 @@ export const joshuaWeissmanPaprikaRecipes = [
       "type": "imported",
       "name": "Joshua Weissman - An Unapologetic Cookbook"
     },
-    "tags": [
-      "An Unapologetic Cookbook",
-      "Appetizers/Snacks",
-      "Joshua Weissman",
-      "Easy"
-    ],
+    "tags": [],
     "version": 1,
     "createdAt": "2024-09-17T22:05:12.000Z",
     "updatedAt": "2024-09-17T22:05:12.000Z",

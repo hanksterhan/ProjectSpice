@@ -22,7 +22,8 @@ describe("joshuaWeissmanPaprikaRecipes", () => {
       expect(recipe.ingredients[0].items.length).toBeGreaterThan(0);
       expect(recipe.directions[0].steps.length).toBeGreaterThan(0);
       expect(recipe.source.type).toBe("imported");
-      expect(recipe.tags).toContain("Joshua Weissman");
+      expect(recipe.source.name).toMatch(/^Joshua Weissman - /);
+      expect(recipe.tags).toEqual([]);
       expect(recipe.imageUrl).toMatch(
         /^https:\/\/spice\.h6nk\.dev\/recipe-images\/joshua-weissman\/.+\.jpg$/,
       );
@@ -49,12 +50,12 @@ describe("joshuaWeissmanPaprikaRecipes", () => {
   it("preserves expected Joshua Weissman cookbook coverage", () => {
     expect(
       joshuaWeissmanPaprikaRecipes.filter((recipe) =>
-        recipe.tags.includes("An Unapologetic Cookbook"),
+        recipe.source.name === "Joshua Weissman - An Unapologetic Cookbook",
       ),
     ).toHaveLength(112);
     expect(
       joshuaWeissmanPaprikaRecipes.filter((recipe) =>
-        recipe.tags.includes("Texture Over Taste"),
+        recipe.source.name === "Joshua Weissman - Texture Over Taste",
       ),
     ).toHaveLength(78);
   });

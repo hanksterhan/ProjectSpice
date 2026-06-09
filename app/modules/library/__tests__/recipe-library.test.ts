@@ -19,6 +19,7 @@ describe("recipe library query helpers", () => {
         "https://spice.test/?q=  mango  &sort=time&dir=desc&view=list&tag=chilled%20dessert&source=Cookbook&cookbook=Whats%20for%20Dessert",
       ),
     ).toEqual({
+      chapters: [],
       cookbooks: ["Whats for Dessert"],
       direction: "desc",
       favorite: false,
@@ -42,6 +43,7 @@ describe("recipe library query helpers", () => {
     });
 
     expect(parseRecipeLibraryQuery("https://spice.test/?sort=unknown&view=wide")).toEqual({
+      chapters: [],
       cookbooks: [],
       direction: "desc",
       favorite: false,
@@ -56,6 +58,7 @@ describe("recipe library query helpers", () => {
 
   it("filters across title, description, tags, yield, and source text", () => {
     const results = getRecipeLibraryResults(seedRecipes, {
+      chapters: [],
       q: "mango chilled",
       cookbooks: [],
       direction: "asc",
@@ -72,6 +75,7 @@ describe("recipe library query helpers", () => {
 
   it("filters by tag, source, and cookbook facets", () => {
     const results = getRecipeLibraryResults(seedRecipes, {
+      chapters: [],
       cookbooks: ["Claire Saffitz - Whats for Dessert"],
       direction: "asc",
       favorite: false,
@@ -93,6 +97,7 @@ describe("recipe library query helpers", () => {
 
   it("sorts matching recipes by title and total time", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
+      chapters: [],
       cookbooks: [],
       direction: "asc",
       favorite: false,
@@ -104,6 +109,7 @@ describe("recipe library query helpers", () => {
       view: "cards",
     });
     const timeResults = getRecipeLibraryResults(seedRecipes, {
+      chapters: [],
       cookbooks: [],
       direction: "asc",
       favorite: false,
@@ -125,6 +131,7 @@ describe("recipe library query helpers", () => {
 
   it("sorts in descending direction when requested", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
+      chapters: [],
       cookbooks: [],
       direction: "desc",
       favorite: false,
@@ -166,16 +173,34 @@ describe("recipe library query helpers", () => {
 
   it("builds cookbook and tag facets with active filter links", () => {
     const query = parseRecipeLibraryQuery(
-      "https://spice.test/?source=Cookbook&tag=seed",
+      "https://spice.test/?source=Cookbook&tag=weeknight",
     );
-    const facets = getRecipeLibraryFacets(seedRecipes, query);
+    const facets = getRecipeLibraryFacets(
+      [
+        {
+          ...seedRecipes[0],
+          source: { type: "manual" },
+          tags: ["weeknight"],
+        },
+      ],
+      query,
+    );
     const activeFilters = getActiveLibraryFilters(query);
 
     expect(facets.map((facet) => facet.id)).toEqual(["tag"]);
     expect(activeFilters.map((filter) => filter.label)).toEqual([
       "Source: Cookbook",
-      "seed",
+      "weeknight",
     ]);
+  });
+
+  it("keeps Joshua Weissman cookbook hierarchy out of tag facets", () => {
+    const facets = getRecipeLibraryFacets(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+    );
+
+    expect(facets.find((facet) => facet.id === "tag")).toBeUndefined();
   });
 
   it("shortens cookbook active filter labels under the author tree", () => {
@@ -204,8 +229,20 @@ describe("recipe library query helpers", () => {
       "Texture Over Taste",
     ]);
     expect(staples?.href).toBe(
-      "/?tag=Staples+From+Scratch&cookbook=Joshua+Weissman+-+An+Unapologetic+Cookbook",
+      "/?chapter=Staples+From+Scratch&cookbook=Joshua+Weissman+-+An+Unapologetic+Cookbook",
     );
+  });
+
+  it("filters cookbook chapters separately from tags", () => {
+    const results = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery(
+        "https://spice.test/?chapter=Staples%20From%20Scratch&cookbook=Joshua%20Weissman%20-%20An%20Unapologetic%20Cookbook",
+      ),
+    );
+
+    expect(results).toHaveLength(22);
+    expect(results.every((recipe) => recipe.tags.length === 0)).toBe(true);
   });
 
   it("keeps the full tag facet list for scalable vertical browsing", () => {
@@ -214,6 +251,7 @@ describe("recipe library query helpers", () => {
       [
         {
           ...seedRecipes[0],
+          source: { type: "manual" },
           tags: manyTags,
         },
       ],

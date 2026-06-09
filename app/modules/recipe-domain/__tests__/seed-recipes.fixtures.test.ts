@@ -25,9 +25,7 @@ describe("seedRecipes", () => {
     expect(seedRecipes.some((recipe) => recipe.tags.includes("chilled dessert"))).toBe(
       true,
     );
-    expect(seedRecipes.some((recipe) => recipe.tags.includes("Joshua Weissman"))).toBe(
-      true,
-    );
+    expect(seedRecipes.some((recipe) => recipe.source?.name?.startsWith("Joshua Weissman - "))).toBe(true);
     expect(seedRecipes.some((recipe) => recipe.times?.totalMinutes)).toBe(true);
   });
 });
