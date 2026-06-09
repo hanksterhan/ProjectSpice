@@ -3,7 +3,10 @@ import {
   useContext,
   useEffect,
   useState,
+  type CSSProperties,
+  type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { Link, NavLink, useLocation } from "react-router";
@@ -43,22 +46,50 @@ const ShellDrawerContext = createContext<(drawer: ShellDrawer | null) => void>(
 );
 
 type DrawerMode = "closed" | "peek" | "pinned";
+type DrawerBounds = {
+  min: number;
+  max: number;
+};
+
+const defaultDrawerWidth = 360;
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
+  const [drawerBounds, setDrawerBounds] = useState<DrawerBounds>({
+    min: 288,
+    max: 520,
+  });
+  const [drawerWidth, setDrawerWidth] = useState(defaultDrawerWidth);
   const activeCommand = command ?? defaultCommand;
   const isDrawerVisible = drawerMode !== "closed";
   const canRevealDrawer = Boolean(drawer);
   const isLibraryRoute = location.pathname === "/";
+  const shellStyle = {
+    "--shell-drawer-width": `${drawerWidth}px`,
+  } as CSSProperties;
 
   useEffect(() => {
     if (!isLibraryRoute) {
       setDrawerMode("closed");
     }
   }, [isLibraryRoute]);
+
+  useEffect(() => {
+    function updateDrawerBounds() {
+      const nextBounds = getDrawerBounds();
+
+      setDrawerBounds(nextBounds);
+      setDrawerWidth((width) => clampDrawerWidth(width, nextBounds));
+    }
+
+    updateDrawerBounds();
+    window.addEventListener("resize", updateDrawerBounds);
+
+    return () => window.removeEventListener("resize", updateDrawerBounds);
+  }, []);
 
   const closeDrawer = () => setDrawerMode("closed");
   const closePeekDrawerOutsideBounds = (event: MouseEvent<HTMLDivElement>) => {
@@ -73,9 +104,44 @@ export function AppShell({ children }: AppShellProps) {
       closeDrawer();
     }
   };
+  const resizeDrawerBy = (delta: number) => {
+    setDrawerWidth((width) => clampDrawerWidth(width + delta, drawerBounds));
+  };
+  const resizeDrawerTo = (width: number) => {
+    setDrawerWidth(clampDrawerWidth(width, drawerBounds));
+  };
+  const startDrawerResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = drawerWidth;
+
+    function handlePointerMove(pointerEvent: PointerEvent) {
+      resizeDrawerTo(startWidth + pointerEvent.clientX - startX);
+    }
+
+    function handlePointerUp() {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+    }
+
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", handlePointerUp, { once: true });
+  };
+  const handleDrawerResizeKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      resizeDrawerBy(event.shiftKey ? -48 : -16);
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      resizeDrawerBy(event.shiftKey ? 48 : 16);
+    }
+  };
 
   return (
-    <div className="app-shell" onMouseMove={closePeekDrawerOutsideBounds}>
+    <div className="app-shell" onMouseMove={closePeekDrawerOutsideBounds} style={shellStyle}>
       <ShellCommandContext.Provider value={setCommand}>
         <ShellDrawerContext.Provider value={setDrawer}>
           <header className="shell-header">
@@ -146,6 +212,20 @@ export function AppShell({ children }: AppShellProps) {
               <div className="shell-drawer-body">
                 {drawer?.content ?? <ShellNav className="shell-menu-nav" />}
               </div>
+              {drawerMode === "pinned" ? (
+                <button
+                  aria-label="Resize library menu"
+                  aria-orientation="vertical"
+                  aria-valuemax={drawerBounds.max}
+                  aria-valuemin={drawerBounds.min}
+                  aria-valuenow={drawerWidth}
+                  className="shell-drawer-resize-handle"
+                  onKeyDown={handleDrawerResizeKeyDown}
+                  onPointerDown={startDrawerResize}
+                  role="separator"
+                  type="button"
+                />
+              ) : null}
             </aside>
 
             <main className="shell-main">{children}</main>
@@ -154,6 +234,22 @@ export function AppShell({ children }: AppShellProps) {
       </ShellCommandContext.Provider>
     </div>
   );
+}
+
+function getDrawerBounds(): DrawerBounds {
+  const viewportWidth = window.innerWidth;
+  const min = Math.round(Math.min(Math.max(280, viewportWidth * 0.18), 360));
+  const maxByViewport = Math.max(min, viewportWidth - 360);
+  const max = Math.round(Math.min(Math.max(420, viewportWidth * 0.42), maxByViewport));
+
+  return {
+    min,
+    max: Math.max(min, max),
+  };
+}
+
+function clampDrawerWidth(width: number, bounds: DrawerBounds) {
+  return Math.min(bounds.max, Math.max(bounds.min, width));
 }
 
 export function useShellCommand({

@@ -3,11 +3,11 @@ import {
   BookOpen,
   ChevronRight,
   Clock,
-  Filter,
   Folder,
   Heart,
   History,
   LayoutGrid,
+  Search,
   Star,
   Tags,
   Type,
@@ -37,7 +37,6 @@ import {
   EmptyState,
   RecipeImage,
   Tabs,
-  TextInput,
 } from "~/modules/ui-shell/primitives";
 import { useShellDrawer } from "~/modules/ui-shell/AppShell";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
@@ -241,7 +240,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                         <h3>
                           <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                         </h3>
-                        <p>{getRecipeDescription(recipe.description)}</p>
+                        <RecipeRating rating={recipe.rating} />
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
                     </article>
@@ -278,7 +277,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                           <h3>
                             <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                           </h3>
-                          <p>{getRecipeDescription(recipe.description)}</p>
+                          <RecipeRating rating={recipe.rating} />
                         </div>
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
@@ -337,14 +336,17 @@ function LibraryOrganizerDrawer({
   return (
     <div className="library-drawer-organizer">
       <Form className="drawer-filter-form" action="/" method="get" role="search">
-        <TextInput
-          label="Search"
-          type="search"
-          name="q"
-          placeholder="Find a recipe"
-          value={searchValue}
-          onChange={(event) => setSearchValue(event.currentTarget.value)}
-        />
+        <label className="drawer-search-field">
+          <span className="sr-only">Search</span>
+          <Search className="drawer-search-icon" aria-hidden="true" />
+          <input
+            type="search"
+            name="q"
+            placeholder="Search recipes"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+          />
+        </label>
         <input type="hidden" name="view" value={query.view} />
         {query.favorite ? <input type="hidden" name="favorite" value="1" /> : null}
         {query.topRated ? <input type="hidden" name="topRated" value="1" /> : null}
@@ -363,37 +365,14 @@ function LibraryOrganizerDrawer({
         {query.cookbooks.map((cookbook) => (
           <input key={`cookbook:${cookbook}`} type="hidden" name="cookbook" value={cookbook} />
         ))}
-        {hasSearch ? (
-          <div className="drawer-filter-actions">
-            <Link className="button button-secondary" to={getLibraryQueryHref({ ...query, q: "" })}>
-              Clear Search
-            </Link>
-          </div>
-        ) : null}
+        <FilterStateChips
+          activeFilters={activeFilters}
+          hasSearch={hasSearch}
+          query={query}
+        />
       </Form>
 
       <LibraryModePicker query={query} />
-
-      {activeFilters.length > 0 ? (
-        <section className="drawer-active-filters" aria-label="Active filters">
-          <div className="drawer-section-title">
-            <Filter className="drawer-icon" />
-            <h3>Active</h3>
-            <span>{activeFilters.length}</span>
-          </div>
-          <div className="active-filter-list compact">
-            {activeFilters.map((filter) => (
-              <Link className="active-filter-chip" key={filter.id} to={filter.href}>
-                {filter.label}
-                <span aria-hidden="true">x</span>
-              </Link>
-            ))}
-            <Link className="active-filter-chip clear" to="/">
-              Clear all
-            </Link>
-          </div>
-        </section>
-      ) : null}
 
       <div className="drawer-facet-list">
         <CookbookTree tree={cookbookTree} />
@@ -425,6 +404,71 @@ function LibraryOrganizerDrawer({
           </section>
         ))}
       </div>
+    </div>
+  );
+}
+
+function FilterStateChips({
+  activeFilters,
+  hasSearch,
+  query,
+}: {
+  activeFilters: ReturnType<typeof getActiveLibraryFilters>;
+  hasSearch: boolean;
+  query: RecipeLibraryQuery;
+}) {
+  const hasAnyFilter =
+    hasSearch ||
+    activeFilters.length > 0 ||
+    query.favorite ||
+    query.topRated;
+
+  if (!hasAnyFilter) {
+    return (
+      <div className="drawer-filter-state" aria-label="Current filters">
+        <span className="filter-state-empty">All recipes</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="drawer-filter-state active" aria-label="Current filters">
+      {hasSearch ? (
+        <Link
+          className="active-filter-chip"
+          to={getLibraryQueryHref({ ...query, q: "" })}
+        >
+          Search: {query.q}
+          <span aria-hidden="true">x</span>
+        </Link>
+      ) : null}
+      {activeFilters.map((filter) => (
+        <Link className="active-filter-chip" key={filter.id} to={filter.href}>
+          {filter.label}
+          <span aria-hidden="true">x</span>
+        </Link>
+      ))}
+      {query.favorite ? (
+        <Link
+          className="active-filter-chip"
+          to={getLibraryQueryHref({ ...query, favorite: false })}
+        >
+          Favorites
+          <span aria-hidden="true">x</span>
+        </Link>
+      ) : null}
+      {query.topRated ? (
+        <Link
+          className="active-filter-chip"
+          to={getLibraryQueryHref({ ...query, topRated: false })}
+        >
+          Top rated
+          <span aria-hidden="true">x</span>
+        </Link>
+      ) : null}
+      <Link className="active-filter-chip clear" to={getClearFiltersHref(query)}>
+        Clear
+      </Link>
     </div>
   );
 }
@@ -461,7 +505,7 @@ function CookbookTree({
               >
                 <span className="facet-option-label">
                   <span aria-hidden="true" className="facet-option-indent" />
-                  <span>All {author.label}</span>
+                  <span>All Recipes</span>
                 </span>
                 <strong>{author.count}</strong>
               </Link>
@@ -709,9 +753,6 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   return (
     <div className="recipe-meta">
       {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
-      {recipe.rating !== undefined ? (
-        <span className="rating-chip">{recipe.rating.toFixed(1)}/10</span>
-      ) : null}
       <span>{formatDisplayTime(recipe.times?.totalMinutes) || "No time"}</span>
       {recipe.source?.type === "imported" && recipe.source.name ? (
         <Link
@@ -783,10 +824,14 @@ function getSearchHref(query: RecipeLibraryQuery, tag: string) {
   return getLibraryQueryHref({ ...query, tags: [tag] });
 }
 
-function getRecipeDescription(description: string | undefined) {
-  if (!description) {
-    return "Structured chilled dessert recipe.";
-  }
-
-  return description.length > 180 ? `${description.slice(0, 177)}...` : description;
+function getClearFiltersHref(query: RecipeLibraryQuery) {
+  return getLibraryQueryHref({
+    ...query,
+    cookbooks: [],
+    favorite: false,
+    q: "",
+    sources: [],
+    tags: [],
+    topRated: false,
+  });
 }

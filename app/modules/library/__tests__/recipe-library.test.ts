@@ -178,6 +178,16 @@ describe("recipe library query helpers", () => {
     ]);
   });
 
+  it("shortens cookbook active filter labels under the author tree", () => {
+    const query = parseRecipeLibraryQuery(
+      "https://spice.test/?cookbook=Joshua%20Weissman%20-%20An%20Unapologetic%20Cookbook",
+    );
+
+    expect(getActiveLibraryFilters(query).map((filter) => filter.label)).toEqual([
+      "Cookbook: An Unapologetic Cookbook",
+    ]);
+  });
+
   it("builds expandable cookbook trees with chapter links", () => {
     const query = parseRecipeLibraryQuery("https://spice.test/");
     const tree = getRecipeCookbookTree(seedRecipes, query);

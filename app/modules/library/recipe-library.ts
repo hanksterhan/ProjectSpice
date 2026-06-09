@@ -248,7 +248,7 @@ export function getActiveLibraryFilters(
     ...query.cookbooks.map((value) => ({
       href: getLibraryQueryHref(toggleFacetValue(query, "cookbook", value)),
       id: `cookbook:${value}`,
-      label: `Cookbook: ${value}`,
+      label: `Cookbook: ${getCookbookTitleLabel(value)}`,
     })),
     ...query.tags.map((value) => ({
       href: getLibraryQueryHref(toggleFacetValue(query, "tag", value)),
