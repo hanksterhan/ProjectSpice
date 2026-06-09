@@ -328,7 +328,7 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
                     {getDirectionPillLabel(mode.sort, query.direction)}
                   </strong>
                 ) : (
-                  <strong aria-hidden="true">Selected</strong>
+                  <span className="sr-only">Selected</span>
                 )
               ) : null}
             </Link>

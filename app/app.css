@@ -931,12 +931,12 @@ p {
 
 .library-drawer-organizer {
   display: grid;
-  gap: 1rem;
+  gap: 0.95rem;
 }
 
 .drawer-filter-form {
-  background: color-mix(in srgb, var(--surface-muted) 52%, transparent);
-  border: 1px solid rgb(48 72 95 / 10%);
+  background: color-mix(in srgb, var(--surface-muted) 34%, transparent);
+  border: 1px solid rgb(48 72 95 / 8%);
   border-radius: 8px;
   display: grid;
   gap: 0.45rem;
@@ -1002,7 +1002,7 @@ p {
 .filter-state-empty {
   color: var(--muted);
   font-size: 0.78rem;
-  font-weight: 850;
+  font-weight: 500;
   padding-inline: 0.15rem;
 }
 
@@ -1146,7 +1146,7 @@ p {
 
 .drawer-facet-list {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.95rem;
 }
 
 .library-filter-heading {
@@ -1167,7 +1167,7 @@ p {
 .facet-group {
   border-left: 1px solid rgb(48 72 95 / 13%);
   min-width: 0;
-  padding-left: 0.45rem;
+  padding-left: 0.5rem;
 }
 
 .facet-group-header {
@@ -1189,8 +1189,9 @@ p {
 
 .drawer-section-title h3 {
   color: inherit;
-  font-size: 0.78rem;
-  font-weight: 900;
+  font-size: 0.76rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
   margin-bottom: 0;
   text-transform: uppercase;
 }
@@ -1208,13 +1209,11 @@ p {
 
 .drawer-section-title + span,
 .facet-group-header > span {
-  background: color-mix(in srgb, var(--surface-muted) 70%, transparent);
-  border-radius: 999px;
   color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 900;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
   line-height: 1;
-  padding: 0.23rem 0.45rem;
 }
 
 .facet-options {
@@ -1241,7 +1240,7 @@ p {
   cursor: pointer;
   display: flex;
   font-size: 0.88rem;
-  font-weight: 850;
+  font-weight: 500;
   gap: 0.55rem;
   justify-content: space-between;
   list-style: none;
@@ -1254,7 +1253,7 @@ p {
 }
 
 .cookbook-tree-node summary:hover {
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
   color: var(--ink);
 }
 
@@ -1272,9 +1271,10 @@ p {
 }
 
 .cookbook-tree-node summary strong {
-  color: var(--steel);
-  font-size: 0.76rem;
+  color: var(--muted);
+  font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .tree-chevron {
@@ -1308,7 +1308,7 @@ p {
   color: var(--steel);
   display: flex;
   font-size: 0.88rem;
-  font-weight: 800;
+  font-weight: 500;
   gap: 0.6rem;
   justify-content: space-between;
   min-height: 2rem;
@@ -1317,15 +1317,16 @@ p {
 }
 
 .facet-option:hover {
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
   color: var(--ink);
 }
 
 .facet-option.selected {
-  background: rgb(255 255 255 / 78%);
-  border-color: rgb(48 72 95 / 14%);
-  box-shadow: 0 1px 0 rgb(48 72 95 / 6%);
+  background: rgb(255 255 255 / 66%);
+  border-color: rgb(48 72 95 / 12%);
+  box-shadow: 0 1px 0 rgb(48 72 95 / 4%);
   color: var(--ink);
+  font-weight: 600;
 }
 
 .facet-option.selected::before {
@@ -1373,16 +1374,18 @@ p {
 }
 
 .facet-option strong {
-  color: var(--steel);
-  font-size: 0.76rem;
+  color: var(--muted);
+  font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .facet-option .mode-direction {
-  background: var(--surface-muted);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-muted) 70%, transparent);
+  border: 1px solid rgb(48 72 95 / 10%);
   border-radius: 999px;
   color: var(--steel);
+  font-weight: 500;
   line-height: 1;
   min-width: 2.6rem;
   padding: 0.26rem 0.42rem;
@@ -1390,9 +1393,10 @@ p {
 }
 
 .facet-option.selected .mode-direction {
-  background: rgb(185 68 47 / 10%);
-  border-color: rgb(185 68 47 / 20%);
-  color: var(--rust);
+  background: rgb(185 68 47 / 7%);
+  border-color: rgb(185 68 47 / 16%);
+  color: var(--accent-strong);
+  font-weight: 500;
 }
 
 .facet-option.selected:hover .mode-direction {
@@ -1409,13 +1413,13 @@ p {
 
 .active-filter-chip {
   align-items: center;
-  background: rgb(48 72 95 / 8%);
-  border: 1px solid rgb(48 72 95 / 10%);
+  background: rgb(48 72 95 / 6%);
+  border: 1px solid rgb(48 72 95 / 8%);
   border-radius: 999px;
   color: var(--steel);
   display: inline-flex;
   font-size: 0.72rem;
-  font-weight: 850;
+  font-weight: 500;
   gap: 0.28rem;
   line-height: 1;
   min-height: 1.55rem;
