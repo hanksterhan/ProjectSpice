@@ -7,6 +7,7 @@ import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-do
 import {
   addRecipeTags,
   getLibraryQueryHref,
+  getRecipeSourceFilterLink,
   getRecipeLibraryResults,
   maxRecipeTags,
   parseBulkTagText,
@@ -249,16 +250,15 @@ type RecipeMetaProps = {
 };
 
 function RecipeMeta({ query, recipe }: RecipeMetaProps) {
+  const sourceFilter = getRecipeSourceFilterLink(recipe, query);
+
   return (
     <div className="recipe-meta">
       {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
       <span>{formatDisplayTime(recipe.times?.totalMinutes) || "No time"}</span>
-      {recipe.source?.type === "imported" && recipe.source.name ? (
-        <Link
-          className="tag source-tag"
-          to={getLibraryQueryHref({ ...query, cookbooks: [recipe.source.name] })}
-        >
-          {recipe.source.name}
+      {sourceFilter ? (
+        <Link className="tag source-tag" to={sourceFilter.href}>
+          {sourceFilter.label}
         </Link>
       ) : null}
       {recipe.tags.slice(0, 4).map((tag) => (

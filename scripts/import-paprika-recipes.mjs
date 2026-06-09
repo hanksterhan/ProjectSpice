@@ -395,7 +395,7 @@ function toSource(rawRecipe) {
   const url = cleanText(rawRecipe.source_url);
 
   if (!name && !url) {
-    return { type: "imported", name: "Paprika" };
+    return { type: "imported" };
   }
 
   const source = { type: "imported" };

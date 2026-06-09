@@ -5,13 +5,15 @@ export const recipeLibrarySortOptions = ["recent", "title", "time", "rating"] as
 export const recipeLibrarySortDirectionOptions = ["asc", "desc"] as const;
 export const recipeLibraryViewOptions = ["cards", "grid", "list"] as const;
 export const maxRecipeTags = 12;
+export const websiteFacetMinimumRecipeCount = 3;
+export const otherWebsitesFacetValue = "Other websites";
 const internalFixtureTags = new Set(["seed", "chilled dessert"]);
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
 export type RecipeLibrarySortDirection =
   (typeof recipeLibrarySortDirectionOptions)[number];
 export type RecipeLibraryView = (typeof recipeLibraryViewOptions)[number];
-export type RecipeLibraryFacet = "tag" | "source" | "cookbook";
+export type RecipeLibraryFacet = "tag" | "source" | "cookbook" | "website";
 
 export type RecipeLibraryFacetOption = {
   count: number;
@@ -44,6 +46,11 @@ export type RecipeLibraryActiveFilter = {
   label: string;
 };
 
+export type RecipeSourceFilterLink = {
+  href: string;
+  label: string;
+};
+
 export type RecipeLibraryQuery = {
   chapters: string[];
   cookbooks: string[];
@@ -55,6 +62,7 @@ export type RecipeLibraryQuery = {
   tags: string[];
   topRated: boolean;
   view: RecipeLibraryView;
+  websites: string[];
 };
 
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
@@ -78,6 +86,7 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
     tags: parseQueryList(searchParams.getAll("tag")),
     topRated: !favorite && searchParams.get("topRated") === "1",
     view: isRecipeLibraryView(view) ? view : "grid",
+    websites: parseQueryList(searchParams.getAll("website")),
   };
 }
 
@@ -85,6 +94,7 @@ export function getRecipeLibraryResults(
   recipes: readonly Recipe[],
   query: RecipeLibraryQuery,
 ): Recipe[] {
+  const websiteCounts = getWebsiteCounts(recipes);
   const terms = query.q
     .toLowerCase()
     .split(/\s+/)
@@ -96,6 +106,7 @@ export function getRecipeLibraryResults(
     query.chapters.length === 0 &&
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
+    query.websites.length === 0 &&
     !query.favorite &&
     !query.topRated
       ? [...recipes]
@@ -118,7 +129,8 @@ export function getRecipeLibraryResults(
             matchesSelectedValues(recipe.tags, query.tags) &&
             matchesSelectedValues(getCookbookChapterLabelsForRecipe(recipe), query.chapters) &&
             matchesSelectedValues([getSourceTypeLabel(recipe)], query.sources) &&
-            matchesSelectedValues([getCookbookLabel(recipe)].filter(Boolean), query.cookbooks)
+            matchesSelectedValues([getCookbookLabel(recipe)].filter(Boolean), query.cookbooks) &&
+            matchesSelectedWebsites(recipe, query.websites, websiteCounts)
           );
         });
 
@@ -132,6 +144,11 @@ export function getRecipeLibraryFacets(
   query: RecipeLibraryQuery,
 ): RecipeLibraryFacetGroup[] {
   const groups = [
+    {
+      id: "website",
+      label: "Websites",
+      options: getWebsiteFacetOptions(recipes, query),
+    },
     {
       id: "tag",
       label: "Tags",
@@ -258,6 +275,11 @@ export function getActiveLibraryFilters(
       id: `source:${value}`,
       label: `Source: ${value}`,
     })),
+    ...query.websites.map((value) => ({
+      href: getLibraryQueryHref(toggleFacetValue(query, "website", value)),
+      id: `website:${value}`,
+      label: `Website: ${value}`,
+    })),
     ...query.cookbooks.map((value) => ({
       href: getLibraryQueryHref(toggleFacetValue(query, "cookbook", value)),
       id: `cookbook:${value}`,
@@ -274,6 +296,31 @@ export function getActiveLibraryFilters(
       label: value,
     })),
   ];
+}
+
+export function getRecipeSourceFilterLink(
+  recipe: Recipe,
+  query: RecipeLibraryQuery,
+): RecipeSourceFilterLink | undefined {
+  const cookbook = getCookbookLabel(recipe);
+
+  if (cookbook) {
+    return {
+      href: getLibraryQueryHref({ ...query, cookbooks: [cookbook], websites: [] }),
+      label: cookbook,
+    };
+  }
+
+  const website = getWebsiteLabel(recipe);
+
+  if (website) {
+    return {
+      href: getLibraryQueryHref({ ...query, cookbooks: [], websites: [website] }),
+      label: website,
+    };
+  }
+
+  return undefined;
 }
 
 export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
@@ -301,6 +348,10 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
 
   for (const value of query.sources) {
     params.append("source", value);
+  }
+
+  for (const value of query.websites) {
+    params.append("website", value);
   }
 
   for (const value of query.cookbooks) {
@@ -335,6 +386,10 @@ export function toggleFacetValue(
 
   if (facet === "source") {
     return { ...query, sources: toggleValue(query.sources, value) };
+  }
+
+  if (facet === "website") {
+    return { ...query, websites: toggleValue(query.websites, value) };
   }
 
   return { ...query, cookbooks: toggleValue(query.cookbooks, value) };
@@ -453,12 +508,20 @@ function getSelectedValues(
     return query.sources;
   }
 
+  if (facet === "website") {
+    return query.websites;
+  }
+
   return query.cookbooks;
 }
 
 function getSourceTypeLabel(recipe: Recipe): string {
-  if (recipe.source?.type === "imported" && recipe.source.name) {
+  if (getCookbookLabel(recipe)) {
     return "Cookbook";
+  }
+
+  if (getWebsiteLabel(recipe)) {
+    return "Website";
   }
 
   const sourceType = recipe.source?.type ?? "manual";
@@ -467,7 +530,11 @@ function getSourceTypeLabel(recipe: Recipe): string {
 }
 
 function getCookbookLabel(recipe: Recipe): string {
-  return recipe.source?.type === "imported" ? (recipe.source.name ?? "") : "";
+  if (recipe.source?.type !== "imported" || !recipe.source.name) {
+    return "";
+  }
+
+  return getWebsiteLabel(recipe) ? "" : recipe.source.name;
 }
 
 function getCookbookAuthorLabel(cookbook: string): string {
@@ -549,6 +616,119 @@ function getVisibleTagLabels(recipe: Recipe): string[] {
   ]);
 
   return tags.filter((tag) => !hiddenTags.has(tag));
+}
+
+function getWebsiteFacetOptions(
+  recipes: readonly Recipe[],
+  query: RecipeLibraryQuery,
+): RecipeLibraryFacetOption[] {
+  const counts = getWebsiteCounts(recipes);
+  const options = [...counts.entries()]
+    .filter(([, count]) => count >= websiteFacetMinimumRecipeCount)
+    .map(([value, count]) => ({
+      count,
+      href: getLibraryQueryHref(toggleFacetValue(query, "website", value)),
+      id: `website:${value}`,
+      label: value,
+      selected: query.websites.includes(value),
+      value,
+    }));
+  const otherCount = [...counts.values()]
+    .filter((count) => count < websiteFacetMinimumRecipeCount)
+    .reduce((sum, count) => sum + count, 0);
+
+  if (otherCount > 0) {
+    options.push({
+      count: otherCount,
+      href: getLibraryQueryHref(
+        toggleFacetValue(query, "website", otherWebsitesFacetValue),
+      ),
+      id: `website:${otherWebsitesFacetValue}`,
+      label: otherWebsitesFacetValue,
+      selected: query.websites.includes(otherWebsitesFacetValue),
+      value: otherWebsitesFacetValue,
+    });
+  }
+
+  return options.sort((left, right) => {
+    if (left.value === otherWebsitesFacetValue) {
+      return 1;
+    }
+
+    if (right.value === otherWebsitesFacetValue) {
+      return -1;
+    }
+
+    return right.count - left.count || left.label.localeCompare(right.label);
+  });
+}
+
+function getWebsiteCounts(recipes: readonly Recipe[]): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const recipe of recipes) {
+    const website = getWebsiteLabel(recipe);
+
+    if (!website) {
+      continue;
+    }
+
+    counts.set(website, (counts.get(website) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
+function getWebsiteLabel(recipe: Recipe): string {
+  const sourceName = normalizeWebsiteSource(recipe.source?.name ?? "");
+
+  if (sourceName) {
+    return sourceName;
+  }
+
+  try {
+    const hostname = recipe.source?.url ? new URL(recipe.source.url).hostname : "";
+
+    return normalizeWebsiteSource(hostname);
+  } catch {
+    return "";
+  }
+}
+
+function normalizeWebsiteSource(value: string): string {
+  const trimmed = value.trim().toLowerCase().replace(/^https?:\/\//, "");
+  const hostname = trimmed.split("/")[0]?.replace(/^www\./, "") ?? "";
+
+  return isDomainLikeSource(hostname) ? hostname : "";
+}
+
+function isDomainLikeSource(value: string): boolean {
+  return /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(value);
+}
+
+function matchesSelectedWebsites(
+  recipe: Recipe,
+  selectedWebsites: string[],
+  websiteCounts: Map<string, number>,
+): boolean {
+  if (selectedWebsites.length === 0) {
+    return true;
+  }
+
+  const website = getWebsiteLabel(recipe);
+
+  if (!website) {
+    return false;
+  }
+
+  if (selectedWebsites.includes(website)) {
+    return true;
+  }
+
+  return (
+    selectedWebsites.includes(otherWebsitesFacetValue) &&
+    (websiteCounts.get(website) ?? 0) < websiteFacetMinimumRecipeCount
+  );
 }
 
 function matchesSelectedValues(values: string[], selectedValues: string[]): boolean {

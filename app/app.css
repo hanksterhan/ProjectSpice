@@ -1267,6 +1267,23 @@ p {
   padding: 0.15rem 0.35rem 0.3rem;
 }
 
+.collapsible-facet-group > summary.facet-group-header {
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible-facet-group > summary.facet-group-header::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-facet-group > summary.facet-group-header:hover {
+  color: var(--ink);
+}
+
+.collapsible-facet-group[open] > summary .tree-chevron {
+  transform: rotate(90deg);
+}
+
 .drawer-section-title {
   align-items: center;
   color: var(--steel);
@@ -1343,6 +1360,19 @@ p {
 .cookbook-tree-node summary:hover {
   background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
   color: var(--ink);
+}
+
+.cookbook-tree-node summary.selected {
+  background: var(--selected-surface);
+  border-color: var(--soft-border);
+  box-shadow: 0 1px 0 var(--soft-border);
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.cookbook-tree-node summary.selected .tree-folder,
+.cookbook-tree-node summary.selected .tree-chevron {
+  color: var(--rust);
 }
 
 .cookbook-tree-label {

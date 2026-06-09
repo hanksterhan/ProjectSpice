@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Clock,
   Folder,
+  Globe2,
   Heart,
   History,
   LayoutGrid,
@@ -89,6 +90,9 @@ export function LibraryOrganizerDrawer({
         ))}
         {query.sources.map((source) => (
           <input key={`source:${source}`} type="hidden" name="source" value={source} />
+        ))}
+        {query.websites.map((website) => (
+          <input key={`website:${website}`} type="hidden" name="website" value={website} />
         ))}
         {query.cookbooks.map((cookbook) => (
           <input key={`cookbook:${cookbook}`} type="hidden" name="cookbook" value={cookbook} />
@@ -206,19 +210,48 @@ function CookbookTree({
 }: {
   tree: ReturnType<typeof getRecipeCookbookTree>;
 }) {
+  const navigate = useNavigate();
+  const hasSelectedCookbook = tree.some(
+    (author) =>
+      author.selected ||
+      author.cookbooks.some(
+        (cookbook) =>
+          cookbook.selected ||
+          cookbook.chapters.some((chapter) => chapter.selected),
+      ),
+  );
+
   return (
-    <section className="facet-group cookbook-tree" aria-label="Cookbooks">
-      <div className="facet-group-header">
+    <details
+      className="facet-group cookbook-tree collapsible-facet-group"
+      open={hasSelectedCookbook || tree.length <= 6}
+    >
+      <summary className="facet-group-header">
         <div className="drawer-section-title">
+          <ChevronRight className="drawer-icon tree-chevron" />
           <BookOpen className="drawer-icon" />
           <h3>Cookbooks</h3>
         </div>
         <span>{tree.length}</span>
-      </div>
+      </summary>
       <div className="cookbook-tree-list">
         {tree.map((author) => (
-          <details className="cookbook-tree-node author" key={author.id} open>
-            <summary>
+          <details
+            className="cookbook-tree-node author"
+            key={author.id}
+            open={
+              author.selected ||
+              author.cookbooks.some(
+                (cookbook) =>
+                  cookbook.selected ||
+                  cookbook.chapters.some((chapter) => chapter.selected),
+              )
+            }
+          >
+            <summary
+              className={author.selected ? "selected" : undefined}
+              onClick={() => navigate(author.href)}
+            >
               <span className="cookbook-tree-label">
                 <ChevronRight className="drawer-icon tree-chevron" />
                 <Folder className="drawer-icon tree-folder" />
@@ -227,23 +260,16 @@ function CookbookTree({
               <strong>{author.count}</strong>
             </summary>
             <div className="cookbook-tree-children">
-              <Link
-                className={author.selected ? "facet-option selected" : "facet-option"}
-                to={author.href}
-              >
-                <span className="facet-option-label">
-                  <span aria-hidden="true" className="facet-option-indent" />
-                  <span>All Recipes</span>
-                </span>
-                <strong>{author.count}</strong>
-              </Link>
               {author.cookbooks.map((cookbook) => (
                 <details
                   className="cookbook-tree-node cookbook"
                   key={cookbook.id}
                   open={cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)}
                 >
-                  <summary>
+                  <summary
+                    className={cookbook.selected ? "selected" : undefined}
+                    onClick={() => navigate(cookbook.href)}
+                  >
                     <span className="cookbook-tree-label">
                       <ChevronRight className="drawer-icon tree-chevron" />
                       <Folder className="drawer-icon tree-folder" />
@@ -252,16 +278,6 @@ function CookbookTree({
                     <strong>{cookbook.count}</strong>
                   </summary>
                   <div className="cookbook-tree-children">
-                    <Link
-                      className={cookbook.selected ? "facet-option selected" : "facet-option"}
-                      to={cookbook.href}
-                    >
-                      <span className="facet-option-label">
-                        <span aria-hidden="true" className="facet-option-indent" />
-                        <span>All Recipes</span>
-                      </span>
-                      <strong>{cookbook.count}</strong>
-                    </Link>
                     {cookbook.chapters.map((chapter) => (
                       <Link
                         className={chapter.selected ? "facet-option selected" : "facet-option"}
@@ -282,7 +298,7 @@ function CookbookTree({
           </details>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -345,6 +361,10 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
 function LibraryFacetIcon({ id }: { id: RecipeLibraryFacet }) {
   if (id === "cookbook") {
     return <BookOpen className="drawer-icon" />;
+  }
+
+  if (id === "website" || id === "source") {
+    return <Globe2 className="drawer-icon" />;
   }
 
   return <Tags className="drawer-icon" />;
@@ -482,5 +502,6 @@ function getClearFiltersHref(query: RecipeLibraryQuery) {
     sources: [],
     tags: [],
     topRated: false,
+    websites: [],
   });
 }

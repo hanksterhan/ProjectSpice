@@ -7,6 +7,8 @@ import {
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeLibraryResults,
+  getRecipeSourceFilterLink,
+  otherWebsitesFacetValue,
   parseBulkTagText,
   parseRecipeLibraryQuery,
   removeRecipeTags,
@@ -29,6 +31,7 @@ describe("recipe library query helpers", () => {
       tags: ["chilled dessert"],
       topRated: false,
       view: "list",
+      websites: [],
     });
 
     expect(parseRecipeLibraryQuery("https://spice.test/?view=grid")).toMatchObject({
@@ -53,6 +56,7 @@ describe("recipe library query helpers", () => {
       tags: [],
       topRated: false,
       view: "grid",
+      websites: [],
     });
   });
 
@@ -68,6 +72,7 @@ describe("recipe library query helpers", () => {
       tags: [],
       topRated: false,
       view: "cards",
+      websites: [],
     });
 
     expect(results.map((recipe) => recipe.id)).toEqual(["mango-yogurt-mousse"]);
@@ -85,6 +90,7 @@ describe("recipe library query helpers", () => {
       tags: ["chilled dessert"],
       topRated: false,
       view: "cards",
+      websites: [],
     });
 
     expect(results.length).toBeGreaterThan(1);
@@ -107,6 +113,7 @@ describe("recipe library query helpers", () => {
       tags: [],
       topRated: false,
       view: "cards",
+      websites: [],
     });
     const timeResults = getRecipeLibraryResults(seedRecipes, {
       chapters: [],
@@ -119,6 +126,7 @@ describe("recipe library query helpers", () => {
       tags: [],
       topRated: false,
       view: "cards",
+      websites: [],
     });
 
     expect(titleResults[0]?.title.localeCompare(titleResults[1]?.title ?? "")).toBeLessThanOrEqual(
@@ -141,6 +149,7 @@ describe("recipe library query helpers", () => {
       tags: [],
       topRated: false,
       view: "cards",
+      websites: [],
     });
 
     expect(
@@ -194,13 +203,86 @@ describe("recipe library query helpers", () => {
     ]);
   });
 
-  it("keeps Joshua Weissman cookbook hierarchy out of tag facets", () => {
+  it("keeps cookbook hierarchy labels out of tag facets", () => {
     const facets = getRecipeLibraryFacets(
       seedRecipes,
       parseRecipeLibraryQuery("https://spice.test/"),
     );
+    const tagValues = facets
+      .find((facet) => facet.id === "tag")
+      ?.options.map((option) => option.value) ?? [];
 
-    expect(facets.find((facet) => facet.id === "tag")).toBeUndefined();
+    expect(tagValues).not.toContain("Joshua Weissman");
+    expect(tagValues).not.toContain("Texture Over Taste");
+    expect(tagValues).not.toContain("An Unapologetic Cookbook");
+  });
+
+  it("keeps website origins out of the cookbook tree", () => {
+    const tree = getRecipeCookbookTree(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+    );
+    const authorLabels = tree.map((author) => author.label);
+
+    expect(authorLabels).toContain("Joshua Weissman");
+    expect(authorLabels).toContain("Claire Saffitz");
+    expect(authorLabels).not.toContain("cooking.nytimes.com");
+    expect(authorLabels).not.toContain("mollybaz.com");
+    expect(authorLabels).not.toContain("Paprika");
+    expect(tree.length).toBeLessThan(15);
+  });
+
+  it("groups high-count websites separately from one-off website origins", () => {
+    const query = parseRecipeLibraryQuery("https://spice.test/");
+    const websiteFacet = getRecipeLibraryFacets(seedRecipes, query).find(
+      (facet) => facet.id === "website",
+    );
+
+    expect(websiteFacet?.options.map((option) => option.value)).toContain(
+      "cooking.nytimes.com",
+    );
+    expect(websiteFacet?.options.map((option) => option.value)).toContain(
+      otherWebsitesFacetValue,
+    );
+    expect(websiteFacet?.options.find((option) => option.value === "ambitiouskitchen.com")).toBeUndefined();
+
+    const nytResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/?website=cooking.nytimes.com"),
+    );
+    const otherResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery(`https://spice.test/?website=${encodeURIComponent(otherWebsitesFacetValue)}`),
+    );
+
+    expect(nytResults.length).toBeGreaterThan(50);
+    expect(nytResults.every((recipe) => recipe.source?.name === "cooking.nytimes.com")).toBe(
+      true,
+    );
+    expect(otherResults.length).toBeGreaterThan(0);
+    expect(otherResults.every((recipe) => recipe.source?.name !== "cooking.nytimes.com")).toBe(
+      true,
+    );
+  });
+
+  it("builds source chips for cookbook and website origins", () => {
+    const query = parseRecipeLibraryQuery("https://spice.test/");
+    const cookbookRecipe = seedRecipes.find(
+      (recipe) =>
+        recipe.source?.name === "Joshua Weissman - Texture Over Taste",
+    );
+    const websiteRecipe = seedRecipes.find(
+      (recipe) => recipe.source?.name === "cooking.nytimes.com",
+    );
+
+    expect(cookbookRecipe ? getRecipeSourceFilterLink(cookbookRecipe, query) : undefined).toMatchObject({
+      href: "/?cookbook=Joshua+Weissman+-+Texture+Over+Taste",
+      label: "Joshua Weissman - Texture Over Taste",
+    });
+    expect(websiteRecipe ? getRecipeSourceFilterLink(websiteRecipe, query) : undefined).toMatchObject({
+      href: "/?website=cooking.nytimes.com",
+      label: "cooking.nytimes.com",
+    });
   });
 
   it("shortens cookbook active filter labels under the author tree", () => {

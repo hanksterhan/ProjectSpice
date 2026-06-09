@@ -35,6 +35,25 @@ describe("myPaprikaRecipes", () => {
     );
   });
 
+  it("does not invent Paprika labels for personal recipes without an export source", () => {
+    const sourceLessImportedRecipes = myPaprikaRecipes.filter(
+      (recipe) =>
+        recipe.source?.type === "imported" &&
+        !recipe.source.name &&
+        !recipe.source.url,
+    );
+
+    expect(sourceLessImportedRecipes).toHaveLength(14);
+    expect(myPaprikaRecipes.some((recipe) => recipe.source?.name === "Paprika")).toBe(
+      false,
+    );
+    expect(
+      myPaprikaRecipes.some((recipe) =>
+        (recipe.tags as readonly string[]).includes("Paprika"),
+      ),
+    ).toBe(false);
+  });
+
   it("uses available Paprika photos even when they are low resolution", () => {
     const imageBackedRecipes = myPaprikaRecipes.filter(
       (recipe) => "imageUrl" in recipe,
