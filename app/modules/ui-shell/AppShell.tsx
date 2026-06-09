@@ -9,10 +9,11 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { Link, NavLink, useLocation } from "react-router";
+import { Link, NavLink } from "react-router";
 
 type AppShellProps = {
   children: ReactNode;
+  defaultDrawer?: ShellDrawer | null;
 };
 
 export type ShellCommand = {
@@ -53,8 +54,7 @@ type DrawerBounds = {
 
 const defaultDrawerWidth = 360;
 
-export function AppShell({ children }: AppShellProps) {
-  const location = useLocation();
+export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
@@ -63,19 +63,13 @@ export function AppShell({ children }: AppShellProps) {
     max: 520,
   });
   const [drawerWidth, setDrawerWidth] = useState(defaultDrawerWidth);
+  const activeDrawer = drawer ?? defaultDrawer;
   const activeCommand = command ?? defaultCommand;
   const isDrawerVisible = drawerMode !== "closed";
-  const canRevealDrawer = Boolean(drawer);
-  const isLibraryRoute = location.pathname === "/";
+  const canRevealDrawer = Boolean(activeDrawer);
   const shellStyle = {
     "--shell-drawer-width": `${drawerWidth}px`,
   } as CSSProperties;
-
-  useEffect(() => {
-    if (!isLibraryRoute) {
-      setDrawerMode("closed");
-    }
-  }, [isLibraryRoute]);
 
   useEffect(() => {
     function updateDrawerBounds() {
@@ -149,14 +143,14 @@ export function AppShell({ children }: AppShellProps) {
               <button
                 className="icon-button"
                 type="button"
-                title={drawer ? drawer.title : "Navigation"}
+                title={activeDrawer ? activeDrawer.title : "Navigation"}
                 aria-expanded={isDrawerVisible}
                 aria-controls="shell-drawer"
-                aria-label={drawer ? drawer.title : "Navigation"}
+                aria-label={activeDrawer ? activeDrawer.title : "Navigation"}
                 onClick={() => setDrawerMode((mode) => (mode === "pinned" ? "closed" : "pinned"))}
               >
                 <MenuIcon />
-                <span className="sr-only">{drawer ? drawer.title : "Navigation"}</span>
+                <span className="sr-only">{activeDrawer ? activeDrawer.title : "Navigation"}</span>
               </button>
 
               {activeCommand.backHref ? (
@@ -205,12 +199,12 @@ export function AppShell({ children }: AppShellProps) {
               aria-hidden={!isDrawerVisible}
               className={`shell-drawer ${drawerMode}`}
               id="shell-drawer"
-              aria-label={drawer?.title ?? "Navigation"}
+              aria-label={activeDrawer?.title ?? "Navigation"}
               onMouseDown={() => setDrawerMode((mode) => (mode === "peek" ? "pinned" : mode))}
               onMouseLeave={() => setDrawerMode((mode) => (mode === "peek" ? "closed" : mode))}
             >
               <div className="shell-drawer-body">
-                {drawer?.content ?? <ShellNav className="shell-menu-nav" />}
+                {activeDrawer?.content ?? null}
               </div>
               {drawerMode === "pinned" ? (
                 <button

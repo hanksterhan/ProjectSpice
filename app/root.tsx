@@ -5,10 +5,19 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { AppShell } from "./modules/ui-shell/AppShell";
+import { LibraryOrganizerDrawer } from "./modules/library/LibraryOrganizerDrawer";
+import {
+  getActiveLibraryFilters,
+  getRecipeCookbookTree,
+  getRecipeLibraryFacets,
+  parseRecipeLibraryQuery,
+} from "./modules/library/recipe-library";
+import { getRecipeService } from "./server/recipes/recipe.runtime";
 import "./app.css";
 
 export function meta(_args: Route.MetaArgs) {
@@ -19,6 +28,21 @@ export function meta(_args: Route.MetaArgs) {
       content: "A small AI-native recipe workbench for creating and refining recipes.",
     },
   ];
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const query = parseRecipeLibraryQuery(request.url);
+  const recipes = await getRecipeService(context).list();
+
+  return {
+    libraryDrawer: {
+      activeFilters: getActiveLibraryFilters(query),
+      cookbookTree: getRecipeCookbookTree(recipes, query),
+      facets: getRecipeLibraryFacets(recipes, query),
+      hasSearch: query.q.length > 0,
+      query,
+    },
+  };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -40,8 +64,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { libraryDrawer } = useLoaderData<typeof loader>();
+
   return (
-    <AppShell>
+    <AppShell
+      defaultDrawer={{
+        title: "Organize Library",
+        content: <LibraryOrganizerDrawer {...libraryDrawer} />,
+      }}
+    >
       <Outlet />
     </AppShell>
   );
