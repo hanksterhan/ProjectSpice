@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Star } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
@@ -6,7 +6,6 @@ import type { Route } from "./+types/home";
 import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
-  getActiveLibraryFilters,
   getLibraryQueryHref,
   getRecipeLibraryResults,
   maxRecipeTags,
@@ -36,7 +35,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     query,
     recipes,
-    totalRecipeCount: allRecipes.length,
   };
 }
 
@@ -104,11 +102,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const {
     query = fallbackQuery,
     recipes = getRecipeLibraryResults(seedRecipes, fallbackQuery),
-    totalRecipeCount = seedRecipes.length,
   } = loaderData ?? {};
-  const activeFilters = useMemo(() => getActiveLibraryFilters(query), [query]);
-  const hasSearch = query.q.length > 0;
-  const hasFilters = activeFilters.length > 0;
   const isGridView = query.view === "grid";
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -118,23 +112,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
   return (
     <div className="library-page">
-      <section className="page-toolbar" aria-labelledby="library-heading">
-        <div>
-          <h1 id="library-heading">Recipe Library</h1>
-          <p className="page-summary">
-            {hasSearch || hasFilters
-              ? `${resultLabel} in the current view`
-              : `${totalRecipeCount} recipes organized by cookbook and tags`}
-          </p>
-        </div>
-
-        <div className="toolbar-actions">
-          <Link className="button button-primary" to="/recipes/new">
-            New Recipe
-          </Link>
-        </div>
-      </section>
-
       <section className="library-results" aria-labelledby="results-heading">
         <div className="results-header">
           <div>
