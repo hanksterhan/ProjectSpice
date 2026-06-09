@@ -2381,6 +2381,10 @@ p {
   width: min(100%, 1120px);
 }
 
+.recipe-manual-intake-page {
+  width: min(100%, 1500px);
+}
+
 .new-recipe-route {
   display: grid;
   gap: 1rem;
@@ -2407,12 +2411,6 @@ p {
   grid-template-columns: minmax(0, 1fr);
   justify-self: center;
   width: min(100%, 1500px);
-}
-
-.intake-mode-copy {
-  display: grid;
-  gap: 0.45rem;
-  max-width: 52rem;
 }
 
 .intake-mode-picker {
@@ -2461,6 +2459,15 @@ p {
   background: var(--surface-raised);
   box-shadow: 0 0 0 1px var(--line);
   color: var(--ink);
+}
+
+.intake-mode-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 750;
+  line-height: 1.45;
+  margin: 0.15rem 0 0;
+  max-width: 52rem;
 }
 
 .intake-prompt-panel,
@@ -2799,7 +2806,7 @@ p {
   display: grid;
   gap: 1rem;
   margin-inline: auto;
-  width: min(100%, 1680px);
+  width: min(100%, 1500px);
 }
 
 .recipe-url-intake-page.imported {
