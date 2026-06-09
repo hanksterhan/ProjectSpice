@@ -3,26 +3,16 @@ import { joshuaWeissmanPaprikaRecipes } from "./joshua-weissman.fixtures";
 import { recipeSchema } from "./recipe.schema";
 import type { IngredientSection, Recipe } from "./recipe.types";
 
-const seedRecipeImageUrls = {
-  "classic-sundae-bombe": "https://spice.h6nk.dev/mock-images/classic-sundae-bombe.jpg",
-  "coffee-stracciatella-semifreddo":
-    "https://spice.h6nk.dev/mock-images/coffee-stracciatella-semifreddo.jpg",
-  "french-75-jelly-with-grapefruit":
-    "https://spice.h6nk.dev/mock-images/french-75-jelly-with-grapefruit.jpg",
-  "mango-yogurt-mousse": "https://spice.h6nk.dev/mock-images/mango-yogurt-mousse.jpg",
-  "no-bake-grapefruit-bars":
-    "https://spice.h6nk.dev/mock-images/no-bake-grapefruit-bars.jpg",
-  "no-bake-strawberry-ricotta-cheesecake":
-    "https://spice.h6nk.dev/mock-images/no-bake-strawberry-ricotta-cheesecake.jpg",
-  "pineapple-coconut-rum-sundaes":
-    "https://spice.h6nk.dev/mock-images/pineapple-coconut-rum-sundaes.jpg",
-  "tiramisu-y-icebox-cake":
-    "https://spice.h6nk.dev/mock-images/tiramisu-y-icebox-cake.jpg",
-} satisfies Record<string, string>;
-
-const seedRecipeIds = Object.keys(seedRecipeImageUrls) as Array<
-  keyof typeof seedRecipeImageUrls
->;
+const seedRecipeIds = [
+  "classic-sundae-bombe",
+  "coffee-stracciatella-semifreddo",
+  "french-75-jelly-with-grapefruit",
+  "mango-yogurt-mousse",
+  "no-bake-grapefruit-bars",
+  "no-bake-strawberry-ricotta-cheesecake",
+  "pineapple-coconut-rum-sundaes",
+  "tiramisu-y-icebox-cake",
+] as const;
 const paprikaRecipes: readonly Recipe[] = chilledDessertPaprikaRecipes;
 
 const chilledDessertSeedRecipes = seedRecipeIds.map((id, index) => {
@@ -34,7 +24,6 @@ const chilledDessertSeedRecipes = seedRecipeIds.map((id, index) => {
 
   return recipeSchema.parse({
     ...recipe,
-    imageUrl: seedRecipeImageUrls[id],
     ingredients: withReadableIngredientSections(recipe, index),
     directions: recipe.directions.map((section) => ({
       ...section,

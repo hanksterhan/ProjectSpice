@@ -1,7 +1,8 @@
 import type { Recipe } from "./recipe.types";
 
-// Converted from zips/chilled_desserts.paprikarecipes; embedded photo data is intentionally excluded.
-export const chilledDessertPaprikaRecipes = [
+// Converted from zips/chilled_desserts.paprikarecipes; embedded photo data is extracted
+// to static assets under public/recipe-images/chilled-desserts.
+const chilledDessertPaprikaRecipeData = [
   {
     "id": "classic-sundae-bombe",
     "title": "Classic Sundae Bombe",
@@ -2186,4 +2187,46 @@ export const chilledDessertPaprikaRecipes = [
     "createdAt": "2024-12-30T14:18:05.000Z",
     "updatedAt": "2024-12-30T14:18:05.000Z"
   }
-] satisfies Recipe[];
+] satisfies Array<Omit<Recipe, "imageUrl">>;
+
+const chilledDessertPaprikaRecipeImageUrls: Record<string, string> = {
+  "classic-sundae-bombe":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/classic-sundae-bombe.jpg",
+  "coffee-stracciatella-semifreddo":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/coffee-stracciatella-semifreddo.jpg",
+  "french-75-jelly-with-grapefruit":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/french-75-jelly-with-grapefruit.jpg",
+  "goat-milk-panna-cotta-with-guava-sauce":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/goat-milk-panna-cotta-with-guava-sauce.jpg",
+  "grape-semifreddo":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/grape-semifreddo.jpg",
+  "mango-yogurt-mousse":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/mango-yogurt-mousse.jpg",
+  "marbled-mint-chocolate-mousse":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/marbled-mint-chocolate-mousse.jpg",
+  "melon-parfaits":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/melon-parfaits.jpg",
+  "no-bake-grapefruit-bars":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/no-bake-grapefruit-bars.jpg",
+  "no-bake-lime-coconut-custards-with-coconut-crumble":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/no-bake-lime-coconut-custards-with-coconut-crumble.jpg",
+  "no-bake-strawberry-ricotta-cheesecake":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/no-bake-strawberry-ricotta-cheesecake.jpg",
+  "persimmon-panna-cotta":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/persimmon-panna-cotta.jpg",
+  "pineapple-coconut-rum-sundaes":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/pineapple-and-coconut-rum-sundaes.jpg",
+  "roasted-red-plum-biscoff-icebox-cake":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/roasted-red-plum-and-biscoff-icebox-cake.jpg",
+  "salty-brownie-ice-cream-sandwiches":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/salty-brownie-ice-cream-sandwiches.jpg",
+  "tiramisu-y-icebox-cake":
+    "https://spice.h6nk.dev/recipe-images/chilled-desserts/tiramisu-y-icebox-cake.jpg",
+};
+
+export const chilledDessertPaprikaRecipes = chilledDessertPaprikaRecipeData.map(
+  (recipe) => ({
+    ...recipe,
+    imageUrl: chilledDessertPaprikaRecipeImageUrls[recipe.id],
+  }),
+) satisfies Recipe[];

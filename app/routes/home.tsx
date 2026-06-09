@@ -174,7 +174,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   isListView ? (
                     <article className="recipe-row large selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <RecipeImage src={recipe.imageUrl} title={recipe.title} />
+                      <RecipeImage
+                        className="recipe-row-image"
+                        src={recipe.imageUrl}
+                        title={recipe.title}
+                      />
                       <div>
                         <h3>
                           <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>

@@ -305,7 +305,7 @@ p {
   grid-row: 1;
   max-width: 100%;
   min-width: 0;
-  padding: clamp(1rem, 3vw, 2.5rem);
+  padding: clamp(0.75rem, 1.6vw, 1.5rem);
   width: 100%;
 }
 
@@ -864,31 +864,38 @@ p {
   margin-bottom: 0;
 }
 
+.recipe-row-image,
 .recipe-row .image-fallback {
   height: 4rem;
   width: 4rem;
 }
 
+.recipe-row-image {
+  display: block;
+  object-fit: cover;
+}
+
 .recipe-row.large {
   background: var(--surface-raised);
-  grid-template-columns: 6rem minmax(0, 1fr);
-  min-height: 7rem;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  min-height: 5.75rem;
 }
 
 .recipe-row.large h3 {
-  font-size: clamp(1.28rem, 1.8vw, 1.7rem);
+  font-size: clamp(1.08rem, 1.35vw, 1.35rem);
   font-weight: 900;
   line-height: 1.08;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
 }
 
+.recipe-row.large .recipe-row-image,
 .recipe-row.large .image-fallback {
-  height: 6rem;
-  width: 6rem;
+  height: 5rem;
+  width: 5rem;
 }
 
 .recipe-row.large p {
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.55rem;
 }
 
 .recipe-preview {
@@ -976,8 +983,8 @@ p {
   border-radius: 8px;
   box-shadow: var(--shadow);
   margin-inline: auto;
-  padding: 0.75rem;
-  width: min(100%, 1640px);
+  padding: clamp(0.5rem, 0.8vw, 0.7rem);
+  width: 100%;
 }
 
 .library-browser {
@@ -1508,7 +1515,7 @@ p {
 
 .library-organizer-form {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .bulk-tag-toolbar {
@@ -1566,14 +1573,14 @@ p {
   align-items: center;
   border-bottom: 1px solid var(--line);
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.7rem;
 }
 
 .results-header h2 {
-  font-size: 1.55rem;
+  font-size: 1.35rem;
   line-height: 1.1;
   margin-bottom: 0;
 }
@@ -1594,21 +1601,23 @@ p {
 }
 
 .recipe-card-grid {
+  align-items: start;
   display: grid;
-  gap: 0.9rem;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: clamp(0.65rem, 0.9vw, 0.85rem);
+  grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
 }
 
 .recipe-dense-grid {
+  align-items: start;
   display: grid;
-  gap: clamp(0.9rem, 2vw, 1.3rem);
-  grid-template-columns: repeat(auto-fill, minmax(10.75rem, 1fr));
+  gap: clamp(0.5rem, 0.8vw, 0.75rem);
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
 }
 
 .recipe-grid-tile {
   align-content: start;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.35rem;
   grid-template-rows: auto auto 1.1rem;
   min-width: 0;
 }
@@ -1635,7 +1644,7 @@ p {
 
 .recipe-grid-tile h3 {
   color: var(--ink);
-  font-size: clamp(0.96rem, 1.1vw, 1.08rem);
+  font-size: clamp(0.92rem, 0.95vw, 1rem);
   font-weight: 850;
   line-height: 1.12;
   margin-bottom: 0;
@@ -1667,14 +1676,14 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  grid-template-rows: 10.5rem minmax(0, 1fr);
-  min-height: 22rem;
+  grid-template-rows: 9.25rem minmax(0, 1fr);
+  min-height: 18.5rem;
   overflow: hidden;
 }
 
 .recipe-card-image,
 .recipe-card .image-fallback {
-  height: 10.5rem;
+  height: 9.25rem;
   width: 100%;
 }
 
@@ -1686,23 +1695,23 @@ p {
 .recipe-card-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.65rem;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .recipe-card-kicker {
   color: var(--plum);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.35rem;
   text-transform: uppercase;
 }
 
 .recipe-card h3 {
-  font-size: 1.25rem;
+  font-size: 1.12rem;
   line-height: 1.12;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.45rem;
 }
 
 .recipe-card p {
@@ -1711,23 +1720,23 @@ p {
 
 .recipe-card .recipe-rating,
 .recipe-row.large .recipe-rating {
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.45rem;
 }
 
 .recipe-meta {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .recipe-meta span,
 .tag {
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
-  padding: 0.42rem 0.55rem;
+  padding: 0.34rem 0.48rem;
 }
 
 .recipe-meta span {
@@ -1871,8 +1880,18 @@ p {
 }
 
 .recipe-detail-image {
+  align-self: center;
   display: block;
+  height: auto;
+  justify-self: center;
+  max-height: clamp(22rem, 36vw, 34rem);
+  max-width: 100%;
   object-fit: contain;
+  width: auto;
+}
+
+.recipe-detail-image[src*="/recipe-images/chilled-desserts/"] {
+  max-width: 280px;
 }
 
 .recipe-detail-stats {
