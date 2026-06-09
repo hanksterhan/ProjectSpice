@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
+  ChevronRight,
   Clock,
   Filter,
+  Folder,
   Heart,
   History,
   LayoutGrid,
@@ -19,6 +21,7 @@ import {
   getActiveLibraryFilters,
   getDefaultSortDirection,
   getLibraryQueryHref,
+  getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeLibraryResults,
   maxRecipeTags,
@@ -50,6 +53,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   return {
     facets: getRecipeLibraryFacets(allRecipes, query),
+    cookbookTree: getRecipeCookbookTree(allRecipes, query),
     query,
     recipes,
     totalRecipeCount: allRecipes.length,
@@ -118,6 +122,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const fallbackQuery = parseRecipeLibraryQuery("https://spice.local/");
   const {
+    cookbookTree = getRecipeCookbookTree(seedRecipes, fallbackQuery),
     facets = getRecipeLibraryFacets(seedRecipes, fallbackQuery),
     query = fallbackQuery,
     recipes = getRecipeLibraryResults(seedRecipes, fallbackQuery),
@@ -138,13 +143,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       content: (
         <LibraryOrganizerDrawer
           activeFilters={activeFilters}
+          cookbookTree={cookbookTree}
           facets={facets}
           hasSearch={hasSearch}
           query={query}
         />
       ),
     }),
-    [activeFilters, facets, hasSearch, query],
+    [activeFilters, cookbookTree, facets, hasSearch, query],
   );
 
   useShellDrawer(organizerDrawer);
@@ -240,13 +246,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       </div>
                     </article>
                   ) : isGridView ? (
-                    <article className="recipe-dense-card selectable-recipe" key={recipe.id}>
+                    <article className="recipe-grid-tile selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <p>{recipe.source?.name ?? recipe.yield?.notes ?? "Recipe"}</p>
+                      <Link className="recipe-grid-image-link" to={getRecipeDetailPath(recipe)}>
+                        <RecipeImage
+                          className="recipe-grid-image"
+                          src={recipe.imageUrl}
+                          title={recipe.title}
+                        />
+                      </Link>
                       <h3>
                         <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                       </h3>
-                      <RecipeMeta query={query} recipe={recipe} />
+                      <RecipeRating rating={recipe.rating} />
                     </article>
                   ) : (
                     <article className="recipe-card selectable-recipe" key={recipe.id}>
@@ -290,6 +302,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
 type LibraryOrganizerDrawerProps = {
   activeFilters: ReturnType<typeof getActiveLibraryFilters>;
+  cookbookTree: ReturnType<typeof getRecipeCookbookTree>;
   facets: ReturnType<typeof getRecipeLibraryFacets>;
   hasSearch: boolean;
   query: RecipeLibraryQuery;
@@ -297,6 +310,7 @@ type LibraryOrganizerDrawerProps = {
 
 function LibraryOrganizerDrawer({
   activeFilters,
+  cookbookTree,
   facets,
   hasSearch,
   query,
@@ -382,6 +396,8 @@ function LibraryOrganizerDrawer({
       ) : null}
 
       <div className="drawer-facet-list">
+        <CookbookTree tree={cookbookTree} />
+
         {facets.map((group) => (
           <section className="facet-group" key={group.id}>
             <div className="facet-group-header">
@@ -410,6 +426,91 @@ function LibraryOrganizerDrawer({
         ))}
       </div>
     </div>
+  );
+}
+
+function CookbookTree({
+  tree,
+}: {
+  tree: ReturnType<typeof getRecipeCookbookTree>;
+}) {
+  return (
+    <section className="facet-group cookbook-tree" aria-label="Cookbooks">
+      <div className="facet-group-header">
+        <div className="drawer-section-title">
+          <BookOpen className="drawer-icon" />
+          <h3>Cookbooks</h3>
+        </div>
+        <span>{tree.length}</span>
+      </div>
+      <div className="cookbook-tree-list">
+        {tree.map((author) => (
+          <details className="cookbook-tree-node author" key={author.id} open>
+            <summary>
+              <span className="cookbook-tree-label">
+                <ChevronRight className="drawer-icon tree-chevron" />
+                <Folder className="drawer-icon tree-folder" />
+                <span>{author.label}</span>
+              </span>
+              <strong>{author.count}</strong>
+            </summary>
+            <div className="cookbook-tree-children">
+              <Link
+                className={author.selected ? "facet-option selected" : "facet-option"}
+                to={author.href}
+              >
+                <span className="facet-option-label">
+                  <span aria-hidden="true" className="facet-option-indent" />
+                  <span>All {author.label}</span>
+                </span>
+                <strong>{author.count}</strong>
+              </Link>
+              {author.cookbooks.map((cookbook) => (
+                <details
+                  className="cookbook-tree-node cookbook"
+                  key={cookbook.id}
+                  open={cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)}
+                >
+                  <summary>
+                    <span className="cookbook-tree-label">
+                      <ChevronRight className="drawer-icon tree-chevron" />
+                      <Folder className="drawer-icon tree-folder" />
+                      <span>{cookbook.label}</span>
+                    </span>
+                    <strong>{cookbook.count}</strong>
+                  </summary>
+                  <div className="cookbook-tree-children">
+                    <Link
+                      className={cookbook.selected ? "facet-option selected" : "facet-option"}
+                      to={cookbook.href}
+                    >
+                      <span className="facet-option-label">
+                        <span aria-hidden="true" className="facet-option-indent" />
+                        <span>All Recipes</span>
+                      </span>
+                      <strong>{cookbook.count}</strong>
+                    </Link>
+                    {cookbook.chapters.map((chapter) => (
+                      <Link
+                        className={chapter.selected ? "facet-option selected" : "facet-option"}
+                        key={chapter.id}
+                        to={chapter.href}
+                      >
+                        <span className="facet-option-label">
+                          <span aria-hidden="true" className="facet-option-indent" />
+                          <span>{chapter.label}</span>
+                        </span>
+                        <strong>{chapter.count}</strong>
+                      </Link>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -629,6 +730,23 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   );
 }
 
+function RecipeRating({ rating }: { rating: Recipe["rating"] }) {
+  const filledStars = rating === undefined ? 0 : Math.round(rating / 2);
+  const label = rating === undefined ? "Unrated" : `${rating.toFixed(1)} out of 10`;
+
+  return (
+    <div className="recipe-rating" aria-label={label}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <Star
+          aria-hidden="true"
+          className={index < filledStars ? "rating-star filled" : "rating-star"}
+          key={index}
+        />
+      ))}
+    </div>
+  );
+}
+
 function RecipeSelect({ recipe }: { recipe: Recipe }) {
   return (
     <label className="recipe-select-checkbox">
@@ -641,16 +759,16 @@ function RecipeSelect({ recipe }: { recipe: Recipe }) {
 function getViewTabs(query: RecipeLibraryQuery) {
   return [
     {
-      id: "cards",
-      label: "Cards",
-      href: getLibraryQueryHref({ ...query, view: "cards" }),
-      selected: query.view === "cards",
-    },
-    {
       id: "grid",
       label: "Grid",
       href: getLibraryQueryHref({ ...query, view: "grid" }),
       selected: query.view === "grid",
+    },
+    {
+      id: "cards",
+      label: "Cards",
+      href: getLibraryQueryHref({ ...query, view: "cards" }),
+      selected: query.view === "cards",
     },
     {
       id: "list",

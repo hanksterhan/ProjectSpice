@@ -4,6 +4,7 @@ import { seedRecipes } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
   getActiveLibraryFilters,
+  getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeLibraryResults,
   parseBulkTagText,
@@ -49,7 +50,7 @@ describe("recipe library query helpers", () => {
       sources: [],
       tags: [],
       topRated: false,
-      view: "cards",
+      view: "grid",
     });
   });
 
@@ -114,7 +115,9 @@ describe("recipe library query helpers", () => {
       view: "cards",
     });
 
-    expect(titleResults[0]?.title).toBe("Classic Sundae Bombe");
+    expect(titleResults[0]?.title.localeCompare(titleResults[1]?.title ?? "")).toBeLessThanOrEqual(
+      0,
+    );
     expect(timeResults[0]?.times?.totalMinutes).toBeLessThanOrEqual(
       timeResults[1]?.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER,
     );
@@ -133,7 +136,9 @@ describe("recipe library query helpers", () => {
       view: "cards",
     });
 
-    expect(titleResults[0]?.title).toBe("Tiramisu-y Icebox Cake");
+    expect(
+      titleResults[0]?.title.localeCompare(titleResults[1]?.title ?? ""),
+    ).toBeGreaterThanOrEqual(0);
   });
 
   it("filters favorites and top-rated recipes and sorts by rating", () => {
@@ -166,14 +171,31 @@ describe("recipe library query helpers", () => {
     const facets = getRecipeLibraryFacets(seedRecipes, query);
     const activeFilters = getActiveLibraryFilters(query);
 
-    expect(facets.map((facet) => facet.id)).toEqual(["cookbook", "tag"]);
-    expect(facets.find((facet) => facet.id === "cookbook")?.options[0]?.label).toBe(
-      "Claire Saffitz - Whats for Dessert",
-    );
+    expect(facets.map((facet) => facet.id)).toEqual(["tag"]);
     expect(activeFilters.map((filter) => filter.label)).toEqual([
       "Source: Cookbook",
       "seed",
     ]);
+  });
+
+  it("builds expandable cookbook trees with chapter links", () => {
+    const query = parseRecipeLibraryQuery("https://spice.test/");
+    const tree = getRecipeCookbookTree(seedRecipes, query);
+    const joshua = tree.find((author) => author.label === "Joshua Weissman");
+    const unapologetic = joshua?.cookbooks.find(
+      (cookbook) => cookbook.label === "An Unapologetic Cookbook",
+    );
+    const staples = unapologetic?.chapters.find(
+      (chapter) => chapter.label === "Staples From Scratch",
+    );
+
+    expect(joshua?.cookbooks.map((cookbook) => cookbook.label)).toEqual([
+      "An Unapologetic Cookbook",
+      "Texture Over Taste",
+    ]);
+    expect(staples?.href).toBe(
+      "/?tag=Staples+From+Scratch&cookbook=Joshua+Weissman+-+An+Unapologetic+Cookbook",
+    );
   });
 
   it("keeps the full tag facet list for scalable vertical browsing", () => {

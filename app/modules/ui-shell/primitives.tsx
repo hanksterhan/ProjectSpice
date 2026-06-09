@@ -119,9 +119,28 @@ export function EmptyState({ title, body, actionLabel, actionHref }: EmptyStateP
   );
 }
 
+export function getDisplayImageSrc(src: string | undefined): string | undefined {
+  if (!src) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(src);
+
+    if (url.hostname === "spice.h6nk.dev") {
+      return `${url.pathname}${url.search}${url.hash}`;
+    }
+  } catch {
+    return src;
+  }
+
+  return src;
+}
+
 export function RecipeImage({ src, title, alt, className = "", ...props }: RecipeImageProps) {
   const [hasError, setHasError] = useState(false);
-  const shouldUseFallback = !src || hasError || src.includes("/mock-images/");
+  const displaySrc = getDisplayImageSrc(src);
+  const shouldUseFallback = !displaySrc || hasError || displaySrc.includes("/mock-images/");
   const initials = title
     .split(/\s+/)
     .filter(Boolean)
@@ -140,7 +159,7 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
   return (
     <img
       className={className}
-      src={src}
+      src={displaySrc}
       alt={alt ?? title}
       onError={() => setHasError(true)}
       {...props}

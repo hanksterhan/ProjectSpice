@@ -26,6 +26,16 @@ export type RecipeLibraryFacetGroup = {
   options: RecipeLibraryFacetOption[];
 };
 
+export type RecipeLibraryChapterNode = RecipeLibraryFacetOption;
+
+export type RecipeLibraryCookbookNode = RecipeLibraryFacetOption & {
+  chapters: RecipeLibraryChapterNode[];
+};
+
+export type RecipeLibraryAuthorNode = RecipeLibraryFacetOption & {
+  cookbooks: RecipeLibraryCookbookNode[];
+};
+
 export type RecipeLibraryActiveFilter = {
   href: string;
   id: string;
@@ -63,7 +73,7 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
     sources: parseQueryList(searchParams.getAll("source")),
     tags: parseQueryList(searchParams.getAll("tag")),
     topRated: !favorite && searchParams.get("topRated") === "1",
-    view: isRecipeLibraryView(view) ? view : "cards",
+    view: isRecipeLibraryView(view) ? view : "grid",
   };
 }
 
@@ -117,16 +127,6 @@ export function getRecipeLibraryFacets(
 ): RecipeLibraryFacetGroup[] {
   const groups: RecipeLibraryFacetGroup[] = [
     {
-      id: "cookbook",
-      label: "Cookbooks",
-      options: getFacetOptions(
-        recipes,
-        query,
-        "cookbook",
-        (recipe) => [getCookbookLabel(recipe)].filter(Boolean),
-      ),
-    },
-    {
       id: "tag",
       label: "Tags",
       options: getFacetOptions(recipes, query, "tag", (recipe) => recipe.tags),
@@ -134,6 +134,106 @@ export function getRecipeLibraryFacets(
   ];
 
   return groups;
+}
+
+export function getRecipeCookbookTree(
+  recipes: readonly Recipe[],
+  query: RecipeLibraryQuery,
+): RecipeLibraryAuthorNode[] {
+  const authors = new Map<
+    string,
+    {
+      cookbooks: Map<
+        string,
+        {
+          chapters: Map<string, number>;
+          count: number;
+        }
+      >;
+      count: number;
+    }
+  >();
+
+  for (const recipe of recipes) {
+    const cookbook = getCookbookLabel(recipe);
+
+    if (!cookbook) {
+      continue;
+    }
+
+    const author = getCookbookAuthorLabel(cookbook);
+    const authorGroup = authors.get(author) ?? {
+      cookbooks: new Map<string, { chapters: Map<string, number>; count: number }>(),
+      count: 0,
+    };
+    const cookbookGroup = authorGroup.cookbooks.get(cookbook) ?? {
+      chapters: new Map<string, number>(),
+      count: 0,
+    };
+    const chapterLabels = getCookbookChapterLabels(recipe, author, cookbook);
+
+    authorGroup.count += 1;
+    cookbookGroup.count += 1;
+
+    for (const chapter of chapterLabels) {
+      cookbookGroup.chapters.set(chapter, (cookbookGroup.chapters.get(chapter) ?? 0) + 1);
+    }
+
+    authorGroup.cookbooks.set(cookbook, cookbookGroup);
+    authors.set(author, authorGroup);
+  }
+
+  return [...authors.entries()]
+    .map(([author, authorGroup]) => {
+      const cookbookLabels = [...authorGroup.cookbooks.keys()];
+      const authorHref = getLibraryQueryHref({
+        ...query,
+        cookbooks: cookbookLabels,
+        tags: [],
+      });
+      const cookbooks = [...authorGroup.cookbooks.entries()]
+        .map(([cookbook, cookbookGroup]) => ({
+          count: cookbookGroup.count,
+          href: getLibraryQueryHref({
+            ...query,
+            cookbooks: [cookbook],
+            tags: [],
+          }),
+          id: `cookbook:${cookbook}`,
+          label: getCookbookTitleLabel(cookbook),
+          selected: query.cookbooks.includes(cookbook) && query.tags.length === 0,
+          value: cookbook,
+          chapters: [...cookbookGroup.chapters.entries()]
+            .map(([chapter, count]) => ({
+              count,
+              href: getLibraryQueryHref({
+                ...query,
+                cookbooks: [cookbook],
+                tags: [chapter],
+              }),
+              id: `chapter:${cookbook}:${chapter}`,
+              label: chapter,
+              selected: query.cookbooks.includes(cookbook) && query.tags.includes(chapter),
+              value: chapter,
+            }))
+            .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label)),
+        }))
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+
+      return {
+        count: authorGroup.count,
+        href: authorHref,
+        id: `author:${author}`,
+        label: author,
+        selected:
+          cookbookLabels.length > 0 &&
+          query.tags.length === 0 &&
+          cookbookLabels.every((cookbook) => query.cookbooks.includes(cookbook)),
+        value: author,
+        cookbooks,
+      };
+    })
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 }
 
 export function getActiveLibraryFilters(
@@ -193,7 +293,7 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
     params.set("dir", query.direction);
   }
 
-  if (query.view !== "cards") {
+  if (query.view !== "grid") {
     params.set("view", query.view);
   }
 
@@ -346,6 +446,38 @@ function getSourceTypeLabel(recipe: Recipe): string {
 
 function getCookbookLabel(recipe: Recipe): string {
   return recipe.source?.type === "imported" ? (recipe.source.name ?? "") : "";
+}
+
+function getCookbookAuthorLabel(cookbook: string): string {
+  return cookbook.split(" - ")[0]?.trim() || cookbook;
+}
+
+function getCookbookTitleLabel(cookbook: string): string {
+  return cookbook.split(" - ").slice(1).join(" - ").trim() || cookbook;
+}
+
+function getCookbookChapterLabels(
+  recipe: Recipe,
+  author: string,
+  cookbook: string,
+): string[] {
+  const cookbookTitle = getCookbookTitleLabel(cookbook);
+  const excludedTags = new Set([
+    normalizeTag(author),
+    normalizeTag(cookbook),
+    normalizeTag(cookbookTitle),
+    "Easy",
+    "Medium",
+    "Hard",
+  ]);
+
+  return [
+    ...new Set(
+      recipe.tags
+        .map(normalizeTag)
+        .filter((tag) => tag && !excludedTags.has(tag)),
+    ),
+  ];
 }
 
 function matchesSelectedValues(values: string[], selectedValues: string[]): boolean {

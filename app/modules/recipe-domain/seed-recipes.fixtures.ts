@@ -1,4 +1,5 @@
 import { chilledDessertPaprikaRecipes } from "./paprika-chilled-desserts.fixtures";
+import { joshuaWeissmanPaprikaRecipes } from "./joshua-weissman.fixtures";
 import { recipeSchema } from "./recipe.schema";
 import type { IngredientSection, Recipe } from "./recipe.types";
 
@@ -24,7 +25,7 @@ const seedRecipeIds = Object.keys(seedRecipeImageUrls) as Array<
 >;
 const paprikaRecipes: readonly Recipe[] = chilledDessertPaprikaRecipes;
 
-export const seedRecipes = seedRecipeIds.map((id, index) => {
+const chilledDessertSeedRecipes = seedRecipeIds.map((id, index) => {
   const recipe = paprikaRecipes.find((candidate) => candidate.id === id);
 
   if (!recipe) {
@@ -42,6 +43,11 @@ export const seedRecipes = seedRecipeIds.map((id, index) => {
     tags: [...new Set([...recipe.tags, "seed", "chilled dessert"])],
   });
 }) satisfies Recipe[];
+
+export const seedRecipes = [
+  ...chilledDessertSeedRecipes,
+  ...joshuaWeissmanPaprikaRecipes.map((recipe) => recipeSchema.parse(recipe)),
+] satisfies Recipe[];
 
 function withReadableIngredientSections(
   recipe: Recipe,

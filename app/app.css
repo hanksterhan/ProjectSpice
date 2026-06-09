@@ -1144,6 +1144,84 @@ p {
   padding: 0.05rem 0 0;
 }
 
+.cookbook-tree-list {
+  display: grid;
+  gap: 0.12rem;
+  padding-top: 0.05rem;
+}
+
+.cookbook-tree-node {
+  min-width: 0;
+}
+
+.cookbook-tree-node summary {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--steel);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.88rem;
+  font-weight: 850;
+  gap: 0.55rem;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 2rem;
+  padding: 0.32rem 0.42rem 0.32rem 0.5rem;
+}
+
+.cookbook-tree-node summary::-webkit-details-marker {
+  display: none;
+}
+
+.cookbook-tree-node summary:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.cookbook-tree-label {
+  align-items: center;
+  display: flex;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.cookbook-tree-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cookbook-tree-node summary strong {
+  color: var(--steel);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-chevron {
+  transition: transform 140ms ease;
+}
+
+.cookbook-tree-node[open] > summary .tree-chevron {
+  transform: rotate(90deg);
+}
+
+.tree-folder {
+  color: color-mix(in srgb, var(--steel) 72%, var(--accent));
+}
+
+.cookbook-tree-children {
+  border-left: 1px solid rgb(48 72 95 / 16%);
+  display: grid;
+  gap: 0.1rem;
+  margin-left: 0.95rem;
+  padding: 0.08rem 0 0.14rem 0.45rem;
+}
+
+.cookbook-tree-node.cookbook > summary {
+  padding-left: 0.35rem;
+}
+
 .facet-option {
   align-items: center;
   border: 1px solid transparent;
@@ -1363,46 +1441,64 @@ p {
 
 .recipe-dense-grid {
   display: grid;
-  gap: 0.55rem;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: clamp(0.9rem, 2vw, 1.3rem);
+  grid-template-columns: repeat(auto-fill, minmax(10.75rem, 1fr));
 }
 
-.recipe-dense-card {
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+.recipe-grid-tile {
   display: grid;
-  gap: 0.5rem;
-  min-height: 8.75rem;
-  padding: 0.75rem;
+  gap: 0.45rem;
+  grid-template-rows: auto minmax(2.3rem, auto) 1.1rem;
+  min-width: 0;
 }
 
-.recipe-dense-card > p {
-  color: var(--plum);
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 0;
+.recipe-grid-image-link {
+  background: var(--surface-muted);
+  border: 1px solid color-mix(in srgb, var(--line) 78%, var(--ink));
+  border-radius: 6px;
+  display: block;
   overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
-.recipe-dense-card h3 {
-  font-size: 1rem;
-  line-height: 1.15;
+.recipe-grid-image,
+.recipe-grid-tile .image-fallback {
+  aspect-ratio: 1;
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.recipe-grid-image {
+  object-fit: cover;
+}
+
+.recipe-grid-tile h3 {
+  color: var(--ink);
+  font-size: clamp(0.96rem, 1.1vw, 1.08rem);
+  font-weight: 850;
+  line-height: 1.12;
   margin-bottom: 0;
+  overflow-wrap: anywhere;
 }
 
-.recipe-dense-card .recipe-meta {
-  gap: 0.3rem;
+.recipe-rating {
+  align-items: center;
+  display: flex;
+  gap: 0.1rem;
+  min-height: 1.1rem;
 }
 
-.recipe-dense-card .recipe-meta span,
-.recipe-dense-card .tag {
-  font-size: 0.68rem;
-  padding: 0.34rem 0.42rem;
+.rating-star {
+  color: color-mix(in srgb, var(--muted) 34%, transparent);
+  fill: currentColor;
+  height: 0.95rem;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  width: 0.95rem;
+}
+
+.rating-star.filled {
+  color: #d69a2d;
 }
 
 .recipe-card {
