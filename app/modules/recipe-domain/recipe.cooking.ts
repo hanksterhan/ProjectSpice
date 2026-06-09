@@ -10,6 +10,29 @@ export function addCookedDate<T extends Recipe | RecipeDraft>(
   };
 }
 
+export function addCookJournalNote<T extends Recipe | RecipeDraft>(
+  recipe: T,
+  cookedOn: string,
+  note: string | undefined,
+): T {
+  const trimmedNote = note?.trim();
+
+  if (!trimmedNote) {
+    return recipe;
+  }
+
+  const journalNote = `${formatCookJournalDate(cookedOn)} - ${trimmedNote}`;
+
+  if (recipe.notes?.includes(journalNote)) {
+    return recipe;
+  }
+
+  return {
+    ...recipe,
+    notes: [...(recipe.notes ?? []), journalNote],
+  };
+}
+
 export function normalizeCookedDates(cookedDates: readonly string[]): string[] {
   return [...new Set(cookedDates)]
     .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
@@ -24,4 +47,18 @@ export function getLastCookedDate(
   recipe: Pick<Recipe | RecipeDraft, "cookedDates">,
 ): string | undefined {
   return normalizeCookedDates(recipe.cookedDates ?? [])[0];
+}
+
+function formatCookJournalDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return date;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day));
 }

@@ -1894,19 +1894,18 @@ p {
   font-weight: 800;
 }
 
-.cook-history-actions {
+.cook-entry-form {
   display: grid;
   gap: 0.75rem;
 }
 
-.cook-date-form {
-  align-items: stretch;
-  display: grid;
-  gap: 0.65rem;
+.cook-entry-form .field input,
+.cook-entry-form .field textarea {
+  width: 100%;
 }
 
-.cook-date-form .field input {
-  width: 100%;
+.cook-entry-form .field textarea {
+  min-height: 7rem;
 }
 
 .cook-history-dates {

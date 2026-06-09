@@ -3,7 +3,7 @@ import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/recipes.$recipeId";
-import { addCookedDate } from "~/modules/recipe-domain";
+import { addCookJournalNote, addCookedDate } from "~/modules/recipe-domain";
 import {
   RecipeAiPanel,
   appendAiChatTurn,
@@ -42,6 +42,7 @@ const saveDraftFormSchema = z.object({
 
 const cookedFormSchema = z.object({
   cookedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid date."),
+  cookNote: z.string().trim().max(1200, "Keep cook notes under 1200 characters.").optional(),
 });
 
 export function meta({ data }: Route.MetaArgs) {
@@ -82,6 +83,7 @@ export async function action({
   if (intent === "record-cooked") {
     const parsed = cookedFormSchema.safeParse({
       cookedOn: formData.get("cookedOn"),
+      cookNote: optionalFormString(formData.get("cookNote")),
     });
 
     if (!parsed.success) {
@@ -89,14 +91,21 @@ export async function action({
     }
 
     const now = new Date().toISOString();
+    const cookedRecipe = addCookJournalNote(
+      addCookedDate(recipe, parsed.data.cookedOn),
+      parsed.data.cookedOn,
+      parsed.data.cookNote,
+    );
     const updatedRecipe = await service.update(
       {
-        ...addCookedDate(recipe, parsed.data.cookedOn),
+        ...cookedRecipe,
         version: recipe.version + 1,
         updatedAt: now,
       },
       recipe.version,
-      `Recorded cooked date: ${parsed.data.cookedOn}`,
+      parsed.data.cookNote
+        ? `Recorded cooked date with note: ${parsed.data.cookedOn}`
+        : `Recorded cooked date: ${parsed.data.cookedOn}`,
     );
 
     return redirect(getRecipeDetailPath(updatedRecipe));

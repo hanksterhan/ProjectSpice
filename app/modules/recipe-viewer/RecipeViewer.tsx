@@ -237,25 +237,24 @@ export function CookHistoryDrawer({ onClose, recipe }: CookHistoryDrawerProps) {
         {lastCookedDate ? <span>Last cooked {formatCookedDate(lastCookedDate)}</span> : null}
       </div>
 
-      <div className="cook-history-actions">
-        <Form method="post">
-          <input name="intent" type="hidden" value="record-cooked" />
-          <input name="cookedOn" type="hidden" value={today} />
-          <button className="button button-primary" type="submit">
-            Cooked Today
-          </button>
-        </Form>
-        <Form className="cook-date-form" method="post">
-          <input name="intent" type="hidden" value="record-cooked" />
-          <label className="field">
-            <span>Past date</span>
-            <input name="cookedOn" type="date" max={today} defaultValue={today} />
-          </label>
-          <button className="button button-secondary" type="submit">
-            Add Date
-          </button>
-        </Form>
-      </div>
+      <Form className="cook-entry-form" method="post">
+        <input name="intent" type="hidden" value="record-cooked" />
+        <label className="field">
+          <span>Cooked on</span>
+          <input name="cookedOn" type="date" max={today} defaultValue={today} />
+        </label>
+        <label className="field">
+          <span>Cook notes</span>
+          <textarea
+            name="cookNote"
+            placeholder="What changed, worked, or needs adjusting next time?"
+            rows={4}
+          />
+        </label>
+        <button className="button button-primary" type="submit">
+          Save Cook Entry
+        </button>
+      </Form>
 
       {recentCookedDates.length > 0 ? (
         <div className="cook-history-dates" aria-label="Recent cooked dates">
