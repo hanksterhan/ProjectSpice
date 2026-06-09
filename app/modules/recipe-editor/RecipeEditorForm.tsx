@@ -128,16 +128,19 @@ export function RecipeEditorForm({
             src={defaultValues.imageUrl}
             title={defaultValues.title || "Recipe"}
           />
-          <label className="field field-wide">
-            <span>Image URL</span>
-            <input
-              {...register("imageUrl")}
-              defaultValue={defaultValues.imageUrl}
-              inputMode="url"
-              placeholder="https://..."
-            />
-            <FieldError errors={errors} name="imageUrl" />
-          </label>
+          <details className="recipe-compose-image-url">
+            <summary>Change image URL</summary>
+            <label className="field field-wide">
+              <span>Image URL</span>
+              <input
+                {...register("imageUrl")}
+                defaultValue={defaultValues.imageUrl}
+                inputMode="url"
+                placeholder="https://..."
+              />
+              <FieldError errors={errors} name="imageUrl" />
+            </label>
+          </details>
         </div>
       </section>
 

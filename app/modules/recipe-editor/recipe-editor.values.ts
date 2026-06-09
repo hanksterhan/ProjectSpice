@@ -42,7 +42,7 @@ export function getRecipeEditorDefaults(
       stepsText: section.steps
         .slice()
         .sort((firstStep, secondStep) => firstStep.order - secondStep.order)
-        .map((step) => step.text)
+        .map((step, index) => formatDirectionStepForEditing(step.text, index))
         .join("\n\n"),
       steps: section.steps
         .slice()
@@ -55,6 +55,14 @@ export function getRecipeEditorDefaults(
         })),
     })),
   };
+}
+
+function formatDirectionStepForEditing(text: string, index: number): string {
+  return `${index + 1}. ${stripLeadingDirectionNumber(text)}`;
+}
+
+function stripLeadingDirectionNumber(text: string): string {
+  return text.replace(/^\s*(?:step\s*)?\d+[).:-]?\s+/i, "").trim();
 }
 
 export function getRecipeEditorBaseDraft(recipe: Recipe | RecipeDraft): RecipeDraft {

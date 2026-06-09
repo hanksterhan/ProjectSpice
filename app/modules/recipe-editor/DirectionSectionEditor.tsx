@@ -91,7 +91,7 @@ export function DirectionSectionEditor({
                 {...register(`directionSections.${sectionIndex}.stepsText`)}
                 defaultValue={section.stepsText}
                 placeholder={"Heat oven to 350 F.\nMix the batter.\nBake until set."}
-                rows={Math.max(8, section.stepsText?.split("\n").length ?? 8)}
+                rows={getDirectionTextareaRows(section.stepsText)}
               />
               <NestedFieldError
                 errors={errors}
@@ -103,6 +103,15 @@ export function DirectionSectionEditor({
       </div>
     </section>
   );
+}
+
+function getDirectionTextareaRows(value: string | undefined): number {
+  const lineCount = (value ?? "").split("\n").reduce((count, line) => {
+    const visualLines = Math.max(1, Math.ceil(line.length / 78));
+    return count + visualLines;
+  }, 0);
+
+  return Math.max(10, lineCount + 2);
 }
 
 function createEmptyDirectionSection() {

@@ -149,6 +149,49 @@ describe("recipe editor schema", () => {
     ]);
   });
 
+  it("strips display numbering from direction text before saving", () => {
+    const values = recipeEditorFormSchema.parse({
+      title: "Numbered Soup",
+      description: "",
+      imageUrl: "",
+      tagsText: "",
+      favorite: false,
+      rating: "",
+      prepMinutes: "",
+      cookMinutes: "",
+      totalMinutes: "",
+      yieldQuantity: "",
+      yieldUnit: "",
+      yieldNotes: "",
+      notesText: "",
+      sourceName: "",
+      sourceUrl: "",
+      ingredientSections: [
+        {
+          id: "ingredients",
+          title: "",
+          itemsText: "1 cup broth",
+          items: [],
+        },
+      ],
+      directionSections: [
+        {
+          id: "directions",
+          title: "",
+          stepsText: "1. Warm the broth.\n\nStep 2: Season to taste.",
+          steps: [],
+        },
+      ],
+    });
+
+    const draft = validateRecipeEditorDraft(values, createEmptyRecipeDraft());
+
+    expect(draft.directions[0]?.steps.map((step) => step.text)).toEqual([
+      "Warm the broth.",
+      "Season to taste.",
+    ]);
+  });
+
   it("rejects invalid URLs, negative timing values, invalid ingredients, and invalid directions", () => {
     const result = recipeEditorFormSchema.safeParse({
       title: "Pie",

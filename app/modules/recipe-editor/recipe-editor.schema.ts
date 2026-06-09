@@ -279,7 +279,7 @@ function getDirectionLines(section: {
 }> {
   const textLines = splitEditableLines(section.stepsText).map((text) => ({
     id: "",
-    text,
+    text: stripLeadingDirectionNumber(text),
     timerMinutes: undefined,
     ingredientRefsText: "",
   }));
@@ -296,6 +296,10 @@ function splitEditableLines(value: string | undefined): string[] {
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function stripLeadingDirectionNumber(text: string): string {
+  return text.replace(/^\s*(?:step\s*)?\d+[).:-]?\s+/i, "").trim();
 }
 
 function createRecipeEditorLineId(prefix: string, line: string, index: number): string {
