@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Form, useNavigation } from "react-router";
 
 import type { RecipeDraft } from "~/modules/recipe-domain";
 import { Button } from "~/modules/ui-shell/primitives";
@@ -57,32 +57,15 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
 
   return (
     <div className="recipe-intake-page">
-      <header className="editor-header">
-        <div>
-          <h1>Recipe Intake</h1>
-          <p>
-            Give this prompt to ChatGPT or Claude, paste the JSON here, then
-            review the Project Spice draft before saving it.
-          </p>
-        </div>
-        <div className="editor-actions">
-          <Link className="button button-secondary" to="/recipes/new?mode=url">
-            Import URL
-          </Link>
-          <Link className="button button-secondary" to="/recipes/new?mode=manual">
-            Manual Entry
-          </Link>
-          <Link className="button button-secondary" to="/">
-            Cancel
-          </Link>
-        </div>
-      </header>
-
       <div className="recipe-intake-layout">
         <section className="intake-prompt-panel" aria-labelledby="prompt-heading">
           <div className="intake-panel-header">
             <div>
               <h2 id="prompt-heading">System Prompt</h2>
+              <p className="intake-panel-note">
+                Copy this into ChatGPT or Claude when you want it to return a
+                structured Project Spice draft.
+              </p>
               <span
                 className={`copy-status ${copyStatus}`}
                 aria-live="polite"
@@ -128,6 +111,10 @@ export function RecipeIntake({ actionData }: RecipeIntakeProps) {
         <section className="intake-json-panel" aria-labelledby="json-heading">
           <div>
             <h2 id="json-heading">Paste Recipe JSON</h2>
+            <p className="intake-panel-note">
+              Paste the chat output here, preview the parsed draft, then save it
+              after review.
+            </p>
           </div>
 
           <Form className="intake-json-form" method="post">

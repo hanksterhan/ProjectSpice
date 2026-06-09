@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { Link, redirect } from "react-router";
 
 import type { Route } from "./+types/recipes.new";
 import { createEmptyRecipeDraft } from "~/modules/recipe-domain";
@@ -16,15 +16,19 @@ import { buildRecipeFromEditorFormData } from "~/server/recipes/recipe.form";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 import { scrapeRecipeFromUrl } from "~/server/recipe-scraper";
 
+type NewRecipeMode = "intake" | "url" | "manual";
+
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "New Recipe | ProjectSpice" }];
 }
 
 export function loader({ request }: Route.LoaderArgs) {
   const mode = new URL(request.url).searchParams.get("mode");
+  const normalizedMode: NewRecipeMode =
+    mode === "manual" || mode === "url" ? mode : "intake";
 
   return {
-    mode: mode === "manual" || mode === "url" ? mode : "intake",
+    mode: normalizedMode,
     recipe: createEmptyRecipeDraft(),
   };
 }
@@ -125,36 +129,76 @@ export default function NewRecipe({ loaderData, actionData }: Route.ComponentPro
   useShellCommand({
     backHref: "/",
     backLabel: "Back to library",
-    title:
-      loaderData.mode === "manual"
-        ? "New Recipe"
-        : loaderData.mode === "url"
-          ? "Import From URL"
-          : "Recipe Intake",
+    title: "New Recipe",
   });
 
-  if (loaderData.mode === "manual") {
-    return (
+  const content =
+    loaderData.mode === "manual" ? (
       <div className="recipe-editor-route">
         <RecipeEditorForm
           mode="new"
           recipe={loaderData.recipe}
           cancelHref="/"
           errors={actionData?.errors}
+          chrome="minimal"
         />
       </div>
-    );
-  }
-
-  if (loaderData.mode === "url") {
-    return (
+    ) : loaderData.mode === "url" ? (
       <RecipeUrlIntake
         actionData={actionData as RecipeUrlIntakeActionData | undefined}
       />
+    ) : (
+      <RecipeIntake actionData={actionData as RecipeIntakeActionData | undefined} />
     );
-  }
 
-  return <RecipeIntake actionData={actionData as RecipeIntakeActionData | undefined} />;
+  return (
+    <div className="new-recipe-route">
+      <NewRecipeModeHeader mode={loaderData.mode} />
+      {content}
+    </div>
+  );
+}
+
+function NewRecipeModeHeader({ mode }: { mode: NewRecipeMode }) {
+  return (
+    <header className="editor-header intake-mode-header">
+      <div className="intake-mode-picker">
+        <span className="intake-mode-label">Intake mode</span>
+        <nav className="intake-mode-toggle" aria-label="Recipe intake mode">
+          <Link
+            className={
+              mode === "intake" ? "intake-mode-option active" : "intake-mode-option"
+            }
+            to="/recipes/new"
+            aria-current={mode === "intake" ? "page" : undefined}
+          >
+            AI JSON
+          </Link>
+          <Link
+            className={
+              mode === "url" ? "intake-mode-option active" : "intake-mode-option"
+            }
+            to="/recipes/new?mode=url"
+            aria-current={mode === "url" ? "page" : undefined}
+          >
+            Import URL
+          </Link>
+          <Link
+            className={
+              mode === "manual" ? "intake-mode-option active" : "intake-mode-option"
+            }
+            to="/recipes/new?mode=manual"
+            aria-current={mode === "manual" ? "page" : undefined}
+          >
+            Manual Entry
+          </Link>
+        </nav>
+      </div>
+      <Link className="button button-secondary" to="/">
+        Cancel
+      </Link>
+    </header>
+  );
 }
 
 function getFormString(formData: FormData, name: string): string {

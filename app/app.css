@@ -2336,6 +2336,13 @@ p {
   width: min(100%, 1120px);
 }
 
+.new-recipe-route {
+  display: grid;
+  gap: 1rem;
+  margin-inline: auto;
+  width: min(100%, 1680px);
+}
+
 .recipe-intake-page {
   display: grid;
   gap: 1rem;
@@ -2348,6 +2355,64 @@ p {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(18rem, 0.92fr) minmax(0, 1.08fr);
+}
+
+.intake-mode-header {
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(0.85rem, 2vw, 1rem);
+}
+
+.intake-mode-header > .button {
+  justify-self: end;
+}
+
+.intake-mode-picker {
+  display: grid;
+  gap: 0.35rem;
+  width: min(100%, 62rem);
+}
+
+.intake-mode-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.intake-mode-toggle {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.25rem;
+}
+
+.intake-mode-option {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 2.45rem;
+  min-width: 8.25rem;
+  padding: 0 0.85rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.intake-mode-option:hover {
+  color: var(--ink);
+}
+
+.intake-mode-option.active {
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--ink);
 }
 
 .intake-prompt-panel,
@@ -2376,10 +2441,20 @@ p {
 }
 
 .intake-panel-header {
-  align-items: center;
+  align-items: start;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
+}
+
+.intake-panel-note {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 750;
+  line-height: 1.45;
+  margin-bottom: 0;
+  margin-top: 0.45rem;
+  max-width: 42rem;
 }
 
 .copy-status {
@@ -3309,6 +3384,21 @@ p {
 
   .editor-actions {
     justify-content: stretch;
+  }
+
+  .intake-mode-header > .button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .intake-mode-toggle {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .intake-mode-option {
+    min-width: 0;
+    padding-inline: 0.45rem;
   }
 
   .editor-actions .button,

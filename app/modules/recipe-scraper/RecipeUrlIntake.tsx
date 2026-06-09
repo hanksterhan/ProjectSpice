@@ -77,30 +77,13 @@ export function RecipeUrlIntake({ actionData }: RecipeUrlIntakeProps) {
 
   return (
     <div className="recipe-url-intake-page">
-      <header className="editor-header">
-        <div>
-          <h1>Import From URL</h1>
-          <p>
-            Paste a public recipe URL, review the structured draft, then adjust
-            anything before saving it to the library.
-          </p>
-        </div>
-        <div className="editor-actions">
-          <Link className="button button-secondary" to="/recipes/new">
-            JSON Intake
-          </Link>
-          <Link className="button button-secondary" to="/recipes/new?mode=manual">
-            Manual Entry
-          </Link>
-          <Link className="button button-secondary" to="/">
-            Cancel
-          </Link>
-        </div>
-      </header>
-
       <section className="editor-section" aria-labelledby="url-import-heading">
         <div>
           <h2 id="url-import-heading">Recipe URL</h2>
+          <p className="intake-panel-note">
+            Paste a public recipe URL, preview the imported draft, then adjust
+            anything before saving it.
+          </p>
         </div>
         <Form className="recipe-url-form" method="post">
           <input name="intent" type="hidden" value="preview-url" />
