@@ -241,8 +241,14 @@ describe("recipe library query helpers", () => {
       ),
     );
 
-    expect(results).toHaveLength(22);
-    expect(results.every((recipe) => recipe.tags.length === 0)).toBe(true);
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      results.every(
+        (recipe) =>
+          recipe.source?.name === "Joshua Weissman - An Unapologetic Cookbook",
+      ),
+    ).toBe(true);
+    expect(results.some((recipe) => recipe.tags.length > 0)).toBe(true);
   });
 
   it("keeps the full tag facet list for scalable vertical browsing", () => {

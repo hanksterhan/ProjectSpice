@@ -1,4 +1,5 @@
 import { chilledDessertPaprikaRecipes } from "./paprika-chilled-desserts.fixtures";
+import { myPaprikaRecipes } from "./paprika-my-recipes.fixtures";
 import { joshuaWeissmanPaprikaRecipes } from "./joshua-weissman.fixtures";
 import { recipeSchema } from "./recipe.schema";
 import type { IngredientSection, Recipe } from "./recipe.types";
@@ -36,6 +37,7 @@ const chilledDessertSeedRecipes = seedRecipeIds.map((id, index) => {
 export const seedRecipes = [
   ...chilledDessertSeedRecipes,
   ...joshuaWeissmanPaprikaRecipes.map((recipe) => recipeSchema.parse(recipe)),
+  ...myPaprikaRecipes.map((recipe) => recipeSchema.parse(recipe)),
 ] satisfies Recipe[];
 
 function withReadableIngredientSections(
