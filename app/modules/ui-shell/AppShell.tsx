@@ -47,6 +47,7 @@ const ShellDrawerContext = createContext<(drawer: ShellDrawer | null) => void>(
 );
 
 type DrawerMode = "closed" | "peek" | "pinned";
+type ThemeMode = "light" | "dark";
 type DrawerBounds = {
   min: number;
   max: number;
@@ -58,6 +59,7 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
+  const [theme, setTheme] = useState<ThemeMode>("light");
   const [drawerBounds, setDrawerBounds] = useState<DrawerBounds>({
     min: 288,
     max: 520,
@@ -84,6 +86,25 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
 
     return () => window.removeEventListener("resize", updateDrawerBounds);
   }, []);
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem("projectspice-theme");
+
+    if (storedTheme === "light" || storedTheme === "dark") {
+      setTheme(storedTheme);
+      return;
+    }
+
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem("projectspice-theme", theme);
+  }, [theme]);
 
   const closeDrawer = () => setDrawerMode("closed");
   const closePeekDrawerOutsideBounds = (event: MouseEvent<HTMLDivElement>) => {
@@ -177,6 +198,10 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
 
             <div className="shell-command-cluster">
               <ShellNav className="shell-nav" />
+              <ThemeToggle
+                theme={theme}
+                onToggle={() => setTheme((mode) => (mode === "dark" ? "light" : "dark"))}
+              />
 
               {activeCommand.actions ? (
                 <nav className="shell-context-actions" aria-label="Page actions">
@@ -295,6 +320,30 @@ function ShellNav({ className }: { className: string }) {
   );
 }
 
+function ThemeToggle({
+  onToggle,
+  theme,
+}: {
+  onToggle: () => void;
+  theme: ThemeMode;
+}) {
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={isDark}
+      className="icon-button theme-toggle-button"
+      title={isDark ? "Light mode" : "Dark mode"}
+      type="button"
+      onClick={onToggle}
+    >
+      {isDark ? <MoonIcon /> : <SunIcon />}
+      <span className="sr-only">{isDark ? "Dark mode enabled" : "Light mode enabled"}</span>
+    </button>
+  );
+}
+
 function ArrowLeftIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -310,6 +359,30 @@ function MenuIcon() {
       <path d="M4 6h16" />
       <path d="M4 12h16" />
       <path d="M4 18h16" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M20.8 14.6A8.2 8.2 0 0 1 9.4 3.2a7.9 7.9 0 1 0 11.4 11.4Z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
     </svg>
   );
 }

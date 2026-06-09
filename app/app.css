@@ -10,13 +10,77 @@
   --line: #ddd4c5;
   --accent: #b9442f;
   --accent-strong: #8f2e21;
+  --on-accent: #ffffff;
   --leaf: #2f6f4e;
   --plum: #5d4b73;
+  --rust: var(--accent);
   --steel: #30485f;
   --shadow: 0 12px 28px rgb(32 29 25 / 8%);
+  --header-surface: rgb(248 246 241 / 94%);
+  --icon-surface: rgb(255 255 255 / 74%);
+  --icon-border-hover: rgb(48 72 95 / 34%);
+  --focus-ring: rgb(185 68 47 / 28%);
+  --danger-wash: rgb(185 68 47 / 10%);
+  --image-fallback-end: #d9e6dd;
+  --image-fallback-warm: rgb(185 68 47 / 12%);
+  --image-fallback-leaf: rgb(47 111 78 / 18%);
+  --image-fallback-plum: rgb(93 75 115 / 12%);
+  --image-fallback-badge: rgb(255 255 255 / 72%);
+  --image-fallback-badge-border: rgb(255 255 255 / 70%);
+  --soft-border: rgb(48 72 95 / 8%);
+  --soft-border-strong: rgb(48 72 95 / 20%);
+  --selected-surface: rgb(255 255 255 / 66%);
+  --check-surface: rgb(255 255 255 / 88%);
+  --chip-steel-bg: rgb(48 72 95 / 10%);
+  --chip-leaf-bg: rgb(47 111 78 / 10%);
+  --chip-plum-bg: rgb(93 75 115 / 12%);
+  --accent-wash: rgb(185 68 47 / 10%);
+  --accent-border: rgb(185 68 47 / 25%);
+  --star: #d69a2d;
+  --side-shadow: -18px 0 36px rgb(32 29 25 / 12%);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #151713;
+  --surface-raised: #20231d;
+  --surface-muted: #2d3329;
+  --ink: #f3eee3;
+  --muted: #b7aa9a;
+  --line: #464235;
+  --accent: #e06b55;
+  --accent-strong: #f09884;
+  --on-accent: #151713;
+  --leaf: #80bf92;
+  --plum: #c2a7d7;
+  --rust: var(--accent);
+  --steel: #a5bbc8;
+  --shadow: 0 14px 32px rgb(0 0 0 / 28%);
+  --header-surface: rgb(21 23 19 / 92%);
+  --icon-surface: rgb(32 35 29 / 78%);
+  --icon-border-hover: rgb(165 187 200 / 34%);
+  --focus-ring: rgb(224 107 85 / 34%);
+  --danger-wash: rgb(224 107 85 / 15%);
+  --image-fallback-end: #263a30;
+  --image-fallback-warm: rgb(224 107 85 / 18%);
+  --image-fallback-leaf: rgb(128 191 146 / 16%);
+  --image-fallback-plum: rgb(194 167 215 / 16%);
+  --image-fallback-badge: rgb(32 35 29 / 76%);
+  --image-fallback-badge-border: rgb(243 238 227 / 14%);
+  --soft-border: rgb(243 238 227 / 10%);
+  --soft-border-strong: rgb(243 238 227 / 18%);
+  --selected-surface: rgb(243 238 227 / 8%);
+  --check-surface: rgb(32 35 29 / 88%);
+  --chip-steel-bg: rgb(165 187 200 / 12%);
+  --chip-leaf-bg: rgb(128 191 146 / 13%);
+  --chip-plum-bg: rgb(194 167 215 / 14%);
+  --accent-wash: rgb(224 107 85 / 15%);
+  --accent-border: rgb(224 107 85 / 32%);
+  --star: #f0b24f;
+  --side-shadow: -18px 0 36px rgb(0 0 0 / 38%);
 }
 
 * {
@@ -64,7 +128,7 @@ p {
 
 .shell-header {
   align-items: center;
-  background: rgb(248 246 241 / 94%);
+  background: var(--header-surface);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(16px);
   display: grid;
@@ -154,6 +218,23 @@ p {
   min-height: 2.25rem;
   padding: 0.55rem 0.8rem;
   white-space: nowrap;
+}
+
+.theme-toggle-button {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.theme-toggle-button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--plum) 20%, var(--surface-raised));
+  border-color: color-mix(in srgb, var(--plum) 35%, var(--line));
+  color: var(--plum);
+}
+
+.theme-toggle-button[aria-pressed="true"]:hover {
+  background: color-mix(in srgb, var(--plum) 28%, var(--surface-raised));
+  border-color: color-mix(in srgb, var(--plum) 48%, var(--line));
+  color: var(--plum);
 }
 
 .shell-nav-link.active {
@@ -296,7 +377,7 @@ p {
 }
 
 .shell-drawer-resize-handle:focus-visible {
-  outline: 3px solid rgb(185 68 47 / 28%);
+  outline: 3px solid var(--focus-ring);
   outline-offset: -0.35rem;
   opacity: 1;
 }
@@ -518,7 +599,7 @@ p {
 .ai-chat-message.user p {
   background: var(--plum);
   border-color: var(--plum);
-  color: white;
+  color: var(--on-accent);
 }
 
 .ai-draft-empty {
@@ -614,7 +695,7 @@ p {
 
 .button-primary {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 .button-primary:hover {
@@ -646,7 +727,7 @@ p {
 
 .icon-button {
   align-items: center;
-  background: rgb(255 255 255 / 74%);
+  background: var(--icon-surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--steel);
@@ -665,13 +746,13 @@ p {
 
 .icon-button:hover {
   background: var(--surface-raised);
-  border-color: rgb(48 72 95 / 34%);
+  border-color: var(--icon-border-hover);
   color: var(--ink);
   transform: translateY(-1px);
 }
 
 .icon-button:focus-visible {
-  outline: 3px solid rgb(185 68 47 / 28%);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -694,8 +775,8 @@ p {
 }
 
 .icon-button-danger:hover {
-  background: rgb(185 68 47 / 10%);
-  border-color: rgb(185 68 47 / 32%);
+  background: var(--danger-wash);
+  border-color: var(--accent-border);
   color: var(--accent-strong);
 }
 
@@ -817,7 +898,7 @@ p {
 }
 
 .preview-image-wrap {
-  background: linear-gradient(135deg, var(--surface-muted), #d9e6dd);
+  background: linear-gradient(135deg, var(--surface-muted), var(--image-fallback-end));
   min-height: 14rem;
 }
 
@@ -836,16 +917,16 @@ p {
 .image-fallback {
   align-items: center;
   background:
-    linear-gradient(135deg, rgb(185 68 47 / 12%), transparent 45%),
-    linear-gradient(315deg, rgb(47 111 78 / 18%), rgb(93 75 115 / 12%));
+    linear-gradient(135deg, var(--image-fallback-warm), transparent 45%),
+    linear-gradient(315deg, var(--image-fallback-leaf), var(--image-fallback-plum));
   color: var(--steel);
   display: flex;
   justify-content: center;
 }
 
 .image-fallback span {
-  background: rgb(255 255 255 / 72%);
-  border: 1px solid rgb(255 255 255 / 70%);
+  background: var(--image-fallback-badge);
+  border: 1px solid var(--image-fallback-badge-border);
   border-radius: 6px;
   font-weight: 900;
   padding: 0.45rem 0.55rem;
@@ -927,7 +1008,7 @@ p {
 
 .drawer-filter-form {
   background: color-mix(in srgb, var(--surface-muted) 34%, transparent);
-  border: 1px solid rgb(48 72 95 / 8%);
+  border: 1px solid var(--soft-border);
   border-radius: 8px;
   display: grid;
   gap: 0.45rem;
@@ -951,8 +1032,8 @@ p {
 }
 
 .drawer-search-field:focus-within {
-  border-color: rgb(185 68 47 / 45%);
-  box-shadow: 0 0 0 3px rgb(185 68 47 / 12%);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--danger-wash);
 }
 
 .drawer-search-icon {
@@ -1043,7 +1124,7 @@ p {
 }
 
 .sort-menu[open] summary {
-  border-color: rgb(185 68 47 / 45%);
+  border-color: var(--accent-border);
 }
 
 .sort-menu[open] summary::after {
@@ -1156,7 +1237,7 @@ p {
 }
 
 .facet-group {
-  border-left: 1px solid rgb(48 72 95 / 13%);
+  border-left: 1px solid var(--soft-border);
   min-width: 0;
   padding-left: 0.5rem;
 }
@@ -1281,7 +1362,7 @@ p {
 }
 
 .cookbook-tree-children {
-  border-left: 1px solid rgb(48 72 95 / 16%);
+  border-left: 1px solid var(--soft-border-strong);
   display: grid;
   gap: 0.1rem;
   margin-left: 0.95rem;
@@ -1313,9 +1394,9 @@ p {
 }
 
 .facet-option.selected {
-  background: rgb(255 255 255 / 66%);
-  border-color: rgb(48 72 95 / 12%);
-  box-shadow: 0 1px 0 rgb(48 72 95 / 4%);
+  background: var(--selected-surface);
+  border-color: var(--soft-border);
+  box-shadow: 0 1px 0 var(--soft-border);
   color: var(--ink);
   font-weight: 600;
 }
@@ -1346,8 +1427,8 @@ p {
 }
 
 .facet-option-indent {
-  border-bottom: 1px solid rgb(48 72 95 / 20%);
-  border-left: 1px solid rgb(48 72 95 / 20%);
+  border-bottom: 1px solid var(--soft-border-strong);
+  border-left: 1px solid var(--soft-border-strong);
   border-bottom-left-radius: 4px;
   flex: 0 0 auto;
   height: 0.72rem;
@@ -1373,7 +1454,7 @@ p {
 
 .facet-option .mode-direction {
   background: color-mix(in srgb, var(--surface-muted) 70%, transparent);
-  border: 1px solid rgb(48 72 95 / 10%);
+  border: 1px solid var(--soft-border);
   border-radius: 999px;
   color: var(--steel);
   font-weight: 500;
@@ -1384,14 +1465,14 @@ p {
 }
 
 .facet-option.selected .mode-direction {
-  background: rgb(185 68 47 / 7%);
-  border-color: rgb(185 68 47 / 16%);
+  background: var(--danger-wash);
+  border-color: var(--accent-border);
   color: var(--accent-strong);
   font-weight: 500;
 }
 
 .facet-option.selected:hover .mode-direction {
-  border-color: rgb(185 68 47 / 28%);
+  border-color: var(--accent-border);
 }
 
 .active-filter-list {
@@ -1404,8 +1485,8 @@ p {
 
 .active-filter-chip {
   align-items: center;
-  background: rgb(48 72 95 / 6%);
-  border: 1px solid rgb(48 72 95 / 8%);
+  background: var(--chip-steel-bg);
+  border: 1px solid var(--soft-border);
   border-radius: 999px;
   color: var(--steel);
   display: inline-flex;
@@ -1453,7 +1534,7 @@ p {
 
 .recipe-select-checkbox {
   align-items: center;
-  background: rgb(255 255 255 / 88%);
+  background: var(--check-surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   display: inline-flex;
@@ -1578,7 +1659,7 @@ p {
 }
 
 .rating-star.filled {
-  color: #d69a2d;
+  color: var(--star);
 }
 
 .recipe-card {
@@ -1655,22 +1736,22 @@ p {
 }
 
 .tag {
-  background: rgb(47 111 78 / 10%);
+  background: var(--chip-leaf-bg);
   color: var(--leaf);
 }
 
 .favorite-chip {
-  background: rgb(185 68 47 / 10%) !important;
+  background: var(--accent-wash) !important;
   color: var(--accent-strong) !important;
 }
 
 .rating-chip {
-  background: rgb(93 75 115 / 12%) !important;
+  background: var(--chip-plum-bg) !important;
   color: var(--plum) !important;
 }
 
 .source-tag {
-  background: rgb(48 72 95 / 10%);
+  background: var(--chip-steel-bg);
   color: var(--steel);
 }
 
@@ -1732,7 +1813,7 @@ p {
 
 .menu-danger-action:hover,
 .menu-danger-action:focus-visible {
-  background: rgb(185 68 47 / 10%);
+  background: var(--danger-wash);
   outline: none;
 }
 
@@ -1840,7 +1921,7 @@ p {
   border-left: 1px solid var(--line);
   border-radius: 0;
   bottom: 0;
-  box-shadow: -18px 0 36px rgb(32 29 25 / 12%);
+  box-shadow: var(--side-shadow);
   display: grid;
   gap: 1.1rem;
   grid-template-rows: auto auto auto minmax(0, 1fr);
@@ -1876,7 +1957,7 @@ p {
 
 .cook-history-summary {
   background: var(--surface-muted);
-  border: 1px solid rgb(48 72 95 / 8%);
+  border: 1px solid var(--soft-border);
   border-radius: 8px;
   display: grid;
   gap: 0.35rem;
@@ -2069,7 +2150,7 @@ p {
 }
 
 .direction-ingredient-mention {
-  background: rgb(47 111 78 / 10%);
+  background: var(--chip-leaf-bg);
   border-radius: 6px;
   box-decoration-break: clone;
   color: var(--ink);
@@ -2125,7 +2206,7 @@ p {
   border-left: 1px solid var(--line);
   border-radius: 0;
   bottom: 0;
-  box-shadow: -18px 0 36px rgb(32 29 25 / 12%);
+  box-shadow: var(--side-shadow);
   display: grid;
   gap: 1rem;
   max-height: none;
@@ -2355,8 +2436,8 @@ p {
 }
 
 .form-status {
-  background: rgb(47 111 78 / 10%);
-  border: 1px solid rgb(47 111 78 / 25%);
+  background: var(--chip-leaf-bg);
+  border: 1px solid color-mix(in srgb, var(--leaf) 35%, transparent);
   border-radius: 8px;
   color: var(--leaf);
   font-weight: 900;
@@ -2364,8 +2445,8 @@ p {
 }
 
 .form-status.error {
-  background: rgb(185 68 47 / 10%);
-  border-color: rgb(185 68 47 / 25%);
+  background: var(--accent-wash);
+  border-color: var(--accent-border);
   color: var(--accent-strong);
 }
 
