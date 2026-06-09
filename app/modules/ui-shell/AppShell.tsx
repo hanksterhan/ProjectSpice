@@ -200,7 +200,6 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
               className={`shell-drawer ${drawerMode}`}
               id="shell-drawer"
               aria-label={activeDrawer?.title ?? "Navigation"}
-              onMouseDown={() => setDrawerMode((mode) => (mode === "peek" ? "pinned" : mode))}
               onMouseLeave={() => setDrawerMode((mode) => (mode === "peek" ? "closed" : mode))}
             >
               <div className="shell-drawer-body">
