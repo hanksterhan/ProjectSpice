@@ -1337,32 +1337,26 @@ p {
   min-width: 0;
 }
 
-.cookbook-tree-node summary {
+.cookbook-tree-row {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 7px;
   color: var(--steel);
-  cursor: pointer;
   display: flex;
   font-size: 0.88rem;
   font-weight: 500;
-  gap: 0.55rem;
+  gap: 0.1rem;
   justify-content: space-between;
-  list-style: none;
   min-height: 2rem;
-  padding: 0.32rem 0.42rem 0.32rem 0.5rem;
+  padding: 0.18rem 0.42rem 0.18rem 0.2rem;
 }
 
-.cookbook-tree-node summary::-webkit-details-marker {
-  display: none;
-}
-
-.cookbook-tree-node summary:hover {
+.cookbook-tree-row:hover {
   background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
   color: var(--ink);
 }
 
-.cookbook-tree-node summary.selected {
+.cookbook-tree-row.selected {
   background: var(--selected-surface);
   border-color: var(--soft-border);
   box-shadow: 0 1px 0 var(--soft-border);
@@ -1370,9 +1364,44 @@ p {
   font-weight: 650;
 }
 
-.cookbook-tree-node summary.selected .tree-folder,
-.cookbook-tree-node summary.selected .tree-chevron {
+.cookbook-tree-row.selected .tree-folder,
+.cookbook-tree-row.selected .tree-chevron {
   color: var(--rust);
+}
+
+.cookbook-tree-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 1.45rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.45rem;
+}
+
+.cookbook-tree-toggle:hover {
+  background: color-mix(in srgb, var(--surface-muted) 82%, transparent);
+  color: var(--ink);
+}
+
+.cookbook-tree-filter {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 0.55rem;
+  justify-content: space-between;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.cookbook-tree-filter:hover {
+  color: var(--ink);
 }
 
 .cookbook-tree-label {
@@ -1388,7 +1417,7 @@ p {
   white-space: nowrap;
 }
 
-.cookbook-tree-node summary strong {
+.cookbook-tree-filter strong {
   color: var(--muted);
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
@@ -1399,7 +1428,7 @@ p {
   transition: transform 140ms ease;
 }
 
-.cookbook-tree-node[open] > summary .tree-chevron {
+.cookbook-tree-node.open > .cookbook-tree-row .tree-chevron {
   transform: rotate(90deg);
 }
 
@@ -1415,7 +1444,7 @@ p {
   padding: 0.08rem 0 0.14rem 0.45rem;
 }
 
-.cookbook-tree-node.cookbook > summary {
+.cookbook-tree-node.cookbook > .cookbook-tree-row {
   padding-left: 0.35rem;
 }
 

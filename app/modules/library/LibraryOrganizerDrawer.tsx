@@ -210,7 +210,6 @@ function CookbookTree({
 }: {
   tree: ReturnType<typeof getRecipeCookbookTree>;
 }) {
-  const navigate = useNavigate();
   const hasSelectedCookbook = tree.some(
     (author) =>
       author.selected ||
@@ -220,11 +219,54 @@ function CookbookTree({
           cookbook.chapters.some((chapter) => chapter.selected),
       ),
   );
+  const [isSectionOpen, setIsSectionOpen] = useState(
+    hasSelectedCookbook || tree.length <= 6,
+  );
+  const [openNodeIds, setOpenNodeIds] = useState(() => getSelectedCookbookNodeIds(tree));
+
+  useEffect(() => {
+    if (hasSelectedCookbook) {
+      setIsSectionOpen(true);
+    }
+  }, [hasSelectedCookbook]);
+
+  useEffect(() => {
+    const selectedNodeIds = getSelectedCookbookNodeIds(tree);
+
+    if (selectedNodeIds.size === 0) {
+      return;
+    }
+
+    setOpenNodeIds((currentNodeIds) => {
+      const nextNodeIds = new Set(currentNodeIds);
+
+      for (const nodeId of selectedNodeIds) {
+        nextNodeIds.add(nodeId);
+      }
+
+      return nextNodeIds;
+    });
+  }, [tree]);
+
+  function toggleNode(nodeId: string) {
+    setOpenNodeIds((currentNodeIds) => {
+      const nextNodeIds = new Set(currentNodeIds);
+
+      if (nextNodeIds.has(nodeId)) {
+        nextNodeIds.delete(nodeId);
+      } else {
+        nextNodeIds.add(nodeId);
+      }
+
+      return nextNodeIds;
+    });
+  }
 
   return (
     <details
       className="facet-group cookbook-tree collapsible-facet-group"
-      open={hasSelectedCookbook || tree.length <= 6}
+      open={isSectionOpen}
+      onToggle={(event) => setIsSectionOpen(event.currentTarget.open)}
     >
       <summary className="facet-group-header">
         <div className="drawer-section-title">
@@ -235,71 +277,131 @@ function CookbookTree({
         <span>{tree.length}</span>
       </summary>
       <div className="cookbook-tree-list">
-        {tree.map((author) => (
-          <details
-            className="cookbook-tree-node author"
-            key={author.id}
-            open={
-              author.selected ||
-              author.cookbooks.some(
-                (cookbook) =>
-                  cookbook.selected ||
-                  cookbook.chapters.some((chapter) => chapter.selected),
-              )
-            }
-          >
-            <summary
-              className={author.selected ? "selected" : undefined}
-              onClick={() => navigate(author.href)}
+        {tree.map((author) => {
+          const authorNodeId = getCookbookNodeId("author", author.id);
+          const isAuthorOpen = openNodeIds.has(authorNodeId);
+
+          return (
+            <div
+              className={isAuthorOpen ? "cookbook-tree-node author open" : "cookbook-tree-node author"}
+              key={author.id}
             >
-              <span className="cookbook-tree-label">
-                <ChevronRight className="drawer-icon tree-chevron" />
-                <Folder className="drawer-icon tree-folder" />
-                <span>{author.label}</span>
-              </span>
-              <strong>{author.count}</strong>
-            </summary>
-            <div className="cookbook-tree-children">
-              {author.cookbooks.map((cookbook) => (
-                <details
-                  className="cookbook-tree-node cookbook"
-                  key={cookbook.id}
-                  open={cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)}
+              <div className={author.selected ? "cookbook-tree-row selected" : "cookbook-tree-row"}>
+                <button
+                  aria-expanded={isAuthorOpen}
+                  aria-label={`${isAuthorOpen ? "Collapse" : "Expand"} ${author.label}`}
+                  className="cookbook-tree-toggle"
+                  onClick={() => toggleNode(authorNodeId)}
+                  type="button"
                 >
-                  <summary
-                    className={cookbook.selected ? "selected" : undefined}
-                    onClick={() => navigate(cookbook.href)}
-                  >
-                    <span className="cookbook-tree-label">
-                      <ChevronRight className="drawer-icon tree-chevron" />
-                      <Folder className="drawer-icon tree-folder" />
-                      <span>{cookbook.label}</span>
-                    </span>
-                    <strong>{cookbook.count}</strong>
-                  </summary>
-                  <div className="cookbook-tree-children">
-                    {cookbook.chapters.map((chapter) => (
-                      <Link
-                        className={chapter.selected ? "facet-option selected" : "facet-option"}
-                        key={chapter.id}
-                        to={chapter.href}
+                  <ChevronRight className="drawer-icon tree-chevron" />
+                </button>
+                <Link className="cookbook-tree-filter" to={author.href}>
+                  <span className="cookbook-tree-label">
+                    <Folder className="drawer-icon tree-folder" />
+                    <span>{author.label}</span>
+                  </span>
+                  <strong>{author.count}</strong>
+                </Link>
+              </div>
+              {isAuthorOpen ? (
+                <div className="cookbook-tree-children">
+                  {author.cookbooks.map((cookbook) => {
+                    const cookbookNodeId = getCookbookNodeId("cookbook", cookbook.id);
+                    const isCookbookOpen = openNodeIds.has(cookbookNodeId);
+
+                    return (
+                      <div
+                        className={
+                          isCookbookOpen
+                            ? "cookbook-tree-node cookbook open"
+                            : "cookbook-tree-node cookbook"
+                        }
+                        key={cookbook.id}
                       >
-                        <span className="facet-option-label">
-                          <span aria-hidden="true" className="facet-option-indent" />
-                          <span>{chapter.label}</span>
-                        </span>
-                        <strong>{chapter.count}</strong>
-                      </Link>
-                    ))}
-                  </div>
-                </details>
-              ))}
+                        <div
+                          className={
+                            cookbook.selected
+                              ? "cookbook-tree-row selected"
+                              : "cookbook-tree-row"
+                          }
+                        >
+                          <button
+                            aria-expanded={isCookbookOpen}
+                            aria-label={`${isCookbookOpen ? "Collapse" : "Expand"} ${cookbook.label}`}
+                            className="cookbook-tree-toggle"
+                            onClick={() => toggleNode(cookbookNodeId)}
+                            type="button"
+                          >
+                            <ChevronRight className="drawer-icon tree-chevron" />
+                          </button>
+                          <Link className="cookbook-tree-filter" to={cookbook.href}>
+                            <span className="cookbook-tree-label">
+                              <Folder className="drawer-icon tree-folder" />
+                              <span>{cookbook.label}</span>
+                            </span>
+                            <strong>{cookbook.count}</strong>
+                          </Link>
+                        </div>
+                        {isCookbookOpen ? (
+                          <div className="cookbook-tree-children">
+                            {cookbook.chapters.map((chapter) => (
+                              <Link
+                                className={
+                                  chapter.selected ? "facet-option selected" : "facet-option"
+                                }
+                                key={chapter.id}
+                                to={chapter.href}
+                              >
+                                <span className="facet-option-label">
+                                  <span aria-hidden="true" className="facet-option-indent" />
+                                  <span>{chapter.label}</span>
+                                </span>
+                                <strong>{chapter.count}</strong>
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
-          </details>
-        ))}
+          );
+        })}
       </div>
     </details>
   );
+}
+
+function getSelectedCookbookNodeIds(
+  tree: ReturnType<typeof getRecipeCookbookTree>,
+): Set<string> {
+  const nodeIds = new Set<string>();
+
+  for (const author of tree) {
+    const hasSelectedCookbook = author.cookbooks.some(
+      (cookbook) =>
+        cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected),
+    );
+
+    if (author.selected || hasSelectedCookbook) {
+      nodeIds.add(getCookbookNodeId("author", author.id));
+    }
+
+    for (const cookbook of author.cookbooks) {
+      if (cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)) {
+        nodeIds.add(getCookbookNodeId("cookbook", cookbook.id));
+      }
+    }
+  }
+
+  return nodeIds;
+}
+
+function getCookbookNodeId(type: "author" | "cookbook", id: string): string {
+  return `${type}:${id}`;
 }
 
 function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
