@@ -5,7 +5,6 @@ import { Form } from "react-router";
 import {
   formatDisplayTime,
   formatIngredientDisplayText,
-  type DirectionStep,
   type IngredientItem,
   type Recipe,
 } from "~/modules/recipe-domain";
@@ -20,8 +19,11 @@ import { Button, EmptyState } from "~/modules/ui-shell/primitives";
 import {
   createCookSessionStorageKey,
   createInitialCookSessionState,
+  flattenCookSessionSteps,
   getCookRecipeProgress,
   normalizeCookSessionState,
+  stripDirectionStepLabel,
+  type CookSessionStep,
   type CookSessionState,
 } from "./cook-session";
 
@@ -109,19 +111,19 @@ export function CookMode({ recipes }: CookModeProps) {
     setActiveRecipe(recipes[nextIndex].id);
   }
 
-  function toggleStepComplete(recipeId: string, stepId: string) {
+  function toggleStepComplete(recipeId: string, stepStateId: string) {
     updateRecipeState(recipeId, (recipeState) => {
       const completedStepIds = new Set(recipeState.completedStepIds);
 
-      if (completedStepIds.has(stepId)) {
-        completedStepIds.delete(stepId);
+      if (completedStepIds.has(stepStateId)) {
+        completedStepIds.delete(stepStateId);
       } else {
-        completedStepIds.add(stepId);
+        completedStepIds.add(stepStateId);
       }
 
       return {
         ...recipeState,
-        activeStepId: stepId,
+        activeStepId: stepStateId,
         completedStepIds: [...completedStepIds],
       };
     });
@@ -236,6 +238,7 @@ function CookRecipeReader({
   const completedStepIds = new Set(recipeState?.completedStepIds ?? []);
   const checkedIngredientIds = new Set(recipeState?.checkedIngredientIds ?? []);
   const directionIngredientIndex = buildDirectionIngredientIndex(recipe.ingredients);
+  const cookSteps = flattenCookSessionSteps([recipe]);
 
   return (
     <article className="cook-reader">
@@ -286,14 +289,16 @@ function CookRecipeReader({
             <section key={section.id}>
               {section.title ? <h3>{section.title}</h3> : null}
               <ol>
-                {section.steps.map((step) => (
+                {cookSteps
+                  .filter((cookStep) => cookStep.sectionId === section.id)
+                  .map((cookStep) => (
                   <CookDirectionStep
-                    checked={completedStepIds.has(step.id)}
+                    checked={completedStepIds.has(cookStep.id)}
+                    cookStep={cookStep}
                     directionIngredientIndex={directionIngredientIndex}
-                    key={step.id}
-                    onToggle={() => onToggleStep(step.id)}
+                    key={cookStep.id}
+                    onToggle={() => onToggleStep(cookStep.id)}
                     recipe={recipe}
-                    step={step}
                   />
                 ))}
               </ol>
@@ -307,17 +312,21 @@ function CookRecipeReader({
 
 function CookDirectionStep({
   checked,
+  cookStep,
   directionIngredientIndex,
   onToggle,
   recipe,
-  step,
 }: {
   checked: boolean;
+  cookStep: CookSessionStep;
   directionIngredientIndex: Map<string, DirectionIngredient>;
   onToggle: () => void;
   recipe: Recipe;
-  step: DirectionStep;
 }) {
+  const step = {
+    ...cookStep.step,
+    text: stripDirectionStepLabel(cookStep.step.text),
+  };
   const textParts = enrichDirectionStepText(step, recipe.ingredients);
   const mentionedIngredientIds = new Set(
     textParts
@@ -332,14 +341,14 @@ function CookDirectionStep({
   return (
     <li className={checked ? "complete" : ""}>
       <button
-        aria-label={`${checked ? "Mark incomplete" : "Mark complete"} step ${step.order}`}
+        aria-label={`${checked ? "Mark incomplete" : "Mark complete"} step ${cookStep.stepIndex}`}
         className="cook-inline-check"
         onClick={onToggle}
         type="button"
       >
         <Check aria-hidden="true" size={14} strokeWidth={2.6} />
       </button>
-      <span>{step.order}</span>
+      <span>{cookStep.stepIndex}</span>
       <div>
         <p>
           {textParts.map((part, index) =>
@@ -354,7 +363,7 @@ function CookDirectionStep({
           )}
         </p>
         {ingredientSummary.length > 0 ? (
-          <div className="cook-reader-step-ingredients" aria-label={`Step ${step.order} ingredients`}>
+          <div className="cook-reader-step-ingredients" aria-label={`Step ${cookStep.stepIndex} ingredients`}>
             {ingredientSummary.map((ingredient) => (
               <span key={ingredient.id}>
                 <strong>{ingredient.measure}</strong>

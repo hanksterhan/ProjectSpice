@@ -103,7 +103,7 @@ export function normalizeCookSessionState(
   for (const recipe of recipes) {
     const savedRecipeState = state.recipes[recipe.id];
     const recipeStepIds = new Set(
-      flattenCookSessionSteps([recipe]).map((step) => step.step.id),
+      flattenCookSessionSteps([recipe]).map((step) => step.id),
     );
     const ingredientIds = new Set(
       recipe.ingredients.flatMap((section) => section.items.map((item) => item.id)),
@@ -145,7 +145,7 @@ export function flattenCookSessionSteps(recipes: readonly Recipe[]): CookSession
         stepIndex += 1;
 
         return {
-          id: createCookSessionStepId(recipe.id, step.id),
+          id: createCookSessionStepId(recipe.id, section.id, step.id, stepIndex),
           recipeId: recipe.id,
           recipeTitle: recipe.title,
           sectionId: section.id,
@@ -169,7 +169,7 @@ export function getActiveCookStep(
     return undefined;
   }
 
-  const activeStep = steps.find((step) => step.step.id === recipeState?.activeStepId);
+  const activeStep = steps.find((step) => step.id === recipeState?.activeStepId);
 
   if (activeStep) {
     return activeStep;
@@ -185,7 +185,7 @@ export function getNextIncompleteCookStep(
   const completedStepIds = new Set(recipeState?.completedStepIds ?? []);
 
   return flattenCookSessionSteps([recipe]).find(
-    (step) => !completedStepIds.has(step.step.id),
+    (step) => !completedStepIds.has(step.id),
   );
 }
 
@@ -193,7 +193,7 @@ export function getCookRecipeProgress(
   recipe: Recipe,
   recipeState: CookSessionRecipeState | undefined,
 ): CookRecipeProgress {
-  const stepIds = new Set(flattenCookSessionSteps([recipe]).map((step) => step.step.id));
+  const stepIds = new Set(flattenCookSessionSteps([recipe]).map((step) => step.id));
 
   return {
     completedSteps:
@@ -202,6 +202,22 @@ export function getCookRecipeProgress(
   };
 }
 
-export function createCookSessionStepId(recipeId: string, stepId: string): string {
-  return `${recipeId}:${stepId}`;
+export function createCookSessionStepId(
+  recipeId: string,
+  sectionId: string,
+  stepId: string,
+  stepIndex: number,
+): string {
+  return `${recipeId}:${sectionId}:${stepIndex}:${stepId}`;
+}
+
+export function stripDirectionStepLabel(text: string): string {
+  return text
+    .trim()
+    .replace(
+      /^(?:step\s*)?(?:\d+|[ivxlcdm]+|[a-z])\s*(?:[.)\]:;]|[-–—])+\s*/i,
+      "",
+    )
+    .replace(/^(?:[.)\]:;]|[-–—])+\s*/, "")
+    .trim();
 }
