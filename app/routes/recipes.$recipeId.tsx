@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { ChefHat } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
@@ -6,7 +6,6 @@ import { z } from "zod";
 import type { Route } from "./+types/recipes.$recipeId";
 import { addCookJournalNote, addCookedDate } from "~/modules/recipe-domain";
 import {
-  RecipeAiPanel,
   appendAiChatTurn,
   buildRecipeFromAiDraft,
   buildUpdatedRecipeFromAiDraft,
@@ -231,97 +230,14 @@ export async function action({
 }
 
 export default function RecipeDetail({
-  actionData,
   loaderData,
 }: Route.ComponentProps) {
-  const [isAssistantOpen, setIsAssistantOpen] = useState(Boolean(actionData));
   const [isCookHistoryOpen, setIsCookHistoryOpen] = useState(false);
   const recipe = loaderData.recipe;
   const recipeId = recipe.id;
   const recipeTitle = recipe.title;
 
-  useEffect(() => {
-    if (actionData) {
-      setIsAssistantOpen(true);
-    }
-  }, [actionData]);
-
-  const shellActions = useMemo(
-    () => (
-      <>
-        <Link
-          className="icon-button"
-          to={getRecipeEditPath({ id: recipeId })}
-          title="Edit recipe"
-          aria-label="Edit Recipe"
-        >
-          <PencilIcon />
-          <span className="sr-only">Edit Recipe</span>
-        </Link>
-        <button
-          className="icon-button"
-          type="button"
-          title="Chat with assistant"
-          aria-label="Chat with assistant"
-          aria-controls="recipe-ai-assistant"
-          aria-expanded={isAssistantOpen}
-          onClick={() => setIsAssistantOpen(true)}
-        >
-          <MessageIcon />
-          <span className="sr-only">Chat with assistant</span>
-        </button>
-        <details className="recipe-command-menu">
-          <summary className="icon-button" title="More recipe actions" aria-label="More recipe actions">
-            <MoreIcon />
-            <span className="sr-only">More recipe actions</span>
-          </summary>
-          <div className="recipe-command-menu-popover">
-            <Link
-              className="menu-action"
-              to={getCookSessionHref([recipeId])}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
-              }}
-            >
-              <ChefHat aria-hidden="true" size={16} strokeWidth={2.4} />
-              Cook this recipe
-            </Link>
-            <button
-              className="menu-action"
-              type="button"
-              aria-controls="cook-history-drawer"
-              aria-expanded={isCookHistoryOpen}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
-                setIsCookHistoryOpen(true);
-              }}
-            >
-              <HistoryIcon />
-              Cook history
-            </button>
-            <Form
-              method="post"
-              onSubmit={(event) => {
-                if (!window.confirm(`Delete "${recipeTitle}" from your library?`)) {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <input name="intent" type="hidden" value="delete" />
-              <button className="menu-danger-action" type="submit">
-                <TrashIcon />
-                Delete recipe
-              </button>
-            </Form>
-          </div>
-        </details>
-      </>
-    ),
-    [isAssistantOpen, isCookHistoryOpen, recipeId, recipeTitle],
-  );
-
   useShellCommand({
-    actions: shellActions,
     backHref: "/",
     backLabel: "Back to library",
     title: recipeTitle,
@@ -330,13 +246,12 @@ export default function RecipeDetail({
   return (
     <div className="recipe-detail-route">
       <RecipeViewer recipe={recipe} />
-      {isAssistantOpen ? (
-        <RecipeAiPanel
-          actionData={actionData}
-          onClose={() => setIsAssistantOpen(false)}
-          recipe={recipe}
-        />
-      ) : null}
+      <RecipeActionRail
+        isCookHistoryOpen={isCookHistoryOpen}
+        onOpenCookHistory={() => setIsCookHistoryOpen(true)}
+        recipeId={recipeId}
+        recipeTitle={recipeTitle}
+      />
       {isCookHistoryOpen ? (
         <CookHistoryDrawer
           onClose={() => setIsCookHistoryOpen(false)}
@@ -344,6 +259,72 @@ export default function RecipeDetail({
         />
       ) : null}
     </div>
+  );
+}
+
+function RecipeActionRail({
+  isCookHistoryOpen,
+  onOpenCookHistory,
+  recipeId,
+  recipeTitle,
+}: {
+  isCookHistoryOpen: boolean;
+  onOpenCookHistory: () => void;
+  recipeId: string;
+  recipeTitle: string;
+}) {
+  return (
+    <nav className="recipe-action-rail" aria-label="Recipe actions">
+      <Link
+        aria-label="Edit recipe"
+        className="recipe-rail-action primary"
+        data-tooltip="Edit recipe"
+        to={getRecipeEditPath({ id: recipeId })}
+      >
+        <PencilIcon />
+        <span className="sr-only">Edit recipe</span>
+      </Link>
+      <Link
+        aria-label="Cook this recipe"
+        className="recipe-rail-action"
+        data-tooltip="Cook this recipe"
+        to={getCookSessionHref([recipeId])}
+      >
+        <ChefHat aria-hidden="true" size={18} strokeWidth={2.4} />
+        <span className="sr-only">Cook this recipe</span>
+      </Link>
+      <button
+        className="recipe-rail-action"
+        data-tooltip="Cook history"
+        type="button"
+        aria-controls="cook-history-drawer"
+        aria-expanded={isCookHistoryOpen}
+        aria-label="Cook history"
+        onClick={onOpenCookHistory}
+      >
+        <HistoryIcon />
+        <span className="sr-only">Cook history</span>
+      </button>
+      <Form
+        method="post"
+        onSubmit={(event) => {
+          if (!window.confirm(`Delete "${recipeTitle}" from your library?`)) {
+            event.preventDefault();
+          }
+        }}
+      >
+        <input name="intent" type="hidden" value="delete" />
+        <button
+          aria-label="Delete recipe"
+          className="recipe-rail-action danger"
+          data-tooltip="Delete recipe"
+          type="submit"
+        >
+          <TrashIcon />
+          <span className="sr-only">Delete recipe</span>
+        </button>
+      </Form>
+    </nav>
   );
 }
 
@@ -368,32 +349,12 @@ function TrashIcon() {
   );
 }
 
-function MessageIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
-      <path d="M8 9h8" />
-      <path d="M8 13h5" />
-    </svg>
-  );
-}
-
 function HistoryIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
       <path d="M3 12a9 9 0 1 0 3-6.7" />
       <path d="M3 4v5h5" />
       <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-
-function MoreIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
-      <path d="M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
-      <path d="M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
     </svg>
   );
 }

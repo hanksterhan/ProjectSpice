@@ -67,7 +67,7 @@ export function RecipeAiPanel({ actionData, onClose, recipe }: RecipeAiPanelProp
     >
       <div className="recipe-ai-panel-header">
         <div>
-          <h2 id="ai-heading">Recipe Chat</h2>
+          <h2 id="ai-heading">AI Assist</h2>
         </div>
         <div className="recipe-ai-panel-tools">
           <span>v{recipe.version}</span>

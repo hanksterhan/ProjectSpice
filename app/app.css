@@ -85,6 +85,14 @@ body {
   min-height: 100%;
 }
 
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   background: var(--surface);
   color: var(--ink);
@@ -127,7 +135,7 @@ p {
   gap: 1rem;
   grid-template-columns: minmax(12rem, 1fr) minmax(0, 1.1fr) minmax(12rem, 1fr);
   min-height: 4rem;
-  padding: 0 clamp(1rem, 4vw, 2.5rem) 0 clamp(0.5rem, 1.4vw, 0.85rem);
+  padding: 0 clamp(0.55rem, 1.2vw, 0.85rem) 0 clamp(0.5rem, 1.4vw, 0.85rem);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -242,23 +250,6 @@ p {
   white-space: nowrap;
 }
 
-.theme-toggle-button {
-  color: var(--muted);
-  flex: 0 0 auto;
-}
-
-.theme-toggle-button[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--plum) 20%, var(--surface-raised));
-  border-color: color-mix(in srgb, var(--plum) 35%, var(--line));
-  color: var(--plum);
-}
-
-.theme-toggle-button[aria-pressed="true"]:hover {
-  background: color-mix(in srgb, var(--plum) 28%, var(--surface-raised));
-  border-color: color-mix(in srgb, var(--plum) 48%, var(--line));
-  color: var(--plum);
-}
-
 .shell-nav-link.active {
   background: var(--surface-muted);
   color: var(--ink);
@@ -275,10 +266,17 @@ p {
   position: relative;
 }
 
+.shell-settings-menu {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.shell-settings-menu summary,
 .shell-mobile-menu summary {
   list-style: none;
 }
 
+.shell-settings-menu-popover,
 .shell-mobile-menu-popover {
   background: var(--surface-raised);
   border: 1px solid var(--line);
@@ -290,6 +288,12 @@ p {
   right: 0;
   top: calc(100% + 0.45rem);
   z-index: 20;
+}
+
+.theme-menu-action[aria-pressed="true"] {
+  background: var(--selected-surface);
+  color: var(--plum);
+  font-weight: 900;
 }
 
 .shell-menu-nav {
@@ -1970,28 +1974,109 @@ p {
   display: grid;
   gap: 1rem;
   margin-inline: auto;
+  padding-right: 3.1rem;
   width: min(100%, 1560px);
 }
 
-.recipe-command-menu {
-  position: relative;
-}
-
-.recipe-command-menu summary {
-  list-style: none;
-}
-
-.recipe-command-menu-popover {
+.recipe-action-rail {
+  align-items: stretch;
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  min-width: 12rem;
+  display: grid;
+  gap: 0.3rem;
   padding: 0.35rem;
+  position: fixed;
+  right: clamp(0.2rem, 0.75vw, 0.45rem);
+  top: 5.5rem;
+  z-index: 12;
+}
+
+.recipe-action-rail form {
+  display: contents;
+}
+
+.recipe-rail-action {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--steel);
+  cursor: pointer;
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 2.55rem;
+  padding: 0 0.7rem;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+  width: 2.55rem;
+  position: relative;
+}
+
+.recipe-rail-action:hover,
+.recipe-rail-action:focus-visible {
+  background: var(--surface-muted);
+  color: var(--ink);
+  outline: none;
+}
+
+.recipe-rail-action.primary {
+  color: var(--accent);
+}
+
+.recipe-rail-action.danger {
+  color: var(--accent-strong);
+}
+
+.recipe-rail-action.danger:hover,
+.recipe-rail-action.danger:focus-visible {
+  background: var(--danger-wash);
+  color: var(--accent-strong);
+}
+
+.recipe-rail-action svg {
+  fill: none;
+  flex: 0 0 auto;
+  height: 1.1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 1.1rem;
+}
+
+.recipe-rail-action::after {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  content: attr(data-tooltip);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  padding: 0.55rem 0.65rem;
+  pointer-events: none;
   position: absolute;
-  right: 0;
-  top: calc(100% + 0.45rem);
-  z-index: 20;
+  right: calc(100% + 0.45rem);
+  top: 50%;
+  transform: translateY(-50%);
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+  z-index: 30;
+}
+
+.recipe-rail-action:hover::after,
+.recipe-rail-action:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .menu-action,
@@ -2901,8 +2986,64 @@ p {
 }
 
 .recipe-editor-route {
+  display: grid;
+  gap: 1rem;
   margin-inline: auto;
-  width: min(100%, 1120px);
+  width: min(100%, 1680px);
+}
+
+.recipe-editor-modebar {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+}
+
+.recipe-editor-modebar > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.recipe-editor-modebar span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recipe-editor-modebar strong {
+  font-size: 1.05rem;
+}
+
+.recipe-editor-workspace {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.recipe-editor-workspace.with-ai {
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 28rem);
+}
+
+.recipe-editor-workspace .recipe-editor-form {
+  margin-inline: 0;
+}
+
+.recipe-editor-workspace .recipe-ai-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 5.5rem);
+  position: sticky;
+  top: 5rem;
+  width: 100%;
+  z-index: 1;
 }
 
 .recipe-manual-intake-page {
@@ -3689,6 +3830,7 @@ p {
   .recipe-compose-layout,
   .recipe-compose-stats,
   .recipe-compose-meta,
+  .recipe-editor-workspace.with-ai,
   .cook-history-panel,
   .bulk-tag-toolbar,
   .cook-mode-header,
@@ -3828,6 +3970,12 @@ p {
     width: auto;
   }
 
+  .recipe-editor-workspace .recipe-ai-panel {
+    left: auto;
+    max-height: none;
+    position: static;
+  }
+
   .recipe-mobile-tabs {
     background: var(--surface-raised);
     border: 1px solid var(--line);
@@ -3937,6 +4085,31 @@ p {
 
   .recipe-detail-route {
     gap: 0.75rem;
+    padding-bottom: 4.4rem;
+    padding-right: 0;
+  }
+
+  .recipe-action-rail {
+    bottom: 0.75rem;
+    display: flex;
+    left: 50%;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+  }
+
+  .recipe-rail-action,
+  .recipe-rail-action:hover,
+  .recipe-rail-action:focus-visible {
+    justify-content: center;
+    width: 2.55rem;
+  }
+
+  .recipe-rail-action::after {
+    bottom: calc(100% + 0.45rem);
+    right: 50%;
+    top: auto;
+    transform: translateX(50%);
   }
 
   .shell-current-page span {

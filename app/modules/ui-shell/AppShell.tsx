@@ -203,12 +203,15 @@ export function AppShell({
             )}
 
             <div className="shell-command-cluster">
-              <ShellNav className="shell-nav" />
-              <ThemeToggle
+              <ShellNav
+                className="shell-nav"
+                omitLibrary={activeCommand.backHref === "/"}
+              />
+              {authEnabled ? <AuthControls /> : null}
+              <SettingsMenu
                 theme={theme}
                 onToggle={() => setTheme((mode) => (mode === "dark" ? "light" : "dark"))}
               />
-              {authEnabled ? <AuthControls /> : null}
 
               {activeCommand.actions ? (
                 <nav className="shell-context-actions" aria-label="Page actions">
@@ -331,10 +334,20 @@ export function useShellDrawer(drawer: ShellDrawer | null) {
   }, [drawer, setDrawer]);
 }
 
-function ShellNav({ className }: { className: string }) {
+function ShellNav({
+  className,
+  omitLibrary = false,
+}: {
+  className: string;
+  omitLibrary?: boolean;
+}) {
+  const visibleNavItems = omitLibrary
+    ? navItems.filter((item) => item.to !== "/")
+    : navItems;
+
   return (
     <nav className={className} aria-label="Primary navigation">
-      {navItems.map((item) => (
+      {visibleNavItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -349,7 +362,7 @@ function ShellNav({ className }: { className: string }) {
   );
 }
 
-function ThemeToggle({
+function SettingsMenu({
   onToggle,
   theme,
 }: {
@@ -359,17 +372,26 @@ function ThemeToggle({
   const isDark = theme === "dark";
 
   return (
-    <button
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      aria-pressed={isDark}
-      className="icon-button theme-toggle-button"
-      title={isDark ? "Light mode" : "Dark mode"}
-      type="button"
-      onClick={onToggle}
-    >
-      {isDark ? <MoonIcon /> : <SunIcon />}
-      <span className="sr-only">{isDark ? "Dark mode enabled" : "Light mode enabled"}</span>
-    </button>
+    <details className="shell-settings-menu">
+      <summary className="icon-button" title="Settings" aria-label="Settings">
+        <SettingsIcon />
+        <span className="sr-only">Settings</span>
+      </summary>
+      <div className="shell-settings-menu-popover">
+        <button
+          aria-pressed={isDark}
+          className="menu-action theme-menu-action"
+          type="button"
+          onClick={(event) => {
+            onToggle();
+            event.currentTarget.closest("details")?.removeAttribute("open");
+          }}
+        >
+          {isDark ? <MoonIcon /> : <SunIcon />}
+          {isDark ? "Dark mode" : "Light mode"}
+        </button>
+      </div>
+    </details>
   );
 }
 
@@ -379,6 +401,15 @@ function MenuIcon() {
       <path d="M4 6h16" />
       <path d="M4 12h16" />
       <path d="M4 18h16" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-.4-1.1 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.1-.4 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 .4 1.1 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.37.32.71.6 1 .3.25.68.4 1.1.4h.09a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.1.4c-.28.29-.5.63-.6 1Z" />
     </svg>
   );
 }
