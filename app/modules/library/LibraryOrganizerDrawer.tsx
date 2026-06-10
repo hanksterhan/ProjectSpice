@@ -329,7 +329,7 @@ function CookbookTree({
                 >
                   <ChevronRight className="drawer-icon tree-chevron" />
                 </button>
-                <Link className="cookbook-tree-filter" to={author.href}>
+                <Link className="cookbook-tree-filter" title={author.label} to={author.href}>
                   <span className="cookbook-tree-label">
                     <Folder className="drawer-icon tree-folder" />
                     <span>{author.label}</span>
@@ -368,7 +368,11 @@ function CookbookTree({
                           >
                             <ChevronRight className="drawer-icon tree-chevron" />
                           </button>
-                          <Link className="cookbook-tree-filter" to={cookbook.href}>
+                          <Link
+                            className="cookbook-tree-filter"
+                            title={cookbook.label}
+                            to={cookbook.href}
+                          >
                             <span className="cookbook-tree-label">
                               <Folder className="drawer-icon tree-folder" />
                               <span>{cookbook.label}</span>
@@ -384,6 +388,7 @@ function CookbookTree({
                                   chapter.selected ? "facet-option selected" : "facet-option"
                                 }
                                 key={chapter.id}
+                                title={chapter.label}
                                 to={chapter.href}
                               >
                                 <span className="facet-option-label">
@@ -464,7 +469,11 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
 
           return (
             <Link
-              className={isActive ? "facet-option selected" : "facet-option"}
+              className={
+                isActive
+                  ? "facet-option library-mode-option selected"
+                  : "facet-option library-mode-option"
+              }
               key={mode.id}
               title={
                 isActive && mode.canToggleDirection
@@ -474,6 +483,7 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
               to={href}
             >
               <span className="facet-option-label">
+                <span className="tree-chevron-spacer" aria-hidden="true" />
                 <LibraryModeIcon id={mode.id} />
                 <span>{mode.label}</span>
               </span>

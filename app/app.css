@@ -1373,7 +1373,7 @@ p {
 .cookbook-tree-list {
   display: grid;
   gap: 0.12rem;
-  padding-top: 0.05rem;
+  padding: 0.05rem 0 0 0.85rem;
 }
 
 .cookbook-tree-node {
@@ -1435,10 +1435,10 @@ p {
 .cookbook-tree-filter {
   align-items: center;
   color: inherit;
-  display: flex;
+  display: grid;
   flex: 1 1 auto;
   gap: 0.55rem;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   text-decoration: none;
 }
@@ -1465,6 +1465,8 @@ p {
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .tree-chevron {
@@ -1496,11 +1498,11 @@ p {
   border: 1px solid transparent;
   border-radius: 7px;
   color: var(--steel);
-  display: flex;
+  display: grid;
   font-size: 0.88rem;
   font-weight: 500;
   gap: 0.6rem;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-height: 2rem;
   padding: 0.32rem 0.42rem 0.32rem 0.5rem;
   position: relative;
@@ -1538,6 +1540,21 @@ p {
   min-width: 0;
 }
 
+.library-mode-option {
+  padding-left: 0.125rem;
+}
+
+.library-mode-option .facet-option-label {
+  display: grid;
+  gap: 0.38rem;
+  grid-template-columns: 1rem 1rem minmax(0, 1fr);
+}
+
+.library-mode-option .drawer-icon,
+.library-mode-option .tree-chevron-spacer {
+  justify-self: center;
+}
+
 .facet-option-label > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1568,6 +1585,8 @@ p {
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .facet-option .mode-direction {
