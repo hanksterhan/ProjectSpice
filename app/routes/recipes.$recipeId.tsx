@@ -17,7 +17,10 @@ import {
   CookHistoryDrawer,
   RecipeViewer,
 } from "~/modules/recipe-viewer/RecipeViewer";
-import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
+import {
+  getRecipeDetailPath,
+  getRecipeEditPath,
+} from "~/modules/recipe-viewer/recipe-detail";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import {
   RecipeAiRateLimitError,
@@ -228,6 +231,8 @@ export default function RecipeDetail({
   const [isAssistantOpen, setIsAssistantOpen] = useState(Boolean(actionData));
   const [isCookHistoryOpen, setIsCookHistoryOpen] = useState(false);
   const recipe = loaderData.recipe;
+  const recipeId = recipe.id;
+  const recipeTitle = recipe.title;
 
   useEffect(() => {
     if (actionData) {
@@ -238,7 +243,12 @@ export default function RecipeDetail({
   const shellActions = useMemo(
     () => (
       <>
-        <Link className="icon-button" to="edit" title="Edit recipe" aria-label="Edit Recipe">
+        <Link
+          className="icon-button"
+          to={getRecipeEditPath({ id: recipeId })}
+          title="Edit recipe"
+          aria-label="Edit Recipe"
+        >
           <PencilIcon />
           <span className="sr-only">Edit Recipe</span>
         </Link>
@@ -276,7 +286,7 @@ export default function RecipeDetail({
             <Form
               method="post"
               onSubmit={(event) => {
-                if (!window.confirm(`Delete "${recipe.title}" from your library?`)) {
+                if (!window.confirm(`Delete "${recipeTitle}" from your library?`)) {
                   event.preventDefault();
                 }
               }}
@@ -291,14 +301,14 @@ export default function RecipeDetail({
         </details>
       </>
     ),
-    [isAssistantOpen, isCookHistoryOpen, recipe.title],
+    [isAssistantOpen, isCookHistoryOpen, recipeId, recipeTitle],
   );
 
   useShellCommand({
     actions: shellActions,
     backHref: "/",
     backLabel: "Back to library",
-    title: recipe.title,
+    title: recipeTitle,
   });
 
   return (

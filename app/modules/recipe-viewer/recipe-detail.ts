@@ -11,3 +11,7 @@ export function getSeedRecipeById(recipeId: string | undefined): Recipe | undefi
 export function getRecipeDetailPath(recipe: Pick<Recipe, "id">): string {
   return `/recipes/${encodeURIComponent(recipe.id)}`;
 }
+
+export function getRecipeEditPath(recipe: Pick<Recipe, "id">): string {
+  return `${getRecipeDetailPath(recipe)}/edit`;
+}
