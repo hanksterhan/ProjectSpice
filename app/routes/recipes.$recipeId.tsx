@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChefHat } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -13,6 +14,7 @@ import {
   parseAiDraftJson,
   type RecipeAiPanelActionData,
 } from "~/modules/ai-workbench";
+import { getCookSessionHref } from "~/modules/cooking";
 import {
   CookHistoryDrawer,
   RecipeViewer,
@@ -270,6 +272,16 @@ export default function RecipeDetail({
             <span className="sr-only">More recipe actions</span>
           </summary>
           <div className="recipe-command-menu-popover">
+            <Link
+              className="menu-action"
+              to={getCookSessionHref([recipeId])}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+              }}
+            >
+              <ChefHat aria-hidden="true" size={16} strokeWidth={2.4} />
+              Cook this recipe
+            </Link>
             <button
               className="menu-action"
               type="button"

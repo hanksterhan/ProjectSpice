@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Star, Tag } from "lucide-react";
+import { ChefHat, Star, Tag } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import type { Route } from "./+types/home";
+import { getCookSessionHref } from "~/modules/cooking";
 import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
@@ -150,6 +151,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     <input name="tagsText" placeholder="weeknight, favorite" />
                   </label>
                   <div className="editor-actions compact">
+                    <Button
+                      onClick={() => startCookingSelected()}
+                      type="button"
+                      variant="primary"
+                    >
+                      <ChefHat aria-hidden="true" size={16} strokeWidth={2.4} />
+                      Cook Selected
+                    </Button>
                     <Button name="intent" type="submit" value="add-tags" variant="secondary">
                       Add Tags
                     </Button>
@@ -242,6 +251,16 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       </section>
     </div>
   );
+}
+
+function startCookingSelected() {
+  const checkedRecipeIds = Array.from(
+    document.querySelectorAll<HTMLInputElement>(
+      ".library-organizer-form input[name='recipeIds']:checked",
+    ),
+  ).map((input) => input.value);
+
+  window.location.assign(getCookSessionHref(checkedRecipeIds));
 }
 
 type RecipeMetaProps = {

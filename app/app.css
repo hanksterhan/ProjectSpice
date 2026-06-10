@@ -2422,6 +2422,369 @@ p {
   font-size: 1.3rem;
 }
 
+.cook-mode-page {
+  display: grid;
+  gap: 0.75rem;
+  margin-inline: auto;
+  width: min(100%, 1680px);
+}
+
+.cook-reader-bar {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  padding: 0.45rem;
+  position: sticky;
+  top: 4.5rem;
+  z-index: 9;
+}
+
+.cook-swap-button {
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--steel);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.55rem;
+  justify-content: center;
+  width: 2.55rem;
+}
+
+.cook-swap-button:hover,
+.cook-swap-button:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent-strong);
+  outline: none;
+}
+
+.cook-recipe-picker {
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.15rem;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  padding: 0.35rem 0.65rem;
+}
+
+.cook-recipe-picker span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.cook-recipe-picker select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+  min-width: 0;
+  outline: none;
+  padding: 0;
+  width: 100%;
+}
+
+.cook-session-menu {
+  position: relative;
+}
+
+.cook-session-menu summary {
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--steel);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  height: 2.55rem;
+  list-style: none;
+  padding: 0 0.8rem;
+}
+
+.cook-session-menu summary:hover,
+.cook-session-menu summary:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent-strong);
+  outline: none;
+}
+
+.cook-session-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.cook-session-menu > div {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.45rem;
+  min-width: 12rem;
+  padding: 0.5rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 20;
+}
+
+.cook-session-menu form {
+  display: contents;
+}
+
+.cook-session-menu .button {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.cook-reader {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cook-reader-title {
+  align-items: end;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.85rem 1rem;
+}
+
+.cook-reader-title p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+.cook-reader-title h1 {
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  line-height: 1.03;
+  margin-bottom: 0;
+}
+
+.cook-reader-title dl {
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(3, minmax(4.5rem, 1fr));
+  margin: 0;
+}
+
+.cook-reader-title dl div {
+  background: var(--surface-muted);
+  border-radius: 6px;
+  padding: 0.45rem 0.55rem;
+}
+
+.cook-reader-title dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cook-reader-title dd {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.cook-reader-layout {
+  align-items: start;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(18rem, 0.68fr) minmax(0, 1.45fr);
+}
+
+.cook-reader-ingredients,
+.cook-reader-directions {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.cook-reader-ingredients {
+  padding: 0.9rem;
+  position: sticky;
+  top: 8.7rem;
+}
+
+.cook-reader-ingredients h2,
+.cook-reader-directions h2 {
+  font-size: 1.3rem;
+  line-height: 1.1;
+  margin-bottom: 0.8rem;
+}
+
+.cook-reader-ingredients section + section,
+.cook-reader-directions section + section {
+  border-top: 1px solid var(--line);
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+}
+
+.cook-reader-ingredients h3,
+.cook-reader-directions h3 {
+  color: var(--plum);
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
+.cook-reader-ingredients ul,
+.cook-reader-directions ol {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cook-reader-ingredient {
+  align-items: start;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.35;
+}
+
+.cook-reader-ingredient input {
+  accent-color: var(--accent);
+  height: 0.95rem;
+  margin-top: 0.16rem;
+  width: 0.95rem;
+}
+
+.cook-reader-ingredient span {
+  font-size: 0.95rem;
+  font-weight: 760;
+}
+
+.cook-reader-ingredient.checked span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.cook-reader-directions {
+  padding: 0.9rem 1rem;
+}
+
+.cook-reader-directions li {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: auto 2rem minmax(0, 1fr);
+}
+
+.cook-reader-directions li.complete > div > p {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.cook-inline-check {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.6rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+  width: 1.6rem;
+}
+
+.cook-inline-check:hover,
+.cook-inline-check:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent-strong);
+  outline: none;
+}
+
+.cook-reader-directions li.complete .cook-inline-check {
+  background: var(--leaf);
+  border-color: var(--leaf);
+  color: white;
+}
+
+.cook-reader-directions li > span {
+  align-items: center;
+  background: var(--surface-muted);
+  border-radius: 6px;
+  color: var(--accent);
+  display: inline-flex;
+  font-weight: 900;
+  height: 2rem;
+  justify-content: center;
+  margin-top: 0.05rem;
+}
+
+.cook-reader-directions li p {
+  color: var(--ink);
+  line-height: 1.58;
+  margin-bottom: 0.35rem;
+}
+
+.cook-reader-step-ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.cook-reader-step-ingredients span {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  gap: 0.25rem;
+  line-height: 1.2;
+  padding: 0.28rem 0.4rem;
+}
+
+.cook-reader-step-ingredients strong {
+  color: var(--leaf);
+}
+
+.cook-reader-directions small {
+  align-items: center;
+  color: var(--leaf);
+  display: inline-flex;
+  font-weight: 900;
+  gap: 0.25rem;
+}
+
 .recipe-ai-panel {
   background: var(--surface-raised);
   border: 0;
@@ -3293,12 +3656,14 @@ p {
   .library-browser,
   .recipe-detail-hero,
   .recipe-detail-layout,
+  .cook-station-layout,
   .recipe-compose-hero,
   .recipe-compose-layout,
   .recipe-compose-stats,
   .recipe-compose-meta,
   .cook-history-panel,
   .bulk-tag-toolbar,
+  .cook-mode-header,
   .recipe-intake-layout,
   .editor-header,
   .editor-section-header,
@@ -3337,6 +3702,29 @@ p {
 
   .ingredient-rail {
     position: static;
+  }
+
+  .cook-switcher-bar,
+  .cook-reader-title,
+  .cook-reader-layout,
+  .cook-directions-panel,
+  .cook-ingredient-rail {
+    position: static;
+  }
+
+  .cook-station-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-directions-panel,
+  .cook-ingredient-rail,
+  .cook-reader-ingredients {
+    max-height: none;
+    position: static;
+  }
+
+  .cook-reader-layout {
+    grid-template-columns: 1fr;
   }
 
   .cook-history-actions {
@@ -3441,6 +3829,10 @@ p {
 
   .recipe-detail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cook-step-panel h2 {
+    max-width: none;
   }
 }
 
@@ -3561,8 +3953,67 @@ p {
 
   .recipe-detail-stats div,
   .ingredient-rail,
-  .direction-pane {
+  .direction-pane,
+  .cook-step-panel,
+  .cook-ingredient-rail {
     padding: 0.9rem;
+  }
+
+  .cook-mode-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cook-mode-actions {
+    justify-content: stretch;
+  }
+
+  .cook-mode-actions .button,
+  .cook-mode-actions form,
+  .cook-step-controls .button {
+    width: 100%;
+  }
+
+  .cook-switcher-bar {
+    grid-template-columns: 1fr;
+    top: 0;
+  }
+
+  .cook-switcher-bar > span {
+    padding-inline: 0;
+  }
+
+  .cook-reader-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    top: 0;
+  }
+
+  .cook-session-menu {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .cook-session-menu summary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .cook-session-menu > div {
+    left: 0;
+    right: 0;
+  }
+
+  .cook-reader-title dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cook-step-panel h2 {
+    font-size: clamp(1.25rem, 5.6vw, 1.85rem);
+  }
+
+  .cook-step-controls {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .cook-date-form,
