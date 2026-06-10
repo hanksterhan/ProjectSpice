@@ -1264,7 +1264,23 @@ p {
   gap: 0.75rem;
   justify-content: space-between;
   min-height: 1.65rem;
-  padding: 0.15rem 0.35rem 0.3rem;
+  padding: 0.15rem 0.35rem 0.3rem 1.45rem;
+  position: relative;
+}
+
+.static-facet-group-header {
+  border-bottom: 1px solid var(--soft-border);
+  margin-bottom: 0.16rem;
+  padding-bottom: 0.45rem;
+  pointer-events: none;
+}
+
+.static-facet-group-header .drawer-section-title {
+  color: var(--muted);
+}
+
+.static-facet-group-header .drawer-icon {
+  color: var(--muted);
 }
 
 .collapsible-facet-group > summary.facet-group-header {
@@ -1272,15 +1288,27 @@ p {
   list-style: none;
 }
 
+.facet-group-toggle-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
 .collapsible-facet-group > summary.facet-group-header::-webkit-details-marker {
   display: none;
 }
 
-.collapsible-facet-group > summary.facet-group-header:hover {
+.collapsible-facet-group > summary.facet-group-header:hover,
+.facet-group-toggle-button:hover {
   color: var(--ink);
 }
 
-.collapsible-facet-group[open] > summary .tree-chevron {
+.collapsible-facet-group[open] > summary .tree-chevron,
+.collapsible-facet-group.open .facet-group-toggle-button .tree-chevron {
   transform: rotate(90deg);
 }
 
@@ -1290,6 +1318,11 @@ p {
   display: flex;
   gap: 0.45rem;
   min-width: 0;
+}
+
+.drawer-section-title > .tree-chevron:first-child {
+  left: 0.32rem;
+  position: absolute;
 }
 
 .drawer-section-title h3 {

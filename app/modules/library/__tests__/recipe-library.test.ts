@@ -226,9 +226,15 @@ describe("recipe library query helpers", () => {
 
     expect(authorLabels).toContain("Joshua Weissman");
     expect(authorLabels).toContain("Claire Saffitz");
+    expect(authorLabels).toContain("Julie Taboulie's Lebanese Kitchen");
     expect(authorLabels).not.toContain("cooking.nytimes.com");
     expect(authorLabels).not.toContain("mollybaz.com");
     expect(authorLabels).not.toContain("Paprika");
+    expect(authorLabels).not.toContain("Ina Garten");
+    expect(authorLabels).not.toContain("Julie Taboulie's Labnese Kitchen");
+    expect(
+      tree.find((author) => author.label === "Julie Taboulie's Lebanese Kitchen")?.count,
+    ).toBe(15);
     expect(tree.length).toBeLessThan(15);
   });
 

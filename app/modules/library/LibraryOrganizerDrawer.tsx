@@ -110,33 +110,66 @@ export function LibraryOrganizerDrawer({
         <CookbookTree tree={cookbookTree} />
 
         {facets.map((group) => (
-          <section className="facet-group" key={group.id}>
-            <div className="facet-group-header">
-              <div className="drawer-section-title">
-                <LibraryFacetIcon id={group.id} />
-                <h3>{group.label}</h3>
-              </div>
-              <span>{group.options.length}</span>
-            </div>
-            <div className="facet-options">
-              {group.options.map((option) => (
-                <Link
-                  className={option.selected ? "facet-option selected" : "facet-option"}
-                  key={option.id}
-                  to={option.href}
-                >
-                  <span className="facet-option-label">
-                    <span aria-hidden="true" className="facet-option-indent" />
-                    <span>{option.label}</span>
-                  </span>
-                  <strong>{option.count}</strong>
-                </Link>
-              ))}
-            </div>
-          </section>
+          <CollapsibleFacetGroup group={group} key={group.id} />
         ))}
       </div>
     </div>
+  );
+}
+
+function CollapsibleFacetGroup({
+  group,
+}: {
+  group: ReturnType<typeof getRecipeLibraryFacets>[number];
+}) {
+  const hasSelectedOption = group.options.some((option) => option.selected);
+  const [isOpen, setIsOpen] = useState(hasSelectedOption);
+
+  useEffect(() => {
+    if (hasSelectedOption) {
+      setIsOpen(true);
+    }
+  }, [hasSelectedOption]);
+
+  return (
+    <section
+      className={
+        isOpen
+          ? "facet-group collapsible-facet-group open"
+          : "facet-group collapsible-facet-group"
+      }
+    >
+      <button
+        aria-expanded={isOpen}
+        className="facet-group-header facet-group-toggle-button"
+        onClick={() => setIsOpen((open) => !open)}
+        type="button"
+      >
+        <div className="drawer-section-title">
+          <ChevronRight className="drawer-icon tree-chevron" />
+          <LibraryFacetIcon id={group.id} />
+          <h3>{group.label}</h3>
+        </div>
+        <span>{group.options.length}</span>
+      </button>
+      {isOpen ? (
+        <div className="facet-options">
+          {group.options.map((option) => (
+            <Link
+              className={option.selected ? "facet-option selected" : "facet-option"}
+              key={option.id}
+              to={option.href}
+            >
+              <span className="facet-option-label">
+                <span aria-hidden="true" className="facet-option-indent" />
+                <span>{option.label}</span>
+              </span>
+              <strong>{option.count}</strong>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -409,8 +442,8 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
   const modes = getLibraryModes(query);
 
   return (
-    <section className="facet-group">
-      <div className="facet-group-header">
+    <section className="facet-group static-facet-group">
+      <div className="facet-group-header static-facet-group-header">
         <div className="drawer-section-title">
           <LayoutGrid className="drawer-icon" />
           <h3>Library Views</h3>

@@ -8,6 +8,9 @@ export const maxRecipeTags = 12;
 export const websiteFacetMinimumRecipeCount = 3;
 export const otherWebsitesFacetValue = "Other websites";
 const internalFixtureTags = new Set(["seed", "chilled dessert"]);
+const knownCookbookSourceNames = new Set([
+  "Julie Taboulie's Lebanese Kitchen",
+]);
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
 export type RecipeLibrarySortDirection =
@@ -534,7 +537,11 @@ function getCookbookLabel(recipe: Recipe): string {
     return "";
   }
 
-  return getWebsiteLabel(recipe) ? "" : recipe.source.name;
+  if (getWebsiteLabel(recipe)) {
+    return "";
+  }
+
+  return isCookbookSourceName(recipe.source.name) ? recipe.source.name : "";
 }
 
 function getCookbookAuthorLabel(cookbook: string): string {
@@ -704,6 +711,10 @@ function normalizeWebsiteSource(value: string): string {
 
 function isDomainLikeSource(value: string): boolean {
   return /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(value);
+}
+
+function isCookbookSourceName(value: string): boolean {
+  return value.includes(" - ") || knownCookbookSourceNames.has(value);
 }
 
 function matchesSelectedWebsites(
