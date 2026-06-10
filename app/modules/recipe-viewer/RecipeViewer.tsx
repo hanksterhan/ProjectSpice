@@ -5,6 +5,7 @@ import {
   formatDisplayTime,
   formatIngredientDisplayText,
   getCookCount,
+  getDisplayDirectionSteps,
   getLastCookedDate,
   type Recipe,
 } from "~/modules/recipe-domain";
@@ -131,8 +132,9 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
                 <h3>{section.title}</h3>
               ) : null}
               <ol>
-                {section.steps.map((step) => {
-                  const textParts = enrichDirectionStepText(step, recipe.ingredients);
+                {getDisplayDirectionSteps(section.steps).map(({ displayOrder, displayText, step }) => {
+                  const displayStep = { ...step, text: displayText };
+                  const textParts = enrichDirectionStepText(displayStep, recipe.ingredients);
                   const mentionedIngredientIds = new Set(
                     textParts
                       .filter((part) => part.type === "ingredient")
@@ -146,8 +148,8 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
                   );
 
                   return (
-                    <li key={step.id}>
-                      <span>{step.order}</span>
+                    <li key={`${step.id}-${displayOrder}`}>
+                      <span>{displayOrder}</span>
                       <div>
                         <p>
                           {textParts.map((part, partIndex) =>
@@ -167,7 +169,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
                         {ingredientSummary.length > 0 ? (
                           <div
                             className="direction-ingredient-summary"
-                            aria-label={`Step ${step.order} ingredients`}
+                            aria-label={`Step ${displayOrder} ingredients`}
                           >
                             {ingredientSummary.map((ingredient) => (
                               <span key={ingredient.id}>

@@ -5,6 +5,7 @@ import { Form } from "react-router";
 import {
   formatDisplayTime,
   formatIngredientDisplayText,
+  stripDirectionStepLabel,
   type IngredientItem,
   type Recipe,
 } from "~/modules/recipe-domain";
@@ -22,7 +23,6 @@ import {
   flattenCookSessionSteps,
   getCookRecipeProgress,
   normalizeCookSessionState,
-  stripDirectionStepLabel,
   type CookSessionStep,
   type CookSessionState,
 } from "./cook-session";

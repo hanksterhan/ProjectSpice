@@ -6,6 +6,7 @@ import {
   formatDisplayTime,
   formatIngredientDisplayText,
   formatIngredientMeasure,
+  getDisplayDirectionSteps,
   moveRecipeSection,
   normalizeDirectionSections,
   normalizeDirectionSteps,
@@ -148,6 +149,35 @@ describe("normalizeDirectionSections", () => {
     ]);
 
     expect(normalizedSections[0].steps.map((step) => step.order)).toEqual([1, 2]);
+  });
+});
+
+describe("getDisplayDirectionSteps", () => {
+  it("uses sequential display order and removes imported direction labels", () => {
+    const steps = getDisplayDirectionSteps([
+      {
+        id: "step-1",
+        order: 1,
+        text: "). First prepare the pastry cream.",
+      },
+      {
+        id: "step-1",
+        order: 1,
+        text: "1) Make the cupcake batter.",
+      },
+      {
+        id: "step-1",
+        order: 1,
+        text: "Step 3: Bake until set.",
+      },
+    ]);
+
+    expect(steps.map((step) => step.displayOrder)).toEqual([1, 2, 3]);
+    expect(steps.map((step) => step.displayText)).toEqual([
+      "First prepare the pastry cream.",
+      "Make the cupcake batter.",
+      "Bake until set.",
+    ]);
   });
 });
 

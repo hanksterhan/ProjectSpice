@@ -8,9 +8,8 @@ import {
   getCookRecipeProgress,
   getNextIncompleteCookStep,
   parseCookRecipeIds,
-  stripDirectionStepLabel,
 } from "~/modules/cooking/cook-session";
-import { validRecipeFixture } from "~/modules/recipe-domain";
+import { stripDirectionStepLabel, validRecipeFixture } from "~/modules/recipe-domain";
 
 describe("cook session helpers", () => {
   it("parses repeated recipe params and removes duplicates", () => {

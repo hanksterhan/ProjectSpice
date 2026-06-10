@@ -210,14 +210,3 @@ export function createCookSessionStepId(
 ): string {
   return `${recipeId}:${sectionId}:${stepIndex}:${stepId}`;
 }
-
-export function stripDirectionStepLabel(text: string): string {
-  return text
-    .trim()
-    .replace(
-      /^(?:step\s*)?(?:\d+|[ivxlcdm]+|[a-z])\s*(?:[.)\]:;]|[-–—])+\s*/i,
-      "",
-    )
-    .replace(/^(?:[.)\]:;]|[-–—])+\s*/, "")
-    .trim();
-}
