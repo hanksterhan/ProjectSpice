@@ -445,6 +445,7 @@ function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
     <section className="facet-group static-facet-group">
       <div className="facet-group-header static-facet-group-header">
         <div className="drawer-section-title">
+          <span className="tree-chevron-spacer" aria-hidden="true" />
           <LayoutGrid className="drawer-icon" />
           <h3>Library Views</h3>
         </div>

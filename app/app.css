@@ -21,12 +21,8 @@
   --icon-border-hover: rgb(48 72 95 / 34%);
   --focus-ring: rgb(185 68 47 / 28%);
   --danger-wash: rgb(185 68 47 / 10%);
-  --image-fallback-end: #d9e6dd;
-  --image-fallback-warm: rgb(185 68 47 / 12%);
-  --image-fallback-leaf: rgb(47 111 78 / 18%);
-  --image-fallback-plum: rgb(93 75 115 / 12%);
-  --image-fallback-badge: rgb(255 255 255 / 72%);
-  --image-fallback-badge-border: rgb(255 255 255 / 70%);
+  --image-fallback-bg: #eeeae2;
+  --image-fallback-icon: rgb(48 72 95 / 68%);
   --soft-border: rgb(48 72 95 / 8%);
   --soft-border-strong: rgb(48 72 95 / 20%);
   --selected-surface: rgb(255 255 255 / 66%);
@@ -64,12 +60,8 @@
   --icon-border-hover: rgb(165 187 200 / 34%);
   --focus-ring: rgb(224 107 85 / 34%);
   --danger-wash: rgb(224 107 85 / 15%);
-  --image-fallback-end: #263a30;
-  --image-fallback-warm: rgb(224 107 85 / 18%);
-  --image-fallback-leaf: rgb(128 191 146 / 16%);
-  --image-fallback-plum: rgb(194 167 215 / 16%);
-  --image-fallback-badge: rgb(32 35 29 / 76%);
-  --image-fallback-badge-border: rgb(243 238 227 / 14%);
+  --image-fallback-bg: #1b1b1a;
+  --image-fallback-icon: rgb(243 238 227 / 82%);
   --soft-border: rgb(243 238 227 / 10%);
   --soft-border-strong: rgb(243 238 227 / 18%);
   --selected-surface: rgb(243 238 227 / 8%);
@@ -478,6 +470,10 @@ p {
   width: 100%;
 }
 
+.ai-draft-hero .image-fallback {
+  display: flex;
+}
+
 .ai-draft-image {
   display: block;
   object-fit: cover;
@@ -879,6 +875,10 @@ p {
   width: 4rem;
 }
 
+.recipe-row .image-fallback {
+  display: flex;
+}
+
 .recipe-row-image {
   display: block;
   object-fit: cover;
@@ -914,7 +914,7 @@ p {
 }
 
 .preview-image-wrap {
-  background: linear-gradient(135deg, var(--surface-muted), var(--image-fallback-end));
+  background: var(--image-fallback-bg);
   min-height: 14rem;
 }
 
@@ -925,6 +925,10 @@ p {
   width: 100%;
 }
 
+.preview-image-wrap .image-fallback {
+  display: flex;
+}
+
 .preview-image {
   display: block;
   object-fit: cover;
@@ -932,20 +936,20 @@ p {
 
 .image-fallback {
   align-items: center;
-  background:
-    linear-gradient(135deg, var(--image-fallback-warm), transparent 45%),
-    linear-gradient(315deg, var(--image-fallback-leaf), var(--image-fallback-plum));
-  color: var(--steel);
+  background: var(--image-fallback-bg);
+  color: var(--image-fallback-icon);
   display: flex;
   justify-content: center;
 }
 
-.image-fallback span {
-  background: var(--image-fallback-badge);
-  border: 1px solid var(--image-fallback-badge-border);
-  border-radius: 6px;
-  font-weight: 900;
-  padding: 0.45rem 0.55rem;
+.image-fallback-icon {
+  fill: none;
+  height: clamp(1.75rem, 34%, 4rem);
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: clamp(1.75rem, 34%, 4rem);
 }
 
 .preview-copy {
@@ -1264,7 +1268,7 @@ p {
   gap: 0.75rem;
   justify-content: space-between;
   min-height: 1.65rem;
-  padding: 0.15rem 0.35rem 0.3rem 1.45rem;
+  padding: 0.15rem 0.35rem 0.3rem 0.2rem;
   position: relative;
 }
 
@@ -1315,14 +1319,20 @@ p {
 .drawer-section-title {
   align-items: center;
   color: var(--steel);
-  display: flex;
-  gap: 0.45rem;
+  display: grid;
+  gap: 0.38rem;
+  grid-template-columns: 1rem 1rem minmax(0, 1fr);
   min-width: 0;
 }
 
-.drawer-section-title > .tree-chevron:first-child {
-  left: 0.32rem;
-  position: absolute;
+.drawer-section-title .tree-chevron,
+.tree-chevron-spacer {
+  justify-self: center;
+}
+
+.tree-chevron-spacer {
+  height: 1rem;
+  width: 1rem;
 }
 
 .drawer-section-title h3 {
@@ -1375,13 +1385,13 @@ p {
   border: 1px solid transparent;
   border-radius: 7px;
   color: var(--steel);
-  display: flex;
+  display: grid;
   font-size: 0.88rem;
   font-weight: 500;
-  gap: 0.1rem;
-  justify-content: space-between;
+  gap: 0.22rem;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
   min-height: 2rem;
-  padding: 0.18rem 0.42rem 0.18rem 0.2rem;
+  padding: 0.18rem 0.42rem 0.18rem 0.14rem;
 }
 
 .cookbook-tree-row:hover {
@@ -1411,10 +1421,10 @@ p {
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
-  height: 1.45rem;
+  height: 1.35rem;
   justify-content: center;
   padding: 0;
-  width: 1.45rem;
+  width: 1.35rem;
 }
 
 .cookbook-tree-toggle:hover {
@@ -1770,13 +1780,17 @@ p {
 .recipe-grid-image,
 .recipe-grid-tile .image-fallback {
   aspect-ratio: 1;
-  display: block;
   height: auto;
   width: 100%;
 }
 
 .recipe-grid-image {
+  display: block;
   object-fit: cover;
+}
+
+.recipe-grid-tile .image-fallback {
+  display: flex;
 }
 
 .recipe-grid-tile h3 {
@@ -1827,6 +1841,10 @@ p {
 .recipe-card-image {
   display: block;
   object-fit: cover;
+}
+
+.recipe-card .image-fallback {
+  display: flex;
 }
 
 .recipe-card-copy {
@@ -2014,6 +2032,10 @@ p {
   height: clamp(22rem, 36vw, 34rem);
   min-height: 0;
   width: 100%;
+}
+
+.recipe-detail-hero .image-fallback {
+  display: flex;
 }
 
 .recipe-detail-image {
@@ -2769,6 +2791,10 @@ p {
   object-fit: cover;
   overflow: hidden;
   width: 100%;
+}
+
+.recipe-compose-image-panel .image-fallback {
+  display: flex;
 }
 
 .recipe-compose-image-url {

@@ -141,20 +141,11 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
   const [hasError, setHasError] = useState(false);
   const displaySrc = getDisplayImageSrc(src);
   const shouldUseFallback = !displaySrc || hasError || displaySrc.includes("/mock-images/");
-  const fallbackLabel =
-    title.length <= 3
-      ? title.toUpperCase()
-      : title
-          .split(/\s+/)
-          .filter(Boolean)
-          .slice(0, 2)
-          .map((word) => word[0]?.toUpperCase())
-          .join("");
 
   if (shouldUseFallback) {
     return (
       <div className={`image-fallback ${className}`.trim()} aria-label={`${title} image`}>
-        <span>{fallbackLabel || "PS"}</span>
+        <MissingRecipeImageIcon />
       </div>
     );
   }
@@ -167,5 +158,21 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
       onError={() => setHasError(true)}
       {...props}
     />
+  );
+}
+
+function MissingRecipeImageIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="image-fallback-icon"
+      focusable="false"
+      viewBox="0 0 48 48"
+    >
+      <rect x="8" y="10" width="32" height="28" rx="2" />
+      <circle cx="18" cy="19" r="4" />
+      <path d="m10 34 11-11 8 8" />
+      <path d="m25 27 6-6 7 7" />
+    </svg>
   );
 }
