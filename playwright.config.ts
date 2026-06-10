@@ -9,16 +9,17 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4174",
     extraHTTPHeaders: {
+      "x-projectspice-auth-bypass": "1",
       "x-projectspice-ai-provider": "mock",
     },
     trace: "on-first-retry",
   },
   webServer: {
     command:
-      "RECIPE_AI_PROVIDER=mock OPENAI_API_KEY=mock pnpm exec react-router dev --host 127.0.0.1 --port 4174 --strictPort",
+      "PROJECTSPICE_AUTH_BYPASS=1 RECIPE_AI_PROVIDER=mock VITE_CLERK_PUBLISHABLE_KEY=pk_test_mock CLERK_SECRET_KEY=sk_test_mock OPENAI_API_KEY=mock pnpm exec react-router dev --host 127.0.0.1 --port 4174 --strictPort",
     reuseExistingServer: false,
     timeout: 120_000,
-    url: "http://127.0.0.1:4174",
+    url: "http://127.0.0.1:4174/?projectspice_auth_bypass=1",
   },
   projects: [
     {

@@ -160,8 +160,8 @@ Wrangler is configured for local/preview and production Cloudflare bindings:
 
 The checked-in binding IDs point to fresh V1 Cloudflare resources. If those
 resources are ever recreated, replace the D1 `database_id`, KV `id`, and KV
-`preview_id` values in `wrangler.jsonc`. V1 intentionally has no auth bindings
-and no R2 media bucket.
+`preview_id` values in `wrangler.jsonc`. V1 intentionally has no R2 media
+bucket.
 
 Create preview/staging resources:
 
@@ -182,11 +182,26 @@ pnpm wrangler kv namespace create AI_RATE_LIMITS --preview --env production
 If recreating any resource, copy the returned D1 `database_id`, KV `id`, and KV
 `preview_id` values into `wrangler.jsonc` for the matching environment.
 
-Configure the AI secret for staging and production:
+Configure Clerk and AI secrets for staging and production:
 
 ```bash
+pnpm wrangler secret put VITE_CLERK_PUBLISHABLE_KEY --env staging
+pnpm wrangler secret put VITE_CLERK_PUBLISHABLE_KEY --env production
+pnpm wrangler secret put CLERK_SECRET_KEY --env staging
+pnpm wrangler secret put CLERK_SECRET_KEY --env production
 pnpm wrangler secret put OPENAI_API_KEY --env staging
 pnpm wrangler secret put OPENAI_API_KEY --env production
+```
+
+The local `.dev.vars` file should include:
+
+```bash
+VITE_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+CLERK_SIGN_IN_URL=/sign-in
+CLERK_SIGN_UP_URL=/sign-up
+CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
+CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
 ```
 
 Apply D1 migrations:

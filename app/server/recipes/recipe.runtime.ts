@@ -1,6 +1,8 @@
-import type { AppLoadContext } from "react-router";
-
 import { seedRecipes, type Recipe } from "~/modules/recipe-domain";
+import {
+  getCloudflareRuntimeContext,
+  type RuntimeLoadContext,
+} from "~/server/runtime-context";
 
 import { RecipeRepository, type RecipeRepositoryDatabase } from "./recipe.repo";
 import { RecipeVersionConflictError } from "./recipe.repo";
@@ -14,7 +16,7 @@ type MaybeD1Env = Record<string, unknown> & {
 
 let memoryRepository: MemoryRecipeRepository | undefined;
 
-export function getRecipeService(context: AppLoadContext): RecipeService {
+export function getRecipeService(context: RuntimeLoadContext): RecipeService {
   const database = getBoundRecipeDatabase(context);
 
   if (database) {
@@ -27,9 +29,9 @@ export function getRecipeService(context: AppLoadContext): RecipeService {
 }
 
 function getBoundRecipeDatabase(
-  context: AppLoadContext,
+  context: RuntimeLoadContext,
 ): RecipeRepositoryDatabase | undefined {
-  const env = context.cloudflare.env as unknown as MaybeD1Env;
+  const env = getCloudflareRuntimeContext(context).env as unknown as MaybeD1Env;
 
   if (
     env.PROJECTSPICE_RECIPE_STORAGE === "memory" ||

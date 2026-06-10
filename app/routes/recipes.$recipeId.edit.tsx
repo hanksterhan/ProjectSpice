@@ -7,6 +7,7 @@ import {
   buildRecipeFromEditorFormData,
   getExpectedRecipeVersion,
 } from "~/server/recipes/recipe.form";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { RecipeVersionConflictError } from "~/server/recipes/recipe.repo";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 import {
@@ -17,7 +18,9 @@ export function meta({ data }: Route.MetaArgs) {
   return [{ title: `Edit ${data?.recipe.title ?? "Recipe"} | ProjectSpice` }];
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ params, request, context }: Route.LoaderArgs) {
+  await requireAuthenticatedUser({ request, context, params });
+
   const recipe = await getRecipeService(context).getById(params.recipeId);
 
   if (!recipe) {
@@ -28,6 +31,8 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 }
 
 export async function action({ params, request, context }: Route.ActionArgs) {
+  await requireAuthenticatedUser({ request, context, params });
+
   const service = getRecipeService(context);
   const recipe = await service.getById(params.recipeId);
 

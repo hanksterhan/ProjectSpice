@@ -212,6 +212,18 @@ p {
   min-width: 0;
 }
 
+.shell-auth-controls {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.button.compact {
+  font-size: 0.82rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+}
+
 .shell-nav {
   align-items: center;
   display: flex;
@@ -317,6 +329,22 @@ p {
   min-width: 0;
   padding: clamp(0.75rem, 1.6vw, 1.5rem);
   width: 100%;
+}
+
+.auth-route {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  margin: 6vh auto 0;
+  width: min(100%, 32rem);
+}
+
+.auth-route h1 {
+  color: var(--ink);
+  font-size: 1.4rem;
+  line-height: 1.1;
+  margin: 0;
 }
 
 .shell-body.drawer-pinned .shell-main {

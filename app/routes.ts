@@ -9,4 +9,6 @@ export default [
   route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:recipeId", "routes/recipes.$recipeId.tsx"),
   route("recipes/:recipeId/edit", "routes/recipes.$recipeId.edit.tsx"),
+  route("sign-in/*", "routes/sign-in.tsx"),
+  route("sign-up/*", "routes/sign-up.tsx"),
 ] satisfies RouteConfig;

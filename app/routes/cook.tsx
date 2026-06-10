@@ -6,6 +6,7 @@ import type { Route } from "./+types/cook";
 import { CookMode, getCookSessionHref, parseCookRecipeIds } from "~/modules/cooking";
 import { addCookedDate } from "~/modules/recipe-domain";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 const finishCookingSchema = z.object({
@@ -18,6 +19,8 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  await requireAuthenticatedUser({ request, context, params: {} });
+
   const recipeIds = parseCookRecipeIds(request.url);
   const recipes = await getRecipesInQueryOrder(recipeIds, context);
 
@@ -28,6 +31,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  await requireAuthenticatedUser({ request, context, params: {} });
+
   const formData = await request.formData();
   const intent = formData.get("intent");
 

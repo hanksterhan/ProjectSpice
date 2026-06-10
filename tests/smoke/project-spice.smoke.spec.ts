@@ -4,37 +4,38 @@ test("recipe loop covers library, CRUD, responsive detail, and mocked AI transfo
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Chilled Desserts" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /recipes$/ })).toBeVisible();
   await expect(
-    page.locator(".recipe-card-copy").getByRole("link", {
-      name: "Classic Sundae Bombe",
-    }),
+    page.getByRole("link", { name: "Banana Bread", exact: true }).first(),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "New Recipe" }).click();
-  await expect(page.getByRole("heading", { name: "Create Recipe" })).toBeVisible();
+  await page.goto("/recipes/new?mode=manual");
+  await expect(
+    page.getByRole("textbox", { name: "Title", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("textbox", { name: "Title", exact: true })
     .fill("Smoke Test Lemon Cream");
   await page
     .getByLabel("Description")
     .fill("A browser-smoked manual recipe for the v1 loop.");
-  await page.getByLabel("Tags").fill("smoke, chilled");
-  await page.getByLabel("Yield notes").fill("Serves 2");
-  await page.getByLabel("Raw text").fill("1 cup chilled cream");
-  await page.getByLabel("Item").fill("chilled cream");
-  await page.getByLabel("Step 1").fill("Whip the cream and chill before serving.");
-  await page.locator(".editor-header").getByRole("button", { name: "Save Recipe" }).click();
+  await page.getByRole("textbox", { name: "Tags" }).fill("smoke, chilled");
+  await page.getByRole("textbox", { name: "Yield" }).fill("Serves 2");
+  await page.getByRole("textbox", { name: "Ingredients" }).fill("1 cup chilled cream");
+  await page
+    .getByRole("textbox", { name: "Directions" })
+    .fill("Whip the cream and chill before serving.");
+  await page.getByRole("button", { name: "Save Recipe" }).first().click();
 
   await expect(page.getByRole("heading", { name: "Smoke Test Lemon Cream" })).toBeVisible();
   await expect(page.getByText("A browser-smoked manual recipe")).toBeVisible();
 
   await page.getByRole("link", { name: "Edit Recipe" }).click();
-  await expect(page.getByRole("heading", { name: "Edit Recipe" })).toBeVisible();
+  await expect(page.getByText("Editing recipe")).toBeVisible();
   await page
     .getByLabel("Description")
     .fill("Updated through the smoke edit path.");
-  await page.locator(".editor-header").getByRole("button", { name: "Save Recipe" }).click();
+  await page.getByRole("button", { name: "Save Recipe" }).first().click();
   await expect(page.getByText("Updated through the smoke edit path.")).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });

@@ -5,8 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from "react-router";
+import { ClerkProvider } from "@clerk/react-router";
+import {
+  clerkMiddleware,
+  rootAuthLoader,
+} from "@clerk/react-router/server";
 
 import type { Route } from "./+types/root";
 import { AppShell } from "./modules/ui-shell/AppShell";
@@ -15,10 +19,42 @@ import {
   getActiveLibraryFilters,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
+  type RecipeLibraryActiveFilter,
+  type RecipeLibraryAuthorNode,
+  type RecipeLibraryFacetGroup,
+  type RecipeLibraryQuery,
   parseRecipeLibraryQuery,
 } from "./modules/library/recipe-library";
+import {
+  isAuthBypassEnabled,
+  isPublicAuthPath,
+  redirectToSignIn,
+} from "./server/auth";
 import { getRecipeService } from "./server/recipes/recipe.runtime";
+import type { RuntimeLoadContext } from "./server/runtime-context";
 import "./app.css";
+
+const clerkAuthMiddleware = clerkMiddleware();
+
+export const middleware: Route.MiddlewareFunction[] = [
+  (args, next) =>
+    isAuthBypassEnabled(args.context, args.request)
+      ? next()
+      : clerkAuthMiddleware(args, next),
+];
+
+type RootLibraryDrawerData = {
+  activeFilters: RecipeLibraryActiveFilter[];
+  cookbookTree: RecipeLibraryAuthorNode[];
+  facets: RecipeLibraryFacetGroup[];
+  hasSearch: boolean;
+  query: RecipeLibraryQuery;
+};
+
+type RootAppData = {
+  authBypassed: boolean;
+  libraryDrawer: RootLibraryDrawerData | null;
+};
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -30,11 +66,37 @@ export function meta(_args: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
+export async function loader(args: Route.LoaderArgs) {
+  if (isAuthBypassEnabled(args.context, args.request)) {
+    return loadRootAppData(args.request, args.context, true);
+  }
+
+  return rootAuthLoader(args, async ({ request, context }) => {
+    if (isPublicAuthPath(request.url)) {
+      return {
+        authBypassed: false,
+        libraryDrawer: null,
+      };
+    }
+
+    if (!isAuthBypassEnabled(context, request) && !request.auth.isAuthenticated) {
+      throw redirectToSignIn(request);
+    }
+
+    return loadRootAppData(request, context, false);
+  });
+}
+
+async function loadRootAppData(
+  request: Request,
+  context: RuntimeLoadContext,
+  authBypassed: boolean,
+): Promise<RootAppData> {
   const query = parseRecipeLibraryQuery(request.url);
   const recipes = await getRecipeService(context).list();
 
   return {
+    authBypassed,
     libraryDrawer: {
       activeFilters: getActiveLibraryFilters(query),
       cookbookTree: getRecipeCookbookTree(recipes, query),
@@ -69,19 +131,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
-  const { libraryDrawer } = useLoaderData<typeof loader>();
-
-  return (
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { authBypassed, libraryDrawer } = loaderData as RootAppData;
+  const shell = (
     <AppShell
-      defaultDrawer={{
-        title: "Organize Library",
-        content: <LibraryOrganizerDrawer {...libraryDrawer} />,
-      }}
+      authEnabled={!authBypassed}
+      defaultDrawer={
+        libraryDrawer
+          ? {
+              title: "Organize Library",
+              content: <LibraryOrganizerDrawer {...libraryDrawer} />,
+            }
+          : null
+      }
     >
       <Outlet />
     </AppShell>
   );
+
+  return authBypassed ? shell : <ClerkProvider loaderData={loaderData}>{shell}</ClerkProvider>;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

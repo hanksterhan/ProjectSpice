@@ -1,6 +1,8 @@
-import type { AppLoadContext } from "react-router";
-
 import type { RecipeDraft } from "~/modules/recipe-domain";
+import {
+  getCloudflareRuntimeContext,
+  type RuntimeLoadContext,
+} from "~/server/runtime-context";
 
 import { createOpenAiRecipeAiProviderFromEnv } from "./openai-recipe-ai.provider";
 import type {
@@ -39,10 +41,10 @@ let memoryAuditRepository: MemoryRecipeAiRunRepository | undefined;
 let memoryRateLimiter: MemoryRecipeAiRateLimiter | undefined;
 
 export function getRecipeAiService(
-  context: AppLoadContext,
+  context: RuntimeLoadContext,
   providerOverride?: RecipeAiProviderOverride,
 ): RecipeAiService {
-  const env = context.cloudflare.env as unknown as MaybeAiEnv;
+  const env = getCloudflareRuntimeContext(context).env as unknown as MaybeAiEnv;
   const model = env.OPENAI_RECIPE_MODEL ?? "gpt-4.1-mini";
   const providerName = providerOverride ?? getConfiguredProviderName(env);
 
@@ -74,9 +76,9 @@ function getConfiguredProviderName(env: MaybeAiEnv): "mock" | "openai" {
 
 export function getRecipeAiProviderOverride(
   request: Request,
-  context: AppLoadContext,
+  context: RuntimeLoadContext,
 ): RecipeAiProviderOverride | undefined {
-  const env = context.cloudflare.env as unknown as MaybeAiEnv;
+  const env = getCloudflareRuntimeContext(context).env as unknown as MaybeAiEnv;
   const requestedProvider = request.headers.get("x-projectspice-ai-provider");
 
   if (env.ENVIRONMENT === "development" && requestedProvider === "mock") {

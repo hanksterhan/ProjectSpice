@@ -30,6 +30,7 @@ import {
   getRecipeAiProviderOverride,
   getRecipeAiService,
 } from "~/server/ai";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { RecipeVersionConflictError } from "~/server/recipes/recipe.repo";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
@@ -54,7 +55,9 @@ export function meta({ data }: Route.MetaArgs) {
   return [{ title: `${data?.recipe.title ?? "Recipe"} | ProjectSpice` }];
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ params, request, context }: Route.LoaderArgs) {
+  await requireAuthenticatedUser({ request, context, params });
+
   const recipe = await getRecipeService(context).getById(params.recipeId);
 
   if (!recipe) {
@@ -69,6 +72,7 @@ export async function action({
   request,
   context,
 }: Route.ActionArgs): Promise<Response | RecipeAiPanelActionData> {
+  const user = await requireAuthenticatedUser({ request, context, params });
   const service = getRecipeService(context);
   const recipe = await service.getById(params.recipeId);
 
@@ -148,7 +152,7 @@ export async function action({
           conversation: chatHistory,
         },
         {
-          rateLimitKey: getRateLimitKey(request),
+          rateLimitKey: user.userId,
         },
       );
 
@@ -405,10 +409,6 @@ function parsePreferences(value: string | undefined): string[] | undefined {
 
 function optionalFormString(value: FormDataEntryValue | null): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function getRateLimitKey(request: Request): string {
-  return request.headers.get("CF-Connecting-IP") ?? "single-user";
 }
 
 function getAiErrorMessage(error: unknown): string {

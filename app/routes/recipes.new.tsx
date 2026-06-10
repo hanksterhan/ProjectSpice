@@ -23,6 +23,7 @@ import {
   getRecipeAiProviderOverride,
   getRecipeAiService,
 } from "~/server/ai";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { buildRecipeFromEditorFormData } from "~/server/recipes/recipe.form";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 import { scrapeRecipeFromUrl } from "~/server/recipe-scraper";
@@ -72,7 +73,9 @@ export function meta(_args: Route.MetaArgs) {
   return [{ title: "New Recipe | ProjectSpice" }];
 }
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  await requireAuthenticatedUser({ request, context, params: {} });
+
   const mode = new URL(request.url).searchParams.get("mode");
   const normalizedMode: NewRecipeMode =
     mode === "chat" || mode === "manual" || mode === "url" ? mode : "intake";
@@ -93,6 +96,7 @@ export async function action({
   | RecipeUrlIntakeActionData
   | { errors: string[] }
 > {
+  const user = await requireAuthenticatedUser({ request, context, params: {} });
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -127,7 +131,7 @@ export async function action({
           conversation: chatHistory,
         },
         {
-          rateLimitKey: getRateLimitKey(request),
+          rateLimitKey: user.userId,
         },
       );
 
@@ -343,10 +347,6 @@ function parsePreferences(value: string | undefined): string[] | undefined {
 
 function optionalFormString(value: FormDataEntryValue | null): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function getRateLimitKey(request: Request): string {
-  return request.headers.get("CF-Connecting-IP") ?? "single-user";
 }
 
 function getAiErrorMessage(error: unknown): string {

@@ -23,6 +23,7 @@ import {
   RecipeImage,
   Tabs,
 } from "~/modules/ui-shell/primitives";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
 export function meta(_args: Route.MetaArgs) {
@@ -30,6 +31,8 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  await requireAuthenticatedUser({ request, context, params: {} });
+
   const query = parseRecipeLibraryQuery(request.url);
   const allRecipes = await getRecipeService(context).list();
   const recipes = getRecipeLibraryResults(allRecipes, query);
@@ -41,6 +44,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  await requireAuthenticatedUser({ request, context, params: {} });
+
   const formData = await request.formData();
   const intent = formData.get("intent");
 

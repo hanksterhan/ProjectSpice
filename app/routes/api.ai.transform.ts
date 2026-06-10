@@ -7,6 +7,7 @@ import {
   formatOpenAiRecipeAiProviderError,
   getRecipeAiProviderOverride,
 } from "~/server/ai";
+import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeAiService } from "~/server/ai/recipe-ai.runtime";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
@@ -35,6 +36,7 @@ export function loader() {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  const user = await requireAuthenticatedUser({ request, context, params: {} });
   const parsedBody = await parseJsonBody(request, transformRequestSchema);
 
   if (!parsedBody.ok) {
@@ -60,7 +62,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         conversation: parsedBody.data.conversation,
       },
       {
-        rateLimitKey: getRateLimitKey(request),
+        rateLimitKey: user.userId,
       },
     );
 
@@ -86,10 +88,6 @@ async function parseJsonBody<T>(
 
     return { ok: false, error: "Invalid JSON body." };
   }
-}
-
-function getRateLimitKey(request: Request): string {
-  return request.headers.get("CF-Connecting-IP") ?? "single-user";
 }
 
 function toAiErrorResponse(error: unknown) {

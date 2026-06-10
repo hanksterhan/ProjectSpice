@@ -10,9 +10,16 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/react-router";
 import { NavLink } from "react-router";
 
 type AppShellProps = {
+  authEnabled?: boolean;
   children: ReactNode;
   defaultDrawer?: ShellDrawer | null;
 };
@@ -57,7 +64,11 @@ type DrawerBounds = {
 
 const defaultDrawerWidth = 360;
 
-export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
+export function AppShell({
+  authEnabled = true,
+  children,
+  defaultDrawer = null,
+}: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
@@ -197,6 +208,7 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
                 theme={theme}
                 onToggle={() => setTheme((mode) => (mode === "dark" ? "light" : "dark"))}
               />
+              {authEnabled ? <AuthControls /> : null}
 
               {activeCommand.actions ? (
                 <nav className="shell-context-actions" aria-label="Page actions">
@@ -245,6 +257,28 @@ export function AppShell({ children, defaultDrawer = null }: AppShellProps) {
           </div>
         </ShellDrawerContext.Provider>
       </ShellCommandContext.Provider>
+    </div>
+  );
+}
+
+function AuthControls() {
+  return (
+    <div className="shell-auth-controls">
+      <Show when="signed-out">
+        <SignInButton mode="modal">
+          <button className="button button-secondary compact" type="button">
+            Sign In
+          </button>
+        </SignInButton>
+        <SignUpButton mode="modal">
+          <button className="button button-primary compact" type="button">
+            Sign Up
+          </button>
+        </SignUpButton>
+      </Show>
+      <Show when="signed-in">
+        <UserButton />
+      </Show>
     </div>
   );
 }
