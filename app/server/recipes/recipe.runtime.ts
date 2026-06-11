@@ -10,6 +10,7 @@ import { RecipeService, type RecipeServiceRepository } from "./recipe.service";
 
 type MaybeD1Env = Record<string, unknown> & {
   DB?: RecipeRepositoryDatabase;
+  ENVIRONMENT?: string;
   RECIPE_DB?: RecipeRepositoryDatabase;
   PROJECTSPICE_RECIPE_STORAGE?: string;
 };
@@ -23,6 +24,7 @@ export function getRecipeService(context: RuntimeLoadContext): RecipeService {
     return new RecipeService(new RecipeRepository(database));
   }
 
+  assertCanUseMemoryRecipeStorage(context);
   memoryRepository ??= new MemoryRecipeRepository(seedRecipes);
 
   return new RecipeService(memoryRepository);
@@ -41,6 +43,17 @@ function getBoundRecipeDatabase(
   }
 
   return env.RECIPE_DB ?? env.DB;
+}
+
+function assertCanUseMemoryRecipeStorage(context: RuntimeLoadContext): void {
+  const env = getCloudflareRuntimeContext(context).env as unknown as MaybeD1Env;
+  const environment = env.ENVIRONMENT ?? process.env.ENVIRONMENT;
+
+  if (environment !== "development") {
+    throw new Error(
+      "Recipe persistence is not configured. Bind RECIPE_DB before running outside development.",
+    );
+  }
 }
 
 class MemoryRecipeRepository implements RecipeServiceRepository {

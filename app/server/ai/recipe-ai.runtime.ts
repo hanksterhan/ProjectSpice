@@ -23,6 +23,7 @@ type MaybeAiEnv = Record<string, unknown> & {
   AI_RATE_LIMITS?: KVNamespace;
   AI_RATE_LIMIT?: KVNamespace;
   DB?: RecipeAiRunRepositoryDatabase;
+  ENVIRONMENT?: string;
   RECIPE_DB?: RecipeAiRunRepositoryDatabase;
   OPENAI_API_KEY?: string;
   OPENAI_RECIPE_MODEL?: string;
@@ -93,6 +94,7 @@ function getAuditRepository(env: MaybeAiEnv) {
     env.PROJECTSPICE_RECIPE_STORAGE === "memory" ||
     process.env.PROJECTSPICE_RECIPE_STORAGE === "memory"
   ) {
+    assertCanUseMemoryAiAuditStorage(env);
     memoryAuditRepository ??= new MemoryRecipeAiRunRepository();
 
     return memoryAuditRepository;
@@ -104,9 +106,20 @@ function getAuditRepository(env: MaybeAiEnv) {
     return new RecipeAiRunRepository(database);
   }
 
+  assertCanUseMemoryAiAuditStorage(env);
   memoryAuditRepository ??= new MemoryRecipeAiRunRepository();
 
   return memoryAuditRepository;
+}
+
+function assertCanUseMemoryAiAuditStorage(env: MaybeAiEnv): void {
+  const environment = env.ENVIRONMENT ?? process.env.ENVIRONMENT;
+
+  if (environment !== "development") {
+    throw new Error(
+      "Recipe AI audit persistence is not configured. Bind RECIPE_DB before running outside development.",
+    );
+  }
 }
 
 function getRateLimiter(env: MaybeAiEnv): RecipeAiRateLimiter {

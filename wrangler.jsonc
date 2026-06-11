@@ -7,8 +7,7 @@
 	],
 	"main": "./workers/app.ts",
 	"vars": {
-		"ENVIRONMENT": "development",
-		"PROJECTSPICE_RECIPE_STORAGE": "memory"
+		"ENVIRONMENT": "development"
 	},
 	// Replace placeholder IDs with values returned by `wrangler d1 create`
 	// and `wrangler kv namespace create` before remote deploys.

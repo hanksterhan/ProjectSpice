@@ -43,6 +43,7 @@ export function CookMode({ recipes }: CookModeProps) {
     : -1;
   const activeRecipeState = activeRecipe ? session.recipes[activeRecipe.id] : undefined;
   const completedRecipeIds = getCompletedRecipeIds(recipes, session);
+  const hasMultipleRecipes = recipes.length > 1;
 
   useEffect(() => {
     try {
@@ -152,65 +153,67 @@ export function CookMode({ recipes }: CookModeProps) {
 
   return (
     <div className="cook-mode-page">
-      <header className="cook-reader-bar">
-        <button
-          className="cook-swap-button"
-          onClick={() => switchRecipe(-1)}
-          type="button"
-          aria-label="Previous recipe"
-        >
-          <ChevronLeft aria-hidden="true" size={18} strokeWidth={2.6} />
-        </button>
-
-        <label className="cook-recipe-picker">
-          <span>Currently cooking</span>
-          <select
-            aria-label="Choose active recipe"
-            onChange={(event) => setActiveRecipe(event.currentTarget.value)}
-            value={activeRecipe?.id ?? ""}
+      {hasMultipleRecipes ? (
+        <header className="cook-reader-bar">
+          <button
+            className="cook-swap-button"
+            onClick={() => switchRecipe(-1)}
+            type="button"
+            aria-label="Previous recipe"
           >
-            {recipes.map((recipe) => {
-              const progress = getCookRecipeProgress(recipe, session.recipes[recipe.id]);
+            <ChevronLeft aria-hidden="true" size={18} strokeWidth={2.6} />
+          </button>
 
-              return (
-                <option key={recipe.id} value={recipe.id}>
-                  {recipe.title} ({progress.completedSteps}/{progress.totalSteps})
-                </option>
-              );
-            })}
-          </select>
-        </label>
+          <label className="cook-recipe-picker">
+            <span>Currently cooking</span>
+            <select
+              aria-label="Choose active recipe"
+              onChange={(event) => setActiveRecipe(event.currentTarget.value)}
+              value={activeRecipe?.id ?? ""}
+            >
+              {recipes.map((recipe) => {
+                const progress = getCookRecipeProgress(recipe, session.recipes[recipe.id]);
 
-        <button
-          className="cook-swap-button"
-          onClick={() => switchRecipe(1)}
-          type="button"
-          aria-label="Next recipe"
-        >
-          <ChevronRight aria-hidden="true" size={18} strokeWidth={2.6} />
-        </button>
+                return (
+                  <option key={recipe.id} value={recipe.id}>
+                    {recipe.title} ({progress.completedSteps}/{progress.totalSteps})
+                  </option>
+                );
+              })}
+            </select>
+          </label>
 
-        <details className="cook-session-menu">
-          <summary>Session</summary>
-          <div>
-            <Button onClick={resetSession} type="button" variant="secondary">
-              <RotateCcw aria-hidden="true" size={16} strokeWidth={2.4} />
-              Reset Checks
-            </Button>
-            <Form method="post">
-              <input name="intent" type="hidden" value="finish-cooking" />
-              <input name="cookedOn" type="hidden" value={getTodayDateInputValue()} />
-              {completedRecipeIds.map((recipeId) => (
-                <input key={recipeId} name="recipeIds" type="hidden" value={recipeId} />
-              ))}
-              <Button type="submit" variant="primary">
-                <Check aria-hidden="true" size={16} strokeWidth={2.6} />
-                Finish Cooking
+          <button
+            className="cook-swap-button"
+            onClick={() => switchRecipe(1)}
+            type="button"
+            aria-label="Next recipe"
+          >
+            <ChevronRight aria-hidden="true" size={18} strokeWidth={2.6} />
+          </button>
+
+          <details className="cook-session-menu">
+            <summary>Session</summary>
+            <div>
+              <Button onClick={resetSession} type="button" variant="secondary">
+                <RotateCcw aria-hidden="true" size={16} strokeWidth={2.4} />
+                Reset Checks
               </Button>
-            </Form>
-          </div>
-        </details>
-      </header>
+              <Form method="post">
+                <input name="intent" type="hidden" value="finish-cooking" />
+                <input name="cookedOn" type="hidden" value={getTodayDateInputValue()} />
+                {completedRecipeIds.map((recipeId) => (
+                  <input key={recipeId} name="recipeIds" type="hidden" value={recipeId} />
+                ))}
+                <Button type="submit" variant="primary">
+                  <Check aria-hidden="true" size={16} strokeWidth={2.6} />
+                  Finish Cooking
+                </Button>
+              </Form>
+            </div>
+          </details>
+        </header>
+      ) : null}
 
       {activeRecipe ? (
         <CookRecipeReader
@@ -349,19 +352,30 @@ function CookDirectionStep({
         <Check aria-hidden="true" size={14} strokeWidth={2.6} />
       </button>
       <span>{cookStep.stepIndex}</span>
-      <div>
-        <p>
-          {textParts.map((part, index) =>
-            part.type === "ingredient" ? (
-              <span className="direction-ingredient-mention" key={`${part.ingredientId}-${index}`}>
-                {part.text}
-                <span>{part.measure}</span>
-              </span>
-            ) : (
-              <span key={`text-${index}`}>{part.text}</span>
-            ),
-          )}
-        </p>
+      <div className="cook-reader-step-body">
+        <div className="cook-reader-step-main">
+          <p>
+            {textParts.map((part, index) =>
+              part.type === "ingredient" ? (
+                <span className="direction-ingredient-mention" key={`${part.ingredientId}-${index}`}>
+                  {part.text}
+                  {part.showMeasure ? <span>{part.measure}</span> : null}
+                </span>
+              ) : (
+                <span key={`text-${index}`}>{part.text}</span>
+              ),
+            )}
+          </p>
+          {step.timerMinutes ? (
+            <span
+              aria-label={`Step ${cookStep.stepIndex} timer: ${formatDisplayTime(step.timerMinutes)}`}
+              className="cook-reader-step-timer"
+            >
+              <Timer aria-hidden="true" size={14} strokeWidth={2.5} />
+              {formatDisplayTime(step.timerMinutes)}
+            </span>
+          ) : null}
+        </div>
         {ingredientSummary.length > 0 ? (
           <div className="cook-reader-step-ingredients" aria-label={`Step ${cookStep.stepIndex} ingredients`}>
             {ingredientSummary.map((ingredient) => (
@@ -371,12 +385,6 @@ function CookDirectionStep({
               </span>
             ))}
           </div>
-        ) : null}
-        {step.timerMinutes ? (
-          <small>
-            <Timer aria-hidden="true" size={14} strokeWidth={2.5} />
-            {formatDisplayTime(step.timerMinutes)}
-          </small>
         ) : null}
       </div>
     </li>

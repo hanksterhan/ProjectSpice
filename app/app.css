@@ -2859,9 +2859,15 @@ p {
   grid-template-columns: auto 2rem minmax(0, 1fr);
 }
 
-.cook-reader-directions li.complete > div > p {
+.cook-reader-directions li.complete .cook-reader-step-main p {
   color: var(--muted);
   text-decoration: line-through;
+}
+
+.cook-reader-directions li.complete .cook-reader-step-timer {
+  background: var(--surface-muted);
+  border-color: var(--line);
+  color: var(--muted);
 }
 
 .cook-inline-check {
@@ -2903,17 +2909,45 @@ p {
   margin-top: 0.05rem;
 }
 
+.cook-reader-step-body {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.cook-reader-step-main {
+  align-items: start;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .cook-reader-directions li p {
   color: var(--ink);
   line-height: 1.58;
-  margin-bottom: 0.35rem;
+  margin: 0;
+}
+
+.cook-reader-step-timer {
+  align-items: center;
+  background: color-mix(in srgb, var(--leaf) 10%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--leaf) 28%, var(--line));
+  border-radius: 999px;
+  color: var(--leaf);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 0.25rem;
+  line-height: 1;
+  margin-top: 0.1rem;
+  padding: 0.38rem 0.55rem;
+  white-space: nowrap;
 }
 
 .cook-reader-step-ingredients {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-bottom: 0.4rem;
 }
 
 .cook-reader-step-ingredients span {
@@ -2931,14 +2965,6 @@ p {
 
 .cook-reader-step-ingredients strong {
   color: var(--leaf);
-}
-
-.cook-reader-directions small {
-  align-items: center;
-  color: var(--leaf);
-  display: inline-flex;
-  font-weight: 900;
-  gap: 0.25rem;
 }
 
 .recipe-ai-panel {
@@ -4217,6 +4243,15 @@ p {
   .cook-session-menu > div {
     left: 0;
     right: 0;
+  }
+
+  .cook-reader-step-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cook-reader-step-timer {
+    justify-self: start;
+    margin-top: 0;
   }
 
   .cook-reader-title dl {

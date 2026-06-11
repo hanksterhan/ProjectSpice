@@ -159,7 +159,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
                                 key={`${part.ingredientId}-${partIndex}`}
                               >
                                 {part.text}
-                                <span>{part.measure}</span>
+                                {part.showMeasure ? <span>{part.measure}</span> : null}
                               </span>
                             ) : (
                               <span key={`text-${partIndex}`}>{part.text}</span>

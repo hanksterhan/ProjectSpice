@@ -15,6 +15,7 @@ export type DirectionIngredientMention =
       type: "ingredient";
       ingredientId: string;
       measure: string;
+      showMeasure: boolean;
       text: string;
     };
 
@@ -201,6 +202,7 @@ function injectIngredientMention(
       type: "ingredient",
       ingredientId: ingredient.id,
       measure: ingredient.measure,
+      showMeasure: !containsNearbyMeasure(text, mentionStart, mentionStart + mention.length, ingredient.measure),
       text: mention,
     });
 
@@ -216,6 +218,78 @@ function injectIngredientMention(
   }
 
   return parts;
+}
+
+function containsNearbyMeasure(
+  text: string,
+  mentionStart: number,
+  mentionEnd: number,
+  measure: string,
+): boolean {
+  const parsedMeasure = parseMeasure(measure);
+
+  if (!parsedMeasure) {
+    return false;
+  }
+
+  const prefix = text.slice(Math.max(0, mentionStart - 40), mentionStart);
+  const suffix = text.slice(mentionEnd, Math.min(text.length, mentionEnd + 24));
+  const hasQuantityBefore = parsedMeasure.quantityPatterns.some((pattern) =>
+    pattern.test(prefix),
+  );
+  const hasUnitBefore = parsedMeasure.unitPatterns.some((pattern) => pattern.test(prefix));
+  const hasUnitAfter = parsedMeasure.unitPatterns.some((pattern) => pattern.test(suffix));
+
+  return hasQuantityBefore && (hasUnitBefore || hasUnitAfter);
+}
+
+function parseMeasure(
+  measure: string,
+): { quantityPatterns: RegExp[]; unitPatterns: RegExp[] } | undefined {
+  const match = measure.trim().match(/^(\d+(?:\s+\d\/\d|\/\d)?|\d*\.\d+)\s+(.+)$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const quantity = match[1] ?? "";
+  const unit = match[2] ?? "";
+  const unitAliases = getUnitAliases(unit);
+
+  return {
+    quantityPatterns: createQuantityAliases(quantity).map(
+      (alias) => new RegExp(`(?:^|\\s)${escapeRegExp(alias)}(?=$|[^A-Za-z0-9])`, "i"),
+    ),
+    unitPatterns: unitAliases.map(
+      (alias) => new RegExp(`(?:^|\\s)${escapeRegExp(alias)}(?=$|[^A-Za-z0-9])`, "i"),
+    ),
+  };
+}
+
+function createQuantityAliases(quantity: string): string[] {
+  const aliases = new Set([quantity]);
+  const numericQuantity = Number(quantity);
+
+  if (Number.isFinite(numericQuantity)) {
+    aliases.add(String(numericQuantity));
+  }
+
+  return [...aliases];
+}
+
+function getUnitAliases(unit: string): string[] {
+  const normalizedUnit = unit.toLowerCase();
+  const aliasesByUnit: Record<string, string[]> = {
+    tbsp: ["tbsp", "tablespoon", "tablespoons"],
+    tsp: ["tsp", "teaspoon", "teaspoons"],
+    lb: ["lb", "lbs", "pound", "pounds"],
+    lbs: ["lb", "lbs", "pound", "pounds"],
+    oz: ["oz", "ounce", "ounces"],
+    g: ["g", "gram", "grams"],
+    kg: ["kg", "kilogram", "kilograms"],
+  };
+
+  return aliasesByUnit[normalizedUnit] ?? [normalizedUnit, singularize(normalizedUnit)];
 }
 
 function escapeRegExp(value: string): string {
