@@ -14,7 +14,8 @@ import {
   Show,
   SignInButton,
   SignUpButton,
-  UserButton,
+  useClerk,
+  useUser,
 } from "@clerk/react-router";
 import { NavLink } from "react-router";
 
@@ -209,6 +210,7 @@ export function AppShell({
               />
               {authEnabled ? <AuthControls /> : null}
               <SettingsMenu
+                authEnabled={authEnabled}
                 theme={theme}
                 onToggle={() => setTheme((mode) => (mode === "dark" ? "light" : "dark"))}
               />
@@ -278,9 +280,6 @@ function AuthControls() {
             Sign Up
           </button>
         </SignUpButton>
-      </Show>
-      <Show when="signed-in">
-        <UserButton />
       </Show>
     </div>
   );
@@ -363,9 +362,11 @@ function ShellNav({
 }
 
 function SettingsMenu({
+  authEnabled,
   onToggle,
   theme,
 }: {
+  authEnabled: boolean;
   onToggle: () => void;
   theme: ThemeMode;
 }) {
@@ -378,6 +379,12 @@ function SettingsMenu({
         <span className="sr-only">Settings</span>
       </summary>
       <div className="shell-settings-menu-popover">
+        {authEnabled ? (
+          <Show when="signed-in">
+            <AccountSettingsControls />
+            <div className="shell-settings-menu-separator" />
+          </Show>
+        ) : null}
         <button
           aria-pressed={isDark}
           className="menu-action theme-menu-action"
@@ -392,6 +399,65 @@ function SettingsMenu({
         </button>
       </div>
     </details>
+  );
+}
+
+function AccountSettingsControls() {
+  const clerk = useClerk();
+  const { user } = useUser();
+  const username =
+    user?.username ??
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.fullName ??
+    "Signed in";
+
+  return (
+    <div className="shell-account-settings">
+      <div className="shell-account-summary">
+        <span>Signed in as</span>
+        <strong>{username}</strong>
+      </div>
+      <button
+        className="menu-action"
+        type="button"
+        onClick={(event) => {
+          clerk.openUserProfile();
+          event.currentTarget.closest("details")?.removeAttribute("open");
+        }}
+      >
+        <AccountIcon />
+        Manage account
+      </button>
+      <button
+        className="menu-danger-action"
+        type="button"
+        onClick={() => void clerk.signOut()}
+      >
+        <SignOutIcon />
+        Sign out
+      </button>
+    </div>
+  );
+}
+
+function AccountIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M20 21a8 8 0 0 0-16 0" />
+      <circle cx="12" cy="7" r="4" />
+      <path d="M18.5 8.5v3" />
+      <path d="M20 10h-3" />
+    </svg>
+  );
+}
+
+function SignOutIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+      <path d="M21 3v18" />
+    </svg>
   );
 }
 

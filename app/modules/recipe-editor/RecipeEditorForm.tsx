@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import { Form, Link } from "react-router";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
@@ -22,6 +22,7 @@ type RecipeEditorFormProps = {
   cancelHref: string;
   errors?: string[];
   chrome?: "full" | "minimal";
+  secondaryAction?: ReactNode;
 };
 
 type EditorFieldProps = {
@@ -44,6 +45,7 @@ export function RecipeEditorForm({
   cancelHref,
   errors: actionErrors = [],
   chrome = "full",
+  secondaryAction,
 }: RecipeEditorFormProps) {
   const defaultValues = useMemo(() => getRecipeEditorDefaults(recipe), [recipe]);
   const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -82,6 +84,7 @@ export function RecipeEditorForm({
             <strong>Review, edit, then save</strong>
           </div>
           <div className="editor-actions">
+            {secondaryAction}
             <Link className="button button-secondary" to={cancelHref}>
               Cancel
             </Link>
@@ -300,6 +303,7 @@ export function RecipeEditorForm({
       <footer className="editor-footer recipe-compose-footer">
         <span>{isDirty ? "Unsaved changes" : "Ready to review"}</span>
         <div className="editor-actions">
+          {secondaryAction}
           <Link className="button button-secondary" to={cancelHref}>
             Cancel
           </Link>

@@ -232,28 +232,23 @@ export default function EditRecipe({ loaderData, actionData }: Route.ComponentPr
 
   return (
     <div className="recipe-editor-route">
-      <div className="recipe-editor-modebar">
-        <div>
-          <span>Editor</span>
-          <strong>Manual edits with AI assist when you need it</strong>
-        </div>
-        <button
-          className="button button-secondary"
-          type="button"
-          aria-controls="recipe-ai-assistant"
-          aria-expanded={isAssistantOpen}
-          onClick={() => setIsAssistantOpen((isOpen) => !isOpen)}
-        >
-          {isAssistantOpen ? "Hide AI Assist" : "AI Assist"}
-        </button>
-      </div>
-
       <div className={isAssistantOpen ? "recipe-editor-workspace with-ai" : "recipe-editor-workspace"}>
         <RecipeEditorForm
           mode="edit"
           recipe={loaderData.recipe}
           cancelHref={getRecipeDetailPath(loaderData.recipe)}
           errors={!isAiActionData ? actionData?.errors : undefined}
+          secondaryAction={
+            <button
+              className="button button-secondary"
+              type="button"
+              aria-controls="recipe-ai-assistant"
+              aria-expanded={isAssistantOpen}
+              onClick={() => setIsAssistantOpen((isOpen) => !isOpen)}
+            >
+              {isAssistantOpen ? "Hide AI Assist" : "AI Assist"}
+            </button>
+          }
         />
         {isAssistantOpen ? (
           <RecipeAiPanel
