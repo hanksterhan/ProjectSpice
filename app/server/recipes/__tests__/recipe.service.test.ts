@@ -47,9 +47,29 @@ describe("RecipeService", () => {
     const service = new RecipeService(repository);
 
     expect(await service.list()).toEqual([validRecipeFixture]);
+    expect(await service.listSummaries()).toEqual([
+      {
+        id: validRecipeFixture.id,
+        title: validRecipeFixture.title,
+        description: validRecipeFixture.description,
+        yield: validRecipeFixture.yield,
+        times: validRecipeFixture.times,
+        imageUrl: validRecipeFixture.imageUrl,
+        source: validRecipeFixture.source,
+        tags: validRecipeFixture.tags,
+        version: validRecipeFixture.version,
+        createdAt: validRecipeFixture.createdAt,
+        updatedAt: validRecipeFixture.updatedAt,
+      },
+    ]);
     expect(await service.getById(validRecipeFixture.id)).toEqual(validRecipeFixture);
+    expect(await service.getManyByIds([validRecipeFixture.id])).toEqual([
+      validRecipeFixture,
+    ]);
     expect(repository.list).toHaveBeenCalledOnce();
+    expect(repository.listSummaries).toHaveBeenCalledOnce();
     expect(repository.getById).toHaveBeenCalledWith(validRecipeFixture.id);
+    expect(repository.getManyByIds).toHaveBeenCalledWith([validRecipeFixture.id]);
   });
 
   it("updates with expected version and records the updated version", async () => {
@@ -96,7 +116,23 @@ function createRepositoryDouble(
   return {
     create: vi.fn(async (recipe: Recipe) => recipe),
     list: vi.fn(async () => [validRecipeFixture]),
+    listSummaries: vi.fn(async () => [
+      {
+        id: validRecipeFixture.id,
+        title: validRecipeFixture.title,
+        description: validRecipeFixture.description,
+        yield: validRecipeFixture.yield,
+        times: validRecipeFixture.times,
+        imageUrl: validRecipeFixture.imageUrl,
+        source: validRecipeFixture.source,
+        tags: validRecipeFixture.tags,
+        version: validRecipeFixture.version,
+        createdAt: validRecipeFixture.createdAt,
+        updatedAt: validRecipeFixture.updatedAt,
+      },
+    ]),
     getById: vi.fn(async () => validRecipeFixture),
+    getManyByIds: vi.fn(async () => [validRecipeFixture]),
     update: vi.fn(async (recipe: Recipe) => recipe),
     recordVersion: vi.fn(async () => undefined),
     softDelete: vi.fn(async () => true),

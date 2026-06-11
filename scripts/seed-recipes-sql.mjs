@@ -30,8 +30,11 @@ const vite = await createServer({
 
 try {
   const domain = await vite.ssrLoadModule("/app/modules/recipe-domain/index.ts");
+  const fixtures = await vite.ssrLoadModule(
+    "/app/modules/recipe-domain/seed-recipes.fixtures.ts",
+  );
   const { createRecipeSlug, getCookCount, getLastCookedDate, recipeSchema } = domain;
-  const seedRecipes = domain.seedRecipes.map((recipe) => recipeSchema.parse(recipe));
+  const seedRecipes = fixtures.seedRecipes.map((recipe) => recipeSchema.parse(recipe));
   const statements = [
     "PRAGMA foreign_keys = ON;",
     ...seedRecipes.map((recipe) =>

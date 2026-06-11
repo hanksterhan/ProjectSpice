@@ -107,7 +107,9 @@ async function getRecipesInQueryOrder(
     return [];
   }
 
-  const recipes = await getRecipeService(context).list();
+  const recipes = await getRecipeService(context).getManyByIds([
+    ...new Set(recipeIds),
+  ]);
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 
   return recipeIds

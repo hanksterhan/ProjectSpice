@@ -1,5 +1,3 @@
-import type { Recipe } from "~/modules/recipe-domain";
-
 const cookbookChapterOverrides: Record<string, string[]> = {
   "51-hour-focaccia": [
     "aerated"
@@ -587,6 +585,6 @@ const cookbookChapterOverrides: Record<string, string[]> = {
   ]
 };
 
-export function getCookbookChapterOverrides(recipe: Recipe): string[] {
+export function getCookbookChapterOverrides(recipe: { id: string }): string[] {
   return cookbookChapterOverrides[recipe.id] ?? [];
 }

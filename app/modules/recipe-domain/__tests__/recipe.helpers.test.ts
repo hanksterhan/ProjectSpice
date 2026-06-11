@@ -11,9 +11,9 @@ import {
   normalizeDirectionSections,
   normalizeDirectionSteps,
   recipeDraftSchema,
-  seedRecipes,
   validRecipeFixture,
 } from "../index";
+import { seedRecipes } from "../seed-recipes.fixtures";
 
 describe("createRecipeSlug", () => {
   it("creates URL-safe slugs from recipe titles", () => {

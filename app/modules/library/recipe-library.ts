@@ -1,4 +1,4 @@
-import type { Recipe } from "~/modules/recipe-domain";
+import type { Recipe, RecipeSummary } from "~/modules/recipe-domain";
 import { getCookbookChapterOverrides } from "~/modules/library/cookbook-chapter-overrides";
 
 export const recipeLibrarySortOptions = ["recent", "title", "time", "rating"] as const;
@@ -68,6 +68,8 @@ export type RecipeLibraryQuery = {
   websites: string[];
 };
 
+export type RecipeLibraryItem = RecipeSummary;
+
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const searchParams = new URL(url).searchParams;
   const sort = searchParams.get("sort");
@@ -94,9 +96,9 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
 }
 
 export function getRecipeLibraryResults(
-  recipes: readonly Recipe[],
+  recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
-): Recipe[] {
+): RecipeLibraryItem[] {
   const websiteCounts = getWebsiteCounts(recipes);
   const terms = query.q
     .toLowerCase()
@@ -143,7 +145,7 @@ export function getRecipeLibraryResults(
 }
 
 export function getRecipeLibraryFacets(
-  recipes: readonly Recipe[],
+  recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
 ): RecipeLibraryFacetGroup[] {
   const groups = [
@@ -163,7 +165,7 @@ export function getRecipeLibraryFacets(
 }
 
 export function getRecipeCookbookTree(
-  recipes: readonly Recipe[],
+  recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
 ): RecipeLibraryAuthorNode[] {
   const authors = new Map<
@@ -302,7 +304,7 @@ export function getActiveLibraryFilters(
 }
 
 export function getRecipeSourceFilterLink(
-  recipe: Recipe,
+  recipe: RecipeLibraryItem,
   query: RecipeLibraryQuery,
 ): RecipeSourceFilterLink | undefined {
   const cookbook = getCookbookLabel(recipe);
@@ -426,8 +428,8 @@ export function removeRecipeTags(recipe: Recipe, tags: string[]): Recipe {
 }
 
 function compareRecipes(
-  left: Recipe,
-  right: Recipe,
+  left: RecipeLibraryItem,
+  right: RecipeLibraryItem,
   sort: RecipeLibrarySort,
   direction: RecipeLibrarySortDirection,
 ): number {
@@ -474,10 +476,10 @@ export function getDefaultSortDirection(
 }
 
 function getFacetOptions(
-  recipes: readonly Recipe[],
+  recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
   facet: RecipeLibraryFacet,
-  getValues: (recipe: Recipe) => string[],
+  getValues: (recipe: RecipeLibraryItem) => string[],
 ): RecipeLibraryFacetOption[] {
   const counts = new Map<string, number>();
 
@@ -518,7 +520,7 @@ function getSelectedValues(
   return query.cookbooks;
 }
 
-function getSourceTypeLabel(recipe: Recipe): string {
+function getSourceTypeLabel(recipe: RecipeLibraryItem): string {
   if (getCookbookLabel(recipe)) {
     return "Cookbook";
   }
@@ -532,7 +534,7 @@ function getSourceTypeLabel(recipe: Recipe): string {
   return `${sourceType.slice(0, 1).toUpperCase()}${sourceType.slice(1)}`;
 }
 
-function getCookbookLabel(recipe: Recipe): string {
+function getCookbookLabel(recipe: RecipeLibraryItem): string {
   if (recipe.source?.type !== "imported" || !recipe.source.name) {
     return "";
   }
@@ -553,7 +555,7 @@ function getCookbookTitleLabel(cookbook: string): string {
 }
 
 function getCookbookChapterLabels(
-  recipe: Recipe,
+  recipe: RecipeLibraryItem,
   author: string,
   cookbook: string,
 ): string[] {
@@ -583,7 +585,7 @@ function getCookbookChapterLabels(
   ];
 }
 
-function getCookbookChapterLabelsForRecipe(recipe: Recipe): string[] {
+function getCookbookChapterLabelsForRecipe(recipe: RecipeLibraryItem): string[] {
   const cookbook = getCookbookLabel(recipe);
 
   if (!cookbook) {
@@ -597,7 +599,7 @@ function getCookbookChapterLabelsForRecipe(recipe: Recipe): string[] {
   );
 }
 
-function getVisibleTagLabels(recipe: Recipe): string[] {
+function getVisibleTagLabels(recipe: RecipeLibraryItem): string[] {
   const tags = recipe.tags.map(normalizeTag).filter(Boolean);
 
   if (tags.length === 0) {
@@ -626,7 +628,7 @@ function getVisibleTagLabels(recipe: Recipe): string[] {
 }
 
 function getWebsiteFacetOptions(
-  recipes: readonly Recipe[],
+  recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
 ): RecipeLibraryFacetOption[] {
   const counts = getWebsiteCounts(recipes);
@@ -670,7 +672,7 @@ function getWebsiteFacetOptions(
   });
 }
 
-function getWebsiteCounts(recipes: readonly Recipe[]): Map<string, number> {
+function getWebsiteCounts(recipes: readonly RecipeLibraryItem[]): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const recipe of recipes) {
@@ -686,7 +688,7 @@ function getWebsiteCounts(recipes: readonly Recipe[]): Map<string, number> {
   return counts;
 }
 
-function getWebsiteLabel(recipe: Recipe): string {
+function getWebsiteLabel(recipe: RecipeLibraryItem): string {
   const sourceName = normalizeWebsiteSource(recipe.source?.name ?? "");
 
   if (sourceName) {
@@ -718,7 +720,7 @@ function isCookbookSourceName(value: string): boolean {
 }
 
 function matchesSelectedWebsites(
-  recipe: Recipe,
+  recipe: RecipeLibraryItem,
   selectedWebsites: string[],
   websiteCounts: Map<string, number>,
 ): boolean {

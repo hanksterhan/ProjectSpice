@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { seedRecipes } from "~/modules/recipe-domain";
+import { seedRecipes } from "~/modules/recipe-domain/seed-recipes.fixtures";
 import {
   addRecipeTags,
   getActiveLibraryFilters,

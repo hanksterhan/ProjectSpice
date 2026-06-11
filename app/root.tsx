@@ -92,8 +92,17 @@ async function loadRootAppData(
   context: RuntimeLoadContext,
   authBypassed: boolean,
 ): Promise<RootAppData> {
+  const url = new URL(request.url);
+
+  if (url.pathname === "/") {
+    return {
+      authBypassed,
+      libraryDrawer: null,
+    };
+  }
+
   const query = parseRecipeLibraryQuery(request.url);
-  const recipes = await getRecipeService(context).list();
+  const recipes = await getRecipeService(context).listSummaries();
 
   return {
     authBypassed,

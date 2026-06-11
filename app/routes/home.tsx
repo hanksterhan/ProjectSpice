@@ -1,22 +1,28 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChefHat, Tag } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import type { Route } from "./+types/home";
 import { getCookSessionHref } from "~/modules/cooking";
-import { formatDisplayTime, seedRecipes, type Recipe } from "~/modules/recipe-domain";
+import { formatDisplayTime } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
+  getActiveLibraryFilters,
   getLibraryQueryHref,
+  getRecipeCookbookTree,
+  getRecipeLibraryFacets,
   getRecipeSourceFilterLink,
   getRecipeLibraryResults,
   maxRecipeTags,
   parseBulkTagText,
   parseRecipeLibraryQuery,
   removeRecipeTags,
+  type RecipeLibraryItem,
   type RecipeLibraryQuery,
 } from "~/modules/library/recipe-library";
+import { LibraryOrganizerDrawer } from "~/modules/library/LibraryOrganizerDrawer";
 import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
+import { useShellDrawer } from "~/modules/ui-shell/AppShell";
 import {
   Button,
   EmptyState,
@@ -36,7 +42,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   await requireAuthenticatedUser({ request, context, params: {} });
 
   const query = parseRecipeLibraryQuery(request.url);
-  const allRecipes = await getRecipeService(context).list();
+  const allRecipes = await getRecipeService(context).listSummaries();
   const recipes = getRecipeLibraryResults(allRecipes, query);
 
   return {
@@ -110,7 +116,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const fallbackQuery = parseRecipeLibraryQuery("https://spice.local/");
   const {
     query = fallbackQuery,
-    recipes = getRecipeLibraryResults(seedRecipes, fallbackQuery),
+    recipes = [],
   } = loaderData ?? {};
   const isGridView = query.view === "grid";
   const isListView = query.view === "list";
@@ -118,6 +124,23 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
   const resultLabel =
     recipes.length === 1 ? "1 recipe" : `${recipes.length} recipes`;
+  const drawer = useMemo(
+    () => ({
+      title: "Organize Library",
+      content: (
+        <LibraryOrganizerDrawer
+          activeFilters={getActiveLibraryFilters(query)}
+          cookbookTree={getRecipeCookbookTree(recipes, query)}
+          facets={getRecipeLibraryFacets(recipes, query)}
+          hasSearch={query.q.length > 0}
+          query={query}
+        />
+      ),
+    }),
+    [query, recipes],
+  );
+
+  useShellDrawer(drawer);
 
   return (
     <div className="library-page">
@@ -281,10 +304,10 @@ function startCookingSelected() {
 
 type RecipeMetaProps = {
   query: RecipeLibraryQuery;
-  recipe: Recipe;
+  recipe: RecipeLibraryItem;
 };
 
-function RecipeSignals({ recipe }: { recipe: Recipe }) {
+function RecipeSignals({ recipe }: { recipe: RecipeLibraryItem }) {
   return (
     <div className="recipe-signals">
       <RatingStars rating={recipe.rating} />
@@ -292,7 +315,7 @@ function RecipeSignals({ recipe }: { recipe: Recipe }) {
   );
 }
 
-function RecipeFavoriteMarker({ recipe }: { recipe: Recipe }) {
+function RecipeFavoriteMarker({ recipe }: { recipe: RecipeLibraryItem }) {
   if (!recipe.favorite) {
     return null;
   }
@@ -320,7 +343,7 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   );
 }
 
-function RecipeSelect({ recipe }: { recipe: Recipe }) {
+function RecipeSelect({ recipe }: { recipe: RecipeLibraryItem }) {
   return (
     <label className="recipe-select-checkbox">
       <input name="recipeIds" type="checkbox" value={recipe.id} />

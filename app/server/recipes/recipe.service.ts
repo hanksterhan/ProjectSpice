@@ -1,7 +1,9 @@
 import {
   recipeSchema,
+  recipeSummarySchema,
   type Recipe,
   type RecipeInput,
+  type RecipeSummary,
 } from "~/modules/recipe-domain";
 
 import {
@@ -11,7 +13,14 @@ import {
 
 export type RecipeServiceRepository = Pick<
   RecipeRepository,
-  "create" | "list" | "getById" | "update" | "recordVersion" | "softDelete"
+  | "create"
+  | "list"
+  | "listSummaries"
+  | "getById"
+  | "getManyByIds"
+  | "update"
+  | "recordVersion"
+  | "softDelete"
 >;
 
 export class RecipeService {
@@ -30,10 +39,22 @@ export class RecipeService {
     return recipes.map((recipe) => recipeSchema.parse(recipe));
   }
 
+  async listSummaries(): Promise<RecipeSummary[]> {
+    const recipes = await this.repository.listSummaries();
+
+    return recipes.map((recipe) => recipeSummarySchema.parse(recipe));
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     const recipe = await this.repository.getById(id);
 
     return recipe ? recipeSchema.parse(recipe) : null;
+  }
+
+  async getManyByIds(ids: string[]): Promise<Recipe[]> {
+    const recipes = await this.repository.getManyByIds(ids);
+
+    return recipes.map((recipe) => recipeSchema.parse(recipe));
   }
 
   async update(

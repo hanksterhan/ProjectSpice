@@ -124,8 +124,52 @@ class RuntimeFakeRecipeD1PreparedStatement implements RecipeRepositoryStatement 
       };
     }
 
+    if (normalizedQuery.startsWith("SELECT id, title, description")) {
+      return {
+        results: [...this.database.rows.values()]
+          .sort((firstRecipe, secondRecipe) =>
+            firstRecipe.title.localeCompare(secondRecipe.title),
+          )
+          .map(recipeToSummaryRow) as T[],
+      };
+    }
+
+    if (normalizedQuery.startsWith("SELECT recipe_json FROM recipes WHERE id IN")) {
+      const ids = new Set(this.values.map(String));
+
+      return {
+        results: [...this.database.rows.values()]
+          .filter((recipe) => ids.has(recipe.id))
+          .map((recipe) => ({ recipe_json: JSON.stringify(recipe) })) as T[],
+      };
+    }
+
     throw new Error(`Unhandled fake D1 all query: ${normalizedQuery}`);
   }
+}
+
+function recipeToSummaryRow(recipe: Recipe) {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    description: recipe.description ?? null,
+    image_url: recipe.imageUrl ?? null,
+    source_type: recipe.source?.type ?? null,
+    source_name: recipe.source?.name ?? null,
+    source_url: recipe.source?.url ?? null,
+    tags_json: JSON.stringify(recipe.tags),
+    yield_quantity: recipe.yield?.quantity ?? null,
+    yield_unit: recipe.yield?.unit ?? null,
+    yield_notes: recipe.yield?.notes ?? null,
+    prep_minutes: recipe.times?.prepMinutes ?? null,
+    cook_minutes: recipe.times?.cookMinutes ?? null,
+    total_minutes: recipe.times?.totalMinutes ?? null,
+    favorite: recipe.favorite === true ? 1 : 0,
+    rating: recipe.rating ?? null,
+    version: recipe.version,
+    created_at: recipe.createdAt,
+    updated_at: recipe.updatedAt,
+  };
 }
 
 function normalizeSql(query: string): string {

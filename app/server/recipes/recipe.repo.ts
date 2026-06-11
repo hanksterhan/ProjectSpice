@@ -1,4 +1,8 @@
-import type { Recipe } from "~/modules/recipe-domain";
+import type {
+  Recipe,
+  RecipeSourceType,
+  RecipeSummary,
+} from "~/modules/recipe-domain";
 import {
   createRecipeSlug,
   getCookCount,
@@ -25,6 +29,28 @@ export class RecipeVersionConflictError extends Error {
 
 type RecipeRow = {
   recipe_json: string | Recipe;
+};
+
+type RecipeSummaryRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  source_type: RecipeSourceType | null;
+  source_name: string | null;
+  source_url: string | null;
+  tags_json: string | string[];
+  yield_quantity: number | null;
+  yield_unit: string | null;
+  yield_notes: string | null;
+  prep_minutes: number | null;
+  cook_minutes: number | null;
+  total_minutes: number | null;
+  favorite: boolean | number;
+  rating: number | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export class RecipeRepository {
@@ -106,6 +132,38 @@ export class RecipeRepository {
     return result.results.map(rowToRecipe);
   }
 
+  async listSummaries(): Promise<RecipeSummary[]> {
+    const result = await this.database
+      .prepare(
+        `SELECT
+          id,
+          title,
+          description,
+          image_url,
+          source_type,
+          source_name,
+          source_url,
+          tags_json,
+          yield_quantity,
+          yield_unit,
+          yield_notes,
+          prep_minutes,
+          cook_minutes,
+          total_minutes,
+          favorite,
+          rating,
+          version,
+          created_at,
+          updated_at
+        FROM recipes
+        WHERE deleted_at IS NULL
+        ORDER BY title COLLATE NOCASE ASC`,
+      )
+      .all<RecipeSummaryRow>();
+
+    return result.results.map(rowToRecipeSummary);
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     const row = await this.database
       .prepare(
@@ -118,6 +176,24 @@ export class RecipeRepository {
       .first<RecipeRow>();
 
     return row ? rowToRecipe(row) : null;
+  }
+
+  async getManyByIds(ids: string[]): Promise<Recipe[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const placeholders = ids.map(() => "?").join(", ");
+    const result = await this.database
+      .prepare(
+        `SELECT recipe_json
+        FROM recipes
+        WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+      )
+      .bind(...ids)
+      .all<RecipeRow>();
+
+    return result.results.map(rowToRecipe);
   }
 
   async update(recipe: Recipe, expectedVersion: number): Promise<Recipe> {
@@ -232,4 +308,50 @@ function rowToRecipe(row: RecipeRow): Recipe {
   return typeof row.recipe_json === "string"
     ? (JSON.parse(row.recipe_json) as Recipe)
     : row.recipe_json;
+}
+
+function rowToRecipeSummary(row: RecipeSummaryRow): RecipeSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    ...(row.description ? { description: row.description } : {}),
+    ...(row.image_url ? { imageUrl: row.image_url } : {}),
+    ...(row.source_type
+      ? {
+          source: {
+            type: row.source_type,
+            ...(row.source_name ? { name: row.source_name } : {}),
+            ...(row.source_url ? { url: row.source_url } : {}),
+          },
+        }
+      : {}),
+    tags: parseTags(row.tags_json),
+    ...(row.yield_quantity || row.yield_unit || row.yield_notes
+      ? {
+          yield: {
+            ...(row.yield_quantity ? { quantity: row.yield_quantity } : {}),
+            ...(row.yield_unit ? { unit: row.yield_unit } : {}),
+            ...(row.yield_notes ? { notes: row.yield_notes } : {}),
+          },
+        }
+      : {}),
+    ...(row.prep_minutes || row.cook_minutes || row.total_minutes
+      ? {
+          times: {
+            ...(row.prep_minutes ? { prepMinutes: row.prep_minutes } : {}),
+            ...(row.cook_minutes ? { cookMinutes: row.cook_minutes } : {}),
+            ...(row.total_minutes ? { totalMinutes: row.total_minutes } : {}),
+          },
+        }
+      : {}),
+    ...(row.favorite ? { favorite: true } : {}),
+    ...(row.rating !== null ? { rating: row.rating } : {}),
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function parseTags(value: string | string[]): string[] {
+  return typeof value === "string" ? (JSON.parse(value) as string[]) : value;
 }

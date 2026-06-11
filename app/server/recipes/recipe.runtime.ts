@@ -1,4 +1,4 @@
-import { seedRecipes, type Recipe } from "~/modules/recipe-domain";
+import type { Recipe, RecipeSummary } from "~/modules/recipe-domain";
 import {
   getCloudflareRuntimeContext,
   type RuntimeLoadContext,
@@ -16,7 +16,7 @@ type MaybeD1Env = Record<string, unknown> & {
 };
 
 let memoryRepository: MemoryRecipeRepository | undefined;
-const developmentSeedPromises = new WeakMap<RecipeRepositoryDatabase, Promise<void>>();
+const developmentSeedPromises = new WeakMap<object, Promise<void>>();
 
 export function getRecipeService(context: RuntimeLoadContext): RecipeService {
   const database = getBoundRecipeDatabase(context);
@@ -32,9 +32,13 @@ export function getRecipeService(context: RuntimeLoadContext): RecipeService {
   }
 
   assertCanUseMemoryRecipeStorage(context);
-  memoryRepository ??= new MemoryRecipeRepository(seedRecipes);
+  memoryRepository ??= new MemoryRecipeRepository();
 
-  return new RecipeService(memoryRepository);
+  return new RecipeService(
+    shouldSeedDevelopmentRecipeDatabase(context)
+      ? new DevelopmentSeedRecipeRepository(memoryRepository, memoryRepository)
+      : memoryRepository,
+  );
 }
 
 function getBoundRecipeDatabase(
@@ -80,7 +84,7 @@ class MemoryRecipeRepository implements RecipeServiceRepository {
   }> = [];
   private readonly deletedRecipeIds = new Set<string>();
 
-  constructor(initialRecipes: readonly Recipe[]) {
+  constructor(initialRecipes: readonly Recipe[] = []) {
     initialRecipes.forEach((recipe) => {
       this.recipes.set(recipe.id, cloneRecipe(recipe));
     });
@@ -102,6 +106,10 @@ class MemoryRecipeRepository implements RecipeServiceRepository {
       .map(cloneRecipe);
   }
 
+  async listSummaries(): Promise<RecipeSummary[]> {
+    return (await this.list()).map(toRecipeSummary);
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     if (this.deletedRecipeIds.has(id)) {
       return null;
@@ -110,6 +118,14 @@ class MemoryRecipeRepository implements RecipeServiceRepository {
     const recipe = this.recipes.get(id);
 
     return recipe ? cloneRecipe(recipe) : null;
+  }
+
+  async getManyByIds(ids: string[]): Promise<Recipe[]> {
+    const idSet = new Set(ids);
+
+    return [...this.recipes.values()]
+      .filter((recipe) => idSet.has(recipe.id) && !this.deletedRecipeIds.has(recipe.id))
+      .map(cloneRecipe);
   }
 
   async update(recipe: Recipe, expectedVersion: number): Promise<Recipe> {
@@ -148,8 +164,8 @@ class MemoryRecipeRepository implements RecipeServiceRepository {
 
 class DevelopmentSeedRecipeRepository implements RecipeServiceRepository {
   constructor(
-    private readonly database: RecipeRepositoryDatabase,
-    private readonly repository: RecipeRepository,
+    private readonly seedKey: object,
+    private readonly repository: RecipeServiceRepository,
   ) {}
 
   async create(recipe: Recipe): Promise<Recipe> {
@@ -164,10 +180,22 @@ class DevelopmentSeedRecipeRepository implements RecipeServiceRepository {
     return this.repository.list();
   }
 
+  async listSummaries(): Promise<RecipeSummary[]> {
+    await this.ensureSeeded();
+
+    return this.repository.listSummaries();
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     await this.ensureSeeded();
 
     return this.repository.getById(id);
+  }
+
+  async getManyByIds(ids: string[]): Promise<Recipe[]> {
+    await this.ensureSeeded();
+
+    return this.repository.getManyByIds(ids);
   }
 
   async update(recipe: Recipe, expectedVersion: number): Promise<Recipe> {
@@ -187,23 +215,24 @@ class DevelopmentSeedRecipeRepository implements RecipeServiceRepository {
   }
 
   private ensureSeeded(): Promise<void> {
-    let seedPromise = developmentSeedPromises.get(this.database);
+    let seedPromise = developmentSeedPromises.get(this.seedKey);
 
     if (!seedPromise) {
       seedPromise = seedMissingRecipes(this.repository).catch((error: unknown) => {
-        developmentSeedPromises.delete(this.database);
+        developmentSeedPromises.delete(this.seedKey);
         throw error;
       });
-      developmentSeedPromises.set(this.database, seedPromise);
+      developmentSeedPromises.set(this.seedKey, seedPromise);
     }
 
     return seedPromise;
   }
 }
 
-async function seedMissingRecipes(repository: RecipeRepository): Promise<void> {
+async function seedMissingRecipes(repository: RecipeServiceRepository): Promise<void> {
+  const { seedRecipes } = await import("~/modules/recipe-domain/seed-recipes.fixtures");
   const existingRecipeIds = new Set(
-    (await repository.list()).map((recipe) => recipe.id),
+    (await repository.listSummaries()).map((recipe) => recipe.id),
   );
 
   for (const recipe of seedRecipes) {
@@ -215,4 +244,22 @@ async function seedMissingRecipes(repository: RecipeRepository): Promise<void> {
 
 function cloneRecipe(recipe: Recipe): Recipe {
   return JSON.parse(JSON.stringify(recipe)) as Recipe;
+}
+
+function toRecipeSummary(recipe: Recipe): RecipeSummary {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    ...(recipe.description ? { description: recipe.description } : {}),
+    ...(recipe.yield ? { yield: recipe.yield } : {}),
+    ...(recipe.times ? { times: recipe.times } : {}),
+    ...(recipe.imageUrl ? { imageUrl: recipe.imageUrl } : {}),
+    ...(recipe.source ? { source: recipe.source } : {}),
+    tags: [...recipe.tags],
+    ...(recipe.favorite ? { favorite: recipe.favorite } : {}),
+    ...(recipe.rating !== undefined ? { rating: recipe.rating } : {}),
+    version: recipe.version,
+    createdAt: recipe.createdAt,
+    updatedAt: recipe.updatedAt,
+  };
 }

@@ -111,6 +111,22 @@ export const recipeSchema = z
   })
   .strict();
 
+export const recipeSummarySchema = recipeSchema.pick({
+  id: true,
+  title: true,
+  description: true,
+  yield: true,
+  times: true,
+  imageUrl: true,
+  source: true,
+  tags: true,
+  favorite: true,
+  rating: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const recipeDraftSchema = recipeSchema.omit({
   id: true,
   version: true,
