@@ -221,8 +221,10 @@ export class RecipeRepository {
 }
 
 function toRecipeSummary(recipe: Recipe) {
+  const titleSlug = createRecipeSlug(recipe.title);
+
   return {
-    slug: createRecipeSlug(recipe.title) || recipe.id,
+    slug: titleSlug ? `${titleSlug}-${recipe.id}` : recipe.id,
   };
 }
 

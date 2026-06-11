@@ -30,6 +30,18 @@ describe("recipe runtime persistence", () => {
     });
   });
 
+  it("seeds missing development fixture recipes into a bound D1 database", async () => {
+    const database = new RuntimeFakeRecipeD1Database();
+    const service = getRecipeService(createRuntimeContext("development", database));
+
+    await service.list();
+
+    expect(database.rows.size).toBeGreaterThan(800);
+    expect(database.rows.get("classic-sundae-bombe")).toMatchObject({
+      title: "Classic Sundae Bombe",
+    });
+  });
+
   it("does not fall back to memory storage outside development", () => {
     expect(() => getRecipeService(createRuntimeContext("production"))).toThrow(
       "Recipe persistence is not configured. Bind RECIPE_DB before running outside development.",
@@ -100,7 +112,19 @@ class RuntimeFakeRecipeD1PreparedStatement implements RecipeRepositoryStatement 
   }
 
   async all<T>(): Promise<{ results: T[] }> {
-    throw new Error(`Unhandled fake D1 all query: ${normalizeSql(this.query)}`);
+    const normalizedQuery = normalizeSql(this.query);
+
+    if (normalizedQuery.startsWith("SELECT recipe_json FROM recipes WHERE deleted_at")) {
+      return {
+        results: [...this.database.rows.values()]
+          .sort((firstRecipe, secondRecipe) =>
+            firstRecipe.title.localeCompare(secondRecipe.title),
+          )
+          .map((recipe) => ({ recipe_json: JSON.stringify(recipe) })) as T[],
+      };
+    }
+
+    throw new Error(`Unhandled fake D1 all query: ${normalizedQuery}`);
   }
 }
 

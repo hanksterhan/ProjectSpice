@@ -9,7 +9,7 @@ import {
   getLastCookedDate,
   type Recipe,
 } from "~/modules/recipe-domain";
-import { RecipeImage } from "~/modules/ui-shell/primitives";
+import { FavoriteStar, RatingStars, RecipeImage } from "~/modules/ui-shell/primitives";
 
 import {
   buildDirectionIngredientIndex,
@@ -32,13 +32,15 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
   return (
     <article className="recipe-detail-page">
       <header className="recipe-detail-hero">
-        <div>
+        <div className="recipe-detail-title-panel">
+          {recipe.favorite ? (
+            <FavoriteStar favorite className="recipe-detail-favorite-marker" />
+          ) : null}
           <h1>{recipe.title}</h1>
           {recipe.description ? <p>{recipe.description}</p> : null}
-          <div className="recipe-meta large" aria-label="Recipe tags">
-            {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
+          <div className="recipe-meta large" aria-label="Recipe highlights and tags">
             {recipe.rating !== undefined ? (
-              <span className="rating-chip">{recipe.rating.toFixed(1)}/10</span>
+              <RatingStars rating={recipe.rating} />
             ) : null}
             {recipe.tags.slice(0, 5).map((tag) => (
               <span className="tag" key={tag}>

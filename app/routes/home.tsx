@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChefHat, Star, Tag } from "lucide-react";
+import { ChefHat, Tag } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import type { Route } from "./+types/home";
@@ -20,7 +20,9 @@ import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import {
   Button,
   EmptyState,
+  FavoriteStar,
   RecipeImage,
+  RatingStars,
   Tabs,
 } from "~/modules/ui-shell/primitives";
 import { requireAuthenticatedUser } from "~/server/auth";
@@ -190,16 +192,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   isListView ? (
                     <article className="recipe-row large selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <RecipeImage
-                        className="recipe-row-image"
-                        src={recipe.imageUrl}
-                        title={recipe.title}
-                      />
+                      <div className="recipe-row-image-frame">
+                        <RecipeImage
+                          className="recipe-row-image"
+                          src={recipe.imageUrl}
+                          title={recipe.title}
+                        />
+                        <RecipeFavoriteMarker recipe={recipe} />
+                      </div>
                       <div>
                         <h3>
                           <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                         </h3>
-                        <RecipeRating rating={recipe.rating} />
+                        <RecipeSignals recipe={recipe} />
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
                     </article>
@@ -212,21 +217,27 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                           src={recipe.imageUrl}
                           title={recipe.title}
                         />
+                        <RecipeFavoriteMarker recipe={recipe} />
                       </Link>
                       <h3>
                         <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                       </h3>
-                      <RecipeRating rating={recipe.rating} />
+                      <RecipeSignals recipe={recipe} />
                     </article>
                   ) : (
                     <article className="recipe-card selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <Link to={getRecipeDetailPath(recipe)} aria-label={recipe.title}>
+                      <Link
+                        className="recipe-card-image-link"
+                        to={getRecipeDetailPath(recipe)}
+                        aria-label={recipe.title}
+                      >
                         <RecipeImage
                           className="recipe-card-image"
                           src={recipe.imageUrl}
                           title={recipe.title}
                         />
+                        <RecipeFavoriteMarker recipe={recipe} />
                       </Link>
                       <div className="recipe-card-copy">
                         <div>
@@ -236,7 +247,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                           <h3>
                             <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
                           </h3>
-                          <RecipeRating rating={recipe.rating} />
+                          <RecipeSignals recipe={recipe} />
                         </div>
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
@@ -273,12 +284,27 @@ type RecipeMetaProps = {
   recipe: Recipe;
 };
 
+function RecipeSignals({ recipe }: { recipe: Recipe }) {
+  return (
+    <div className="recipe-signals">
+      <RatingStars rating={recipe.rating} />
+    </div>
+  );
+}
+
+function RecipeFavoriteMarker({ recipe }: { recipe: Recipe }) {
+  if (!recipe.favorite) {
+    return null;
+  }
+
+  return <FavoriteStar favorite className="recipe-favorite-marker" />;
+}
+
 function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   const sourceFilter = getRecipeSourceFilterLink(recipe, query);
 
   return (
     <div className="recipe-meta">
-      {recipe.favorite ? <span className="favorite-chip">Favorite</span> : null}
       <span>{formatDisplayTime(recipe.times?.totalMinutes) || "No time"}</span>
       {sourceFilter ? (
         <Link className="tag source-tag" to={sourceFilter.href}>
@@ -289,23 +315,6 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
         <Link key={tag} to={getSearchHref(query, tag)} className="tag">
           {tag}
         </Link>
-      ))}
-    </div>
-  );
-}
-
-function RecipeRating({ rating }: { rating: Recipe["rating"] }) {
-  const filledStars = rating === undefined ? 0 : Math.round(rating / 2);
-  const label = rating === undefined ? "Unrated" : `${rating.toFixed(1)} out of 10`;
-
-  return (
-    <div className="recipe-rating" aria-label={label}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          aria-hidden="true"
-          className={index < filledStars ? "rating-star filled" : "rating-star"}
-          key={index}
-        />
       ))}
     </div>
   );

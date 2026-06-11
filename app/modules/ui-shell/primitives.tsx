@@ -5,6 +5,7 @@ import {
   type ImgHTMLAttributes,
   type InputHTMLAttributes,
 } from "react";
+import { Star } from "lucide-react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "quiet";
@@ -38,12 +39,74 @@ type RecipeImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "alt"> & {
   alt?: string;
 };
 
+type RatingStarsProps = {
+  rating?: number;
+  className?: string;
+};
+
+type FavoriteStarProps = {
+  favorite?: boolean;
+  className?: string;
+  decorative?: boolean;
+};
+
 export function Button({
   variant = "secondary",
   className = "",
   ...props
 }: ButtonProps) {
   return <button className={`button button-${variant} ${className}`.trim()} {...props} />;
+}
+
+export function RatingStars({ rating, className = "" }: RatingStarsProps) {
+  const normalizedRating = rating === undefined ? 0 : Math.max(0, Math.min(10, rating));
+  const filledStars = normalizedRating / 2;
+  const starFillPercents = getRatingStarFillPercents(rating);
+  const label =
+    rating === undefined
+      ? "Unrated"
+      : `${rating.toFixed(1)} out of 10, ${filledStars.toFixed(1)} out of 5 stars`;
+
+  return (
+    <div className={`recipe-rating ${className}`.trim()} aria-label={label}>
+      {starFillPercents.map((fillPercent, index) => {
+        return (
+          <span className="rating-star-shell" key={index}>
+            <Star aria-hidden="true" className="rating-star empty" />
+            <span className="rating-star-fill" style={{ width: `${fillPercent}%` }}>
+              <Star aria-hidden="true" className="rating-star filled" />
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+export function FavoriteStar({
+  favorite = false,
+  className = "",
+  decorative = false,
+}: FavoriteStarProps) {
+  return (
+    <span
+      className={`favorite-star ${favorite ? "filled" : "empty"} ${className}`.trim()}
+      aria-hidden={decorative ? "true" : undefined}
+      aria-label={decorative ? undefined : favorite ? "Favorite recipe" : "Not a favorite recipe"}
+      title={decorative ? undefined : favorite ? "Favorite" : "Not a favorite"}
+    >
+      <Star aria-hidden="true" size={20} strokeWidth={2.4} />
+    </span>
+  );
+}
+
+export function getRatingStarFillPercents(rating?: number): number[] {
+  const normalizedRating = rating === undefined ? 0 : Math.max(0, Math.min(10, rating));
+  const filledStars = normalizedRating / 2;
+
+  return Array.from({ length: 5 }, (_, index) =>
+    Math.max(0, Math.min(1, filledStars - index)) * 100,
+  );
 }
 
 export function TextInput({

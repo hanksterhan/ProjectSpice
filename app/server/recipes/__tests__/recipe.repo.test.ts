@@ -33,6 +33,27 @@ describe("RecipeRepository", () => {
     });
   });
 
+  it("creates duplicate recipe titles without slug collisions", async () => {
+    const repository = new RecipeRepository(new FakeRecipeD1Database());
+
+    await repository.create({
+      ...validRecipeFixture,
+      id: "first-chocolate-cake",
+      title: "Chocolate Cake",
+    });
+    await repository.create({
+      ...validRecipeWithoutImageFixture,
+      id: "second-chocolate-cake",
+      title: "Chocolate Cake",
+    });
+
+    expect((await repository.list()).map((recipe) => recipe.id)).toEqual([
+      "first-chocolate-cake",
+      "second-chocolate-cake",
+    ]);
+  });
+
+
   it("persists optional image URLs on create and update", async () => {
     const repository = new RecipeRepository(new FakeRecipeD1Database());
     await repository.create(validRecipeWithoutImageFixture);
@@ -130,6 +151,7 @@ type FakeRecipeRow = {
 
 class FakeRecipeD1Database implements RecipeRepositoryDatabase {
   readonly rows = new Map<string, FakeRecipeRow>();
+  readonly slugs = new Set<string>();
   readonly versions: Array<{
     id: string;
     recipeId: string;
@@ -162,6 +184,13 @@ class FakeRecipeD1PreparedStatement {
 
     if (normalizedQuery.startsWith("INSERT INTO recipes")) {
       const recipe = JSON.parse(String(this.values[19])) as Recipe;
+      const slug = String(this.values[1]);
+
+      if (this.database.slugs.has(slug)) {
+        throw new Error(`UNIQUE constraint failed: recipes.slug (${slug})`);
+      }
+
+      this.database.slugs.add(slug);
       this.database.rows.set(recipe.id, {
         recipe,
         version: recipe.version,

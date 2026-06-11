@@ -5,7 +5,7 @@ import { Form, Link } from "react-router";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 
 import type { Recipe, RecipeDraft } from "~/modules/recipe-domain";
-import { Button, RecipeImage } from "~/modules/ui-shell/primitives";
+import { Button, FavoriteStar, RecipeImage } from "~/modules/ui-shell/primitives";
 
 import {
   recipeEditorFormSchema,
@@ -214,6 +214,7 @@ export function RecipeEditorForm({
             {...register("favorite")}
             defaultChecked={defaultValues.favorite}
           />
+          <FavoriteStar decorative />
           <span>Favorite</span>
         </label>
       </section>
