@@ -59,6 +59,12 @@ export function RecipeViewer({
           ) : null}
           <h1>{displayRecipe.title}</h1>
           {displayRecipe.description ? <p>{displayRecipe.description}</p> : null}
+          {activeLensKey !== "original" && activeLensDefinition ? (
+            <div className="recipe-lens-current" aria-label="Active recipe lens">
+              <span>Viewing lens</span>
+              <strong>{activeLensDefinition.label}</strong>
+            </div>
+          ) : null}
           <div className="recipe-meta large" aria-label="Recipe highlights and tags">
             {displayRecipe.rating !== undefined ? (
               <RatingStars rating={displayRecipe.rating} />
@@ -77,26 +83,6 @@ export function RecipeViewer({
           title={displayRecipe.title}
         />
       </header>
-
-      <nav className="recipe-lens-switcher" aria-label="Recipe lenses">
-        <Link
-          className={activeLensKey === "original" ? "active" : undefined}
-          to={getRecipeLensDetailPath(recipe)}
-        >
-          Original
-        </Link>
-        {builtInRecipeLenses.map((lens) => (
-          <Link
-            className={activeLensKey === lens.key ? "active" : undefined}
-            data-empty={!savedLensKeySet.has(lens.key) ? "true" : undefined}
-            key={lens.key}
-            to={getRecipeLensDetailPath(recipe, lens.key)}
-            title={lens.description}
-          >
-            {lens.shortLabel}
-          </Link>
-        ))}
-      </nav>
 
       <dl className="recipe-detail-stats" aria-label="Recipe overview">
         <div>
@@ -134,44 +120,81 @@ export function RecipeViewer({
         </a>
       </nav>
 
-      {activeLensKey !== "original" && activeLensDefinition ? (
-        <section className="recipe-lens-notes" aria-labelledby="lens-notes-heading">
-          <div>
-            <span>Recipe lens</span>
-            <h2 id="lens-notes-heading">{activeLensDefinition.label}</h2>
-          </div>
-          {activeLens ? (
-            <p>{activeLens.notes}</p>
-          ) : (
-            <p>No {activeLensDefinition.label.toLowerCase()} lens saved yet.</p>
-          )}
-          <Link
-            className="button button-primary"
-            to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
-          >
-            {activeLens ? "Edit lens" : "Create lens"}
-          </Link>
-        </section>
-      ) : null}
-
       <div className="recipe-detail-layout">
-        <aside className="ingredient-rail" aria-labelledby="ingredients-heading">
-          <h2 id="ingredients-heading">Ingredients</h2>
-          {displayRecipe.ingredients.map((section) => (
-            <section className="ingredient-section" key={section.id}>
-              {shouldShowSectionTitle(section.title, "ingredients") ? (
-                <h3>{section.title}</h3>
+        <aside className="recipe-detail-sidebar">
+          <section className="recipe-lens-panel" aria-labelledby="lens-heading">
+            <div className="recipe-lens-panel-header">
+              <span>Recipe view</span>
+              <h2 id="lens-heading">
+                {activeLensDefinition?.label ?? "Original"}
+              </h2>
+            </div>
+
+            <nav className="recipe-lens-menu" aria-label="Recipe lenses">
+              <Link
+                aria-current={activeLensKey === "original" ? "page" : undefined}
+                className={activeLensKey === "original" ? "active" : undefined}
+                to={getRecipeLensDetailPath(recipe)}
+              >
+                <span>Original</span>
+                <small>Saved recipe</small>
+              </Link>
+              {builtInRecipeLenses.map((lens) => {
+                const isSaved = savedLensKeySet.has(lens.key);
+
+                return (
+                  <Link
+                    aria-current={activeLensKey === lens.key ? "page" : undefined}
+                    className={activeLensKey === lens.key ? "active" : undefined}
+                    key={lens.key}
+                    to={getRecipeLensDetailPath(recipe, lens.key)}
+                    title={lens.description}
+                  >
+                    <span>{lens.shortLabel}</span>
+                    <small>{isSaved ? "Saved lens" : "Not saved"}</small>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="recipe-lens-summary" aria-labelledby="lens-notes-heading">
+              <h3 id="lens-notes-heading">Lens Notes</h3>
+              {activeLensKey === "original" ? (
+                <p>This is the canonical saved recipe.</p>
+              ) : activeLens && activeLensDefinition ? (
+                <p>{activeLens.notes}</p>
+              ) : activeLensDefinition ? (
+                <p>No {activeLensDefinition.label.toLowerCase()} lens saved yet.</p>
               ) : null}
-              <ul>
-                {section.items.map((ingredient) => (
-                  <li key={ingredient.id}>
-                    {formatIngredientDisplayText(ingredient)}
-                    {ingredient.optional ? <span>Optional</span> : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+              {activeLensDefinition ? (
+                <Link
+                  className="button button-secondary"
+                  to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
+                >
+                  {activeLens ? "Edit lens" : "Create lens"}
+                </Link>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="ingredient-rail" aria-labelledby="ingredients-heading">
+            <h2 id="ingredients-heading">Ingredients</h2>
+            {displayRecipe.ingredients.map((section) => (
+              <section className="ingredient-section" key={section.id}>
+                {shouldShowSectionTitle(section.title, "ingredients") ? (
+                  <h3>{section.title}</h3>
+                ) : null}
+                <ul>
+                  {section.items.map((ingredient) => (
+                    <li key={ingredient.id}>
+                      {formatIngredientDisplayText(ingredient)}
+                      {ingredient.optional ? <span>Optional</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </section>
         </aside>
 
         <main className="direction-pane" aria-labelledby="directions-heading">

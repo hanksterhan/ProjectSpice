@@ -34,6 +34,7 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("Glucose");
     expect(markup).toContain("Quick");
     expect(markup).toContain("Max Flavor");
+    expect(markup).toContain("Not saved");
     expect(markup).toContain("No lower-cal lens saved yet.");
     expect(markup).toContain("Create lens");
     expect(markup).toContain(validRecipeFixture.title);
@@ -49,6 +50,7 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("Quick Sesame Chicken Bowls");
     expect(markup).toContain("Uses one pan and prepped vegetables");
     expect(markup).toContain("Edit lens");
+    expect(markup).toContain("Viewing lens");
   });
 });
 

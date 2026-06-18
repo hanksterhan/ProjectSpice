@@ -2275,6 +2275,33 @@ p {
   max-width: 52rem;
 }
 
+.recipe-lens-current {
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--soft-border);
+  border-radius: 6px;
+  color: var(--steel);
+  display: inline-flex;
+  gap: 0.45rem;
+  justify-self: start;
+  margin-bottom: 0.85rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.recipe-lens-current span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recipe-lens-current strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
 .recipe-detail-image,
 .recipe-detail-hero .image-fallback {
   background: var(--surface-muted);
@@ -2342,65 +2369,23 @@ p {
   font-weight: 800;
 }
 
-.recipe-lens-switcher {
-  align-items: center;
+.recipe-lens-panel,
+.recipe-lens-editor-intro,
+.recipe-lens-notes-editor,
+.recipe-lens-reset-form {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  display: flex;
-  gap: 0.35rem;
-  overflow-x: auto;
-  padding: 0.45rem;
-}
-
-.recipe-lens-switcher a {
-  align-items: center;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  color: var(--steel);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 0.86rem;
-  font-weight: 900;
-  min-height: 2.35rem;
-  padding: 0.45rem 0.75rem;
-  text-decoration: none;
-}
-
-.recipe-lens-switcher a:hover {
-  background: var(--surface-muted);
-  color: var(--ink);
-}
-
-.recipe-lens-switcher a.active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--surface-raised);
-}
-
-.recipe-lens-switcher a[data-empty="true"]::after {
-  background: var(--muted);
-  border-radius: 50%;
-  content: "";
-  height: 0.38rem;
-  margin-left: 0.42rem;
-  width: 0.38rem;
-}
-
-.recipe-lens-notes {
-  align-items: center;
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(10rem, 0.5fr) minmax(0, 1fr) auto;
   padding: 1rem;
 }
 
-.recipe-lens-notes span,
+.recipe-lens-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.recipe-lens-panel-header span,
 .recipe-lens-editor-intro span {
   color: var(--muted);
   display: block;
@@ -2410,26 +2395,84 @@ p {
   text-transform: uppercase;
 }
 
-.recipe-lens-notes h2,
+.recipe-lens-panel-header h2,
 .recipe-lens-editor-intro h1 {
   font-size: 1.45rem;
   line-height: 1.05;
   margin-bottom: 0;
 }
 
-.recipe-lens-notes p {
+.recipe-lens-menu {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.recipe-lens-menu a {
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  color: var(--steel);
+  display: grid;
+  gap: 0.1rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.65rem;
+  text-decoration: none;
+}
+
+.recipe-lens-menu a:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.recipe-lens-menu a.active {
+  background: var(--surface-muted);
+  border-color: var(--soft-border);
+  border-left-color: var(--accent);
+  color: var(--ink);
+}
+
+.recipe-lens-menu span {
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.recipe-lens-menu small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.recipe-lens-summary {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.85rem;
+}
+
+.recipe-lens-summary h3 {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
   margin-bottom: 0;
+  text-transform: uppercase;
+}
+
+.recipe-lens-summary p {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin-bottom: 0;
+}
+
+.recipe-lens-summary .button {
+  justify-self: start;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.7rem;
 }
 
 .recipe-lens-editor-intro,
 .recipe-lens-notes-editor,
 .recipe-lens-reset-form {
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
   margin-bottom: 1rem;
-  padding: 1rem;
 }
 
 .recipe-lens-editor-intro {
@@ -2558,6 +2601,13 @@ p {
   grid-template-columns: minmax(20rem, 0.75fr) minmax(0, 1.65fr);
 }
 
+.recipe-detail-sidebar {
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
 .ingredient-rail,
 .direction-pane {
   background: var(--surface-raised);
@@ -2568,8 +2618,6 @@ p {
 
 .ingredient-rail {
   padding: 1rem;
-  position: sticky;
-  top: 5.5rem;
 }
 
 .ingredient-rail h2,
@@ -4083,6 +4131,7 @@ p {
   .library-browser,
   .recipe-detail-hero,
   .recipe-detail-layout,
+  .recipe-lens-editor-intro,
   .cook-station-layout,
   .recipe-compose-hero,
   .recipe-compose-layout,
@@ -4128,6 +4177,7 @@ p {
     grid-template-rows: minmax(12rem, 18rem) auto;
   }
 
+  .recipe-detail-sidebar,
   .ingredient-rail {
     position: static;
   }
