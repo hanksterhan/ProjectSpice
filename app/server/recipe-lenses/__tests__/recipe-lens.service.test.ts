@@ -74,6 +74,16 @@ function createRepositoryDouble(
 ): RecipeLensServiceRepository {
   return {
     listByRecipeId: vi.fn(async () => [validLens]),
+    listSummariesByRecipeId: vi.fn(async () => [
+      {
+        id: validLens.id,
+        recipeId: validLens.recipeId,
+        lensKey: validLens.lensKey,
+        notes: validLens.notes,
+        createdAt: validLens.createdAt,
+        updatedAt: validLens.updatedAt,
+      },
+    ]),
     getByRecipeIdAndKey: vi.fn(async () => validLens),
     upsert: vi.fn(async () => validLens),
     delete: vi.fn(async () => true),

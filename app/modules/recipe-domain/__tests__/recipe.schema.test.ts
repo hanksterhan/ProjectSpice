@@ -47,6 +47,32 @@ describe("recipeSchema", () => {
     });
   });
 
+  it("accepts structured cook history with recipe lens context", () => {
+    expect(
+      recipeSchema.parse({
+        ...validRecipeFixture,
+        cookHistory: [
+          {
+            cookedOn: "2026-06-07",
+            createdAt: "2026-06-08T01:02:03.000Z",
+            lensKey: "lower-cal",
+            lensName: "Lower-Cal",
+            note: "Used less icing.",
+            recipeVersion: 1,
+          },
+        ],
+      }),
+    ).toMatchObject({
+      cookHistory: [
+        {
+          cookedOn: "2026-06-07",
+          lensKey: "lower-cal",
+          lensName: "Lower-Cal",
+        },
+      ],
+    });
+  });
+
   it("rejects recipe ratings outside 0 to 10 or finer than 0.1", () => {
     expect(recipeSchema.safeParse({ ...validRecipeFixture, rating: 10.1 }).success).toBe(
       false,
@@ -59,6 +85,19 @@ describe("recipeSchema", () => {
   it("rejects invalid cook history dates", () => {
     expect(
       recipeSchema.safeParse({ ...validRecipeFixture, cookedDates: ["June 7"] }).success,
+    ).toBe(false);
+    expect(
+      recipeSchema.safeParse({
+        ...validRecipeFixture,
+        cookHistory: [
+          {
+            cookedOn: "June 7",
+            createdAt: "2026-06-08T01:02:03.000Z",
+            lensKey: "quick",
+            lensName: "Quick",
+          },
+        ],
+      }).success,
     ).toBe(false);
   });
 

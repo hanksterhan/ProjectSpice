@@ -132,6 +132,7 @@ function toRecipeDraft(recipe: RecipeDraft): RecipeDraft {
     favorite: recipe.favorite,
     rating: recipe.rating,
     cookedDates: recipe.cookedDates,
+    cookHistory: recipe.cookHistory,
   };
 }
 

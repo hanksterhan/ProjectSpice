@@ -3,9 +3,9 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { validRecipeDraftFixture, validRecipeFixture } from "~/modules/recipe-domain";
-import type { RecipeLens } from "~/modules/recipe-lenses";
+import type { RecipeLens, RecipeLensSummary } from "~/modules/recipe-lenses";
 
-import { RecipeViewer } from "../RecipeViewer";
+import { RecipeLensDrawer, RecipeViewer } from "../RecipeViewer";
 
 const quickLens: RecipeLens = {
   id: "weeknight-sesame-chicken-bowls:quick",
@@ -21,36 +21,61 @@ const quickLens: RecipeLens = {
   updatedAt: "2026-06-18T08:00:00.000Z",
 };
 
+const quickLensSummary: RecipeLensSummary = {
+  id: quickLens.id,
+  recipeId: quickLens.recipeId,
+  lensKey: quickLens.lensKey,
+  notes: quickLens.notes,
+  createdAt: quickLens.createdAt,
+  updatedAt: quickLens.updatedAt,
+};
+
 describe("RecipeViewer recipe lenses", () => {
-  it("shows lens tabs and an empty state for unsaved lenses", () => {
+  it("keeps the recipe content focused when a lens is selected", () => {
     const markup = renderViewer({
       activeLensKey: "lower-cal",
       activeLens: null,
-      savedLensKeys: [],
     });
 
+    expect(markup).toContain("Viewing lens");
+    expect(markup).toContain("Lower-Cal");
+    expect(markup).toContain(validRecipeFixture.title);
+    expect(markup).not.toContain("Recipe view");
+  });
+
+  it("renders a saved lens recipe draft", () => {
+    const markup = renderViewer({
+      activeLensKey: "quick",
+      activeLens: quickLens,
+    });
+
+    expect(markup).toContain("Quick Sesame Chicken Bowls");
+    expect(markup).toContain("Viewing lens");
+  });
+
+  it("shows lens navigation and notes in the drawer", () => {
+    const markup = renderToStaticMarkup(
+      <MemoryRouter>
+        <RecipeLensDrawer
+          activeLens={quickLens}
+          activeLensKey="quick"
+          lensSummaries={[quickLensSummary]}
+          onClose={() => undefined}
+          recipe={validRecipeFixture}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(markup).toContain("Recipe view");
     expect(markup).toContain("Original");
     expect(markup).toContain("Lower-Cal");
     expect(markup).toContain("Glucose");
     expect(markup).toContain("Quick");
     expect(markup).toContain("Max Flavor");
+    expect(markup).toContain("Saved lens");
     expect(markup).toContain("Not saved");
-    expect(markup).toContain("No lower-cal lens saved yet.");
-    expect(markup).toContain("Create lens");
-    expect(markup).toContain(validRecipeFixture.title);
-  });
-
-  it("renders a saved lens recipe draft and notes", () => {
-    const markup = renderViewer({
-      activeLensKey: "quick",
-      activeLens: quickLens,
-      savedLensKeys: ["quick"],
-    });
-
-    expect(markup).toContain("Quick Sesame Chicken Bowls");
     expect(markup).toContain("Uses one pan and prepped vegetables");
     expect(markup).toContain("Edit lens");
-    expect(markup).toContain("Viewing lens");
   });
 });
 

@@ -51,6 +51,17 @@ export const recipeSourceSchema = z
   })
   .strict();
 
+export const recipeCookHistoryEntrySchema = z
+  .object({
+    cookedOn: dateOnlySchema,
+    lensKey: requiredTrimmedTextSchema,
+    lensName: requiredTrimmedTextSchema,
+    note: optionalTrimmedTextSchema,
+    recipeVersion: z.number().int().positive().optional(),
+    createdAt: z.iso.datetime({ offset: true }),
+  })
+  .strict();
+
 export const ingredientItemSchema = z
   .object({
     id: recipeIdSchema,
@@ -105,6 +116,7 @@ export const recipeSchema = z
     favorite: z.boolean().optional(),
     rating: recipeRatingSchema.optional(),
     cookedDates: z.array(dateOnlySchema).optional(),
+    cookHistory: z.array(recipeCookHistoryEntrySchema).optional(),
     version: z.number().int().positive(),
     createdAt: z.iso.datetime({ offset: true }),
     updatedAt: z.iso.datetime({ offset: true }),

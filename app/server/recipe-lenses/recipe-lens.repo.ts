@@ -2,6 +2,7 @@ import type {
   RecipeLens,
   RecipeLensInput,
   RecipeLensKey,
+  RecipeLensSummary,
 } from "~/modules/recipe-lenses";
 
 export type RecipeLensRepositoryStatement = {
@@ -25,6 +26,8 @@ type RecipeLensRow = {
   updated_at: string;
 };
 
+type RecipeLensSummaryRow = Omit<RecipeLensRow, "recipe_draft_json">;
+
 export class RecipeLensRepository {
   constructor(private readonly database: RecipeLensRepositoryDatabase) {}
 
@@ -47,6 +50,26 @@ export class RecipeLensRepository {
       .all<RecipeLensRow>();
 
     return result.results.map(rowToRecipeLens);
+  }
+
+  async listSummariesByRecipeId(recipeId: string): Promise<RecipeLensSummary[]> {
+    const result = await this.database
+      .prepare(
+        `SELECT
+          id,
+          recipe_id,
+          lens_key,
+          notes,
+          created_at,
+          updated_at
+        FROM recipe_lenses
+        WHERE recipe_id = ?
+        ORDER BY lens_key ASC`,
+      )
+      .bind(recipeId)
+      .all<RecipeLensSummaryRow>();
+
+    return result.results.map(rowToRecipeLensSummary);
   }
 
   async getByRecipeIdAndKey(
@@ -123,6 +146,17 @@ export class RecipeLensRepository {
 
     return result.meta.changes === 1;
   }
+}
+
+function rowToRecipeLensSummary(row: RecipeLensSummaryRow): RecipeLensSummary {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id,
+    lensKey: row.lens_key,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 function rowToRecipeLens(row: RecipeLensRow): RecipeLens {

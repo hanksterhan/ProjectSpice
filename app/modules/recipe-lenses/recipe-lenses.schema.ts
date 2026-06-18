@@ -58,9 +58,14 @@ export const recipeLensInputSchema = recipeLensSchema.omit({
   updatedAt: true,
 });
 
+export const recipeLensSummarySchema = recipeLensSchema.omit({
+  recipeDraft: true,
+});
+
 export type RecipeLensKey = z.infer<typeof recipeLensKeySchema>;
 export type RecipeLens = z.infer<typeof recipeLensSchema>;
 export type RecipeLensInput = z.input<typeof recipeLensInputSchema>;
+export type RecipeLensSummary = z.infer<typeof recipeLensSummarySchema>;
 
 export function getRecipeLensDefinition(lensKey: RecipeLensKey) {
   return builtInRecipeLenses.find((lens) => lens.key === lensKey);

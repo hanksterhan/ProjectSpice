@@ -3,6 +3,7 @@ import type {
   RecipeLens,
   RecipeLensInput,
   RecipeLensKey,
+  RecipeLensSummary,
 } from "~/modules/recipe-lenses";
 import {
   getCloudflareRuntimeContext,
@@ -77,6 +78,12 @@ class MemoryRecipeLensRepository implements RecipeLensServiceRepository {
       .map(cloneLens);
   }
 
+  async listSummariesByRecipeId(recipeId: string): Promise<RecipeLensSummary[]> {
+    return [...this.lenses.values()]
+      .filter((lens) => lens.recipeId === recipeId)
+      .map(toLensSummary);
+  }
+
   async getByRecipeIdAndKey(
     recipeId: string,
     lensKey: RecipeLensKey,
@@ -114,5 +121,16 @@ function cloneLens(lens: RecipeLens): RecipeLens {
   return {
     ...lens,
     recipeDraft: JSON.parse(JSON.stringify(lens.recipeDraft)) as RecipeDraft,
+  };
+}
+
+function toLensSummary(lens: RecipeLens): RecipeLensSummary {
+  return {
+    id: lens.id,
+    recipeId: lens.recipeId,
+    lensKey: lens.lensKey,
+    notes: lens.notes,
+    createdAt: lens.createdAt,
+    updatedAt: lens.updatedAt,
   };
 }

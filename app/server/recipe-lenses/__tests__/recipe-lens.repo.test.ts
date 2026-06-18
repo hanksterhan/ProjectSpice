@@ -24,6 +24,16 @@ describe("RecipeLensRepository", () => {
     );
 
     expect(await repository.listByRecipeId("weeknight-sesame-chicken-bowls")).toHaveLength(1);
+    expect(await repository.listSummariesByRecipeId("weeknight-sesame-chicken-bowls")).toEqual([
+      {
+        id: "weeknight-sesame-chicken-bowls:quick",
+        recipeId: "weeknight-sesame-chicken-bowls",
+        lensKey: "quick",
+        notes: "Uses one pan and trims inactive time.",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
     expect(
       await repository.getByRecipeIdAndKey("weeknight-sesame-chicken-bowls", "quick"),
     ).toMatchObject({
@@ -120,7 +130,10 @@ class FakeRecipeLensD1PreparedStatement {
   async first<T>() {
     const normalizedQuery = normalizeSql(this.query);
 
-    if (normalizedQuery.startsWith("SELECT id, recipe_id")) {
+    if (
+      normalizedQuery.startsWith("SELECT id, recipe_id") &&
+      normalizedQuery.includes("recipe_draft_json")
+    ) {
       const lens = this.database.lenses.get(
         getMapKey(String(this.values[0]), this.values[1] as RecipeLensKey),
       );
@@ -138,13 +151,28 @@ class FakeRecipeLensD1PreparedStatement {
       const recipeId = String(this.values[0]);
       const results = [...this.database.lenses.values()]
         .filter((lens) => lens.recipeId === recipeId)
-        .map(lensToRow);
+        .map((lens) =>
+          normalizedQuery.includes("recipe_draft_json")
+            ? lensToRow(lens)
+            : lensToSummaryRow(lens),
+        );
 
       return { results } as T;
     }
 
     throw new Error(`Unhandled fake D1 all query: ${normalizedQuery}`);
   }
+}
+
+function lensToSummaryRow(lens: RecipeLens) {
+  return {
+    id: lens.id,
+    recipe_id: lens.recipeId,
+    lens_key: lens.lensKey,
+    notes: lens.notes,
+    created_at: lens.createdAt,
+    updated_at: lens.updatedAt,
+  };
 }
 
 function lensToRow(lens: RecipeLens) {

@@ -2369,7 +2369,6 @@ p {
   font-weight: 800;
 }
 
-.recipe-lens-panel,
 .recipe-lens-editor-intro,
 .recipe-lens-notes-editor,
 .recipe-lens-reset-form {
@@ -2380,12 +2379,6 @@ p {
   padding: 1rem;
 }
 
-.recipe-lens-panel {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.recipe-lens-panel-header span,
 .recipe-lens-editor-intro span {
   color: var(--muted);
   display: block;
@@ -2395,7 +2388,6 @@ p {
   text-transform: uppercase;
 }
 
-.recipe-lens-panel-header h2,
 .recipe-lens-editor-intro h1 {
   font-size: 1.45rem;
   line-height: 1.05;
@@ -2514,6 +2506,10 @@ p {
   z-index: 50;
 }
 
+.recipe-lens-drawer {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
 .recipe-side-panel-header {
   align-items: center;
   border-bottom: 1px solid var(--line);
@@ -2560,6 +2556,27 @@ p {
   gap: 0.75rem;
 }
 
+.cook-entry-lens {
+  background: var(--surface-muted);
+  border: 1px solid var(--soft-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+}
+
+.cook-entry-lens span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cook-entry-lens strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
 .cook-entry-form .field input,
 .cook-entry-form .field textarea {
   width: 100%;
@@ -2590,6 +2607,47 @@ p {
   padding: 0.42rem 0.55rem;
 }
 
+.cook-history-entries {
+  align-content: start;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 0.85rem;
+}
+
+.cook-history-entries article {
+  background: var(--surface-muted);
+  border: 1px solid var(--soft-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+}
+
+.cook-history-entries article > div {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.cook-history-entries strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.cook-history-entries span {
+  color: var(--steel);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.cook-history-entries p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
 .recipe-mobile-tabs {
   display: none;
 }
@@ -2599,13 +2657,6 @@ p {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(20rem, 0.75fr) minmax(0, 1.65fr);
-}
-
-.recipe-detail-sidebar {
-  display: grid;
-  gap: 1rem;
-  position: sticky;
-  top: 5.5rem;
 }
 
 .ingredient-rail,
@@ -2618,6 +2669,8 @@ p {
 
 .ingredient-rail {
   padding: 1rem;
+  position: sticky;
+  top: 5.5rem;
 }
 
 .ingredient-rail h2,
@@ -4177,7 +4230,6 @@ p {
     grid-template-rows: minmax(12rem, 18rem) auto;
   }
 
-  .recipe-detail-sidebar,
   .ingredient-rail {
     position: static;
   }

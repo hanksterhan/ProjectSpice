@@ -15,6 +15,7 @@ import {
   getRecipeLensEditPath,
   type RecipeLens,
   type RecipeLensKey,
+  type RecipeLensSummary,
 } from "~/modules/recipe-lenses";
 import { FavoriteStar, RatingStars, RecipeImage } from "~/modules/ui-shell/primitives";
 
@@ -28,14 +29,12 @@ type RecipeViewerProps = {
   recipe: Recipe;
   activeLensKey?: RecipeLensKey | "original";
   activeLens?: RecipeLens | null;
-  savedLensKeys?: RecipeLensKey[];
 };
 
 export function RecipeViewer({
   recipe,
   activeLensKey = "original",
   activeLens = null,
-  savedLensKeys = [],
 }: RecipeViewerProps) {
   const displayRecipe = getDisplayRecipe(recipe, activeLens);
   const activeLensDefinition =
@@ -48,7 +47,6 @@ export function RecipeViewer({
   const directionIngredientIndex = buildDirectionIngredientIndex(displayRecipe.ingredients);
   const cookCount = getCookCount(recipe);
   const lastCookedDate = getLastCookedDate(recipe);
-  const savedLensKeySet = new Set(savedLensKeys);
 
   return (
     <article className="recipe-detail-page">
@@ -115,86 +113,27 @@ export function RecipeViewer({
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
         <a href="#directions-heading">Directions</a>
-        <a href={activeLensKey === "original" ? "#notes-heading" : "#lens-notes-heading"}>
-          Notes
-        </a>
+        <a href="#notes-heading">Notes</a>
       </nav>
 
       <div className="recipe-detail-layout">
-        <aside className="recipe-detail-sidebar">
-          <section className="recipe-lens-panel" aria-labelledby="lens-heading">
-            <div className="recipe-lens-panel-header">
-              <span>Recipe view</span>
-              <h2 id="lens-heading">
-                {activeLensDefinition?.label ?? "Original"}
-              </h2>
-            </div>
-
-            <nav className="recipe-lens-menu" aria-label="Recipe lenses">
-              <Link
-                aria-current={activeLensKey === "original" ? "page" : undefined}
-                className={activeLensKey === "original" ? "active" : undefined}
-                to={getRecipeLensDetailPath(recipe)}
-              >
-                <span>Original</span>
-                <small>Saved recipe</small>
-              </Link>
-              {builtInRecipeLenses.map((lens) => {
-                const isSaved = savedLensKeySet.has(lens.key);
-
-                return (
-                  <Link
-                    aria-current={activeLensKey === lens.key ? "page" : undefined}
-                    className={activeLensKey === lens.key ? "active" : undefined}
-                    key={lens.key}
-                    to={getRecipeLensDetailPath(recipe, lens.key)}
-                    title={lens.description}
-                  >
-                    <span>{lens.shortLabel}</span>
-                    <small>{isSaved ? "Saved lens" : "Not saved"}</small>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="recipe-lens-summary" aria-labelledby="lens-notes-heading">
-              <h3 id="lens-notes-heading">Lens Notes</h3>
-              {activeLensKey === "original" ? (
-                <p>This is the canonical saved recipe.</p>
-              ) : activeLens && activeLensDefinition ? (
-                <p>{activeLens.notes}</p>
-              ) : activeLensDefinition ? (
-                <p>No {activeLensDefinition.label.toLowerCase()} lens saved yet.</p>
+        <aside className="ingredient-rail" aria-labelledby="ingredients-heading">
+          <h2 id="ingredients-heading">Ingredients</h2>
+          {displayRecipe.ingredients.map((section) => (
+            <section className="ingredient-section" key={section.id}>
+              {shouldShowSectionTitle(section.title, "ingredients") ? (
+                <h3>{section.title}</h3>
               ) : null}
-              {activeLensDefinition ? (
-                <Link
-                  className="button button-secondary"
-                  to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
-                >
-                  {activeLens ? "Edit lens" : "Create lens"}
-                </Link>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="ingredient-rail" aria-labelledby="ingredients-heading">
-            <h2 id="ingredients-heading">Ingredients</h2>
-            {displayRecipe.ingredients.map((section) => (
-              <section className="ingredient-section" key={section.id}>
-                {shouldShowSectionTitle(section.title, "ingredients") ? (
-                  <h3>{section.title}</h3>
-                ) : null}
-                <ul>
-                  {section.items.map((ingredient) => (
-                    <li key={ingredient.id}>
-                      {formatIngredientDisplayText(ingredient)}
-                      {ingredient.optional ? <span>Optional</span> : null}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </section>
+              <ul>
+                {section.items.map((ingredient) => (
+                  <li key={ingredient.id}>
+                    {formatIngredientDisplayText(ingredient)}
+                    {ingredient.optional ? <span>Optional</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </aside>
 
         <main className="direction-pane" aria-labelledby="directions-heading">
@@ -309,15 +248,147 @@ function getDisplayRecipe(recipe: Recipe, activeLens: RecipeLens | null): Recipe
   };
 }
 
-type CookHistoryDrawerProps = {
+type RecipeLensDrawerProps = {
+  activeLens: RecipeLens | null;
+  activeLensKey: RecipeLensKey | "original";
+  lensSummaries: RecipeLensSummary[];
   onClose: () => void;
   recipe: Recipe;
 };
 
-export function CookHistoryDrawer({ onClose, recipe }: CookHistoryDrawerProps) {
+export function RecipeLensDrawer({
+  activeLens,
+  activeLensKey,
+  lensSummaries,
+  onClose,
+  recipe,
+}: RecipeLensDrawerProps) {
+  const activeLensDefinition =
+    activeLensKey === "original"
+      ? undefined
+      : builtInRecipeLenses.find((lens) => lens.key === activeLensKey);
+  const lensSummaryByKey = new Map(
+    lensSummaries.map((lensSummary) => [lensSummary.lensKey, lensSummary]),
+  );
+
+  return (
+    <aside
+      aria-labelledby="recipe-lens-drawer-heading"
+      className="recipe-side-panel recipe-lens-drawer"
+      id="recipe-lens-drawer"
+    >
+      <div className="recipe-side-panel-header">
+        <div>
+          <span>Recipe view</span>
+          <h2 id="recipe-lens-drawer-heading">
+            {activeLensDefinition?.label ?? "Original"}
+          </h2>
+        </div>
+        <button
+          className="icon-button"
+          type="button"
+          title="Close recipe lenses"
+          aria-label="Close recipe lenses"
+          onClick={onClose}
+        >
+          <CloseIcon />
+        </button>
+      </div>
+
+      <nav className="recipe-lens-menu" aria-label="Recipe lenses">
+        <Link
+          aria-current={activeLensKey === "original" ? "page" : undefined}
+          className={activeLensKey === "original" ? "active" : undefined}
+          to={getRecipeLensDetailPath(recipe)}
+        >
+          <span>Original</span>
+          <small>Saved recipe</small>
+        </Link>
+        {builtInRecipeLenses.map((lens) => {
+          const lensSummary = lensSummaryByKey.get(lens.key);
+
+          return (
+            <Link
+              aria-current={activeLensKey === lens.key ? "page" : undefined}
+              className={activeLensKey === lens.key ? "active" : undefined}
+              key={lens.key}
+              to={getRecipeLensDetailPath(recipe, lens.key)}
+              title={lens.description}
+            >
+              <span>{lens.shortLabel}</span>
+              <small>{lensSummary ? "Saved lens" : "Not saved"}</small>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <section className="recipe-lens-summary" aria-labelledby="lens-notes-heading">
+        <h3 id="lens-notes-heading">Lens Notes</h3>
+        {activeLensKey === "original" ? (
+          <p>This is the canonical saved recipe.</p>
+        ) : activeLensDefinition ? (
+          <p>
+            {activeLens?.notes ??
+              lensSummaryByKey.get(activeLensDefinition.key)?.notes ??
+              `No ${activeLensDefinition.label.toLowerCase()} lens saved yet.`}
+          </p>
+        ) : null}
+        {activeLensDefinition ? (
+          <Link
+            className="button button-secondary"
+            to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
+          >
+            {activeLens ? "Edit lens" : "Create lens"}
+          </Link>
+        ) : null}
+      </section>
+    </aside>
+  );
+}
+
+type CookHistoryDrawerProps = {
+  activeLensKey: RecipeLensKey | "original";
+  activeLensName: string;
+  onClose: () => void;
+  recipe: Recipe;
+};
+
+type CookHistoryDisplayEntry = {
+  cookedOn: string;
+  lensKey: string;
+  lensName: string;
+  note?: string;
+};
+
+export function CookHistoryDrawer({
+  activeLensKey,
+  activeLensName,
+  onClose,
+  recipe,
+}: CookHistoryDrawerProps) {
   const cookCount = getCookCount(recipe);
   const lastCookedDate = getLastCookedDate(recipe);
-  const recentCookedDates = recipe.cookedDates?.slice(0, 12) ?? [];
+  const structuredCookHistory: CookHistoryDisplayEntry[] =
+    recipe.cookHistory?.map((entry) => ({
+      cookedOn: entry.cookedOn,
+      lensKey: entry.lensKey,
+      lensName: entry.lensName,
+      note: entry.note,
+    })) ??
+    [];
+  const structuredCookHistoryDateSet = new Set(
+    structuredCookHistory.map((entry) => entry.cookedOn),
+  );
+  const legacyCookHistory: CookHistoryDisplayEntry[] =
+    recipe.cookedDates?.filter((cookedOn) => !structuredCookHistoryDateSet.has(cookedOn)).map((cookedOn) => ({
+      cookedOn,
+      lensKey: "unknown",
+      lensName: "Recorded cook",
+    })) ??
+    [];
+  const recentCookHistory = [...structuredCookHistory, ...legacyCookHistory]
+    .sort((firstEntry, secondEntry) => secondEntry.cookedOn.localeCompare(firstEntry.cookedOn))
+    .slice(0, 12);
   const today = getTodayDateInputValue();
 
   return (
@@ -353,6 +424,11 @@ export function CookHistoryDrawer({ onClose, recipe }: CookHistoryDrawerProps) {
 
       <Form className="cook-entry-form" method="post">
         <input name="intent" type="hidden" value="record-cooked" />
+        <input name="lensKey" type="hidden" value={activeLensKey} />
+        <div className="cook-entry-lens">
+          <span>Recipe version</span>
+          <strong>{activeLensName}</strong>
+        </div>
         <label className="field">
           <span>Cooked on</span>
           <input name="cookedOn" type="date" max={today} defaultValue={today} />
@@ -370,10 +446,16 @@ export function CookHistoryDrawer({ onClose, recipe }: CookHistoryDrawerProps) {
         </button>
       </Form>
 
-      {recentCookedDates.length > 0 ? (
-        <div className="cook-history-dates" aria-label="Recent cooked dates">
-          {recentCookedDates.map((date) => (
-            <span key={date}>{formatCookedDate(date)}</span>
+      {recentCookHistory.length > 0 ? (
+        <div className="cook-history-entries" aria-label="Recent cook history">
+          {recentCookHistory.map((entry, index) => (
+            <article key={`${entry.cookedOn}-${entry.lensKey}-${index}`}>
+              <div>
+                <strong>{formatCookedDate(entry.cookedOn)}</strong>
+                <span>{entry.lensName}</span>
+              </div>
+              {entry.note ? <p>{entry.note}</p> : null}
+            </article>
           ))}
         </div>
       ) : null}

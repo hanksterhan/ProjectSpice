@@ -2,16 +2,22 @@ import {
   recipeLensInputSchema,
   recipeLensKeySchema,
   recipeLensSchema,
+  recipeLensSummarySchema,
   type RecipeLens,
   type RecipeLensInput,
   type RecipeLensKey,
+  type RecipeLensSummary,
 } from "~/modules/recipe-lenses";
 
 import { RecipeLensRepository } from "./recipe-lens.repo";
 
 export type RecipeLensServiceRepository = Pick<
   RecipeLensRepository,
-  "listByRecipeId" | "getByRecipeIdAndKey" | "upsert" | "delete"
+  | "listByRecipeId"
+  | "listSummariesByRecipeId"
+  | "getByRecipeIdAndKey"
+  | "upsert"
+  | "delete"
 >;
 
 export class RecipeLensService {
@@ -21,6 +27,12 @@ export class RecipeLensService {
     const lenses = await this.repository.listByRecipeId(recipeId);
 
     return lenses.map((lens) => recipeLensSchema.parse(lens));
+  }
+
+  async listSummariesByRecipeId(recipeId: string): Promise<RecipeLensSummary[]> {
+    const lenses = await this.repository.listSummariesByRecipeId(recipeId);
+
+    return lenses.map((lens) => recipeLensSummarySchema.parse(lens));
   }
 
   async getByRecipeIdAndKey(

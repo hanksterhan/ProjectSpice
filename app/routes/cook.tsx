@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { Route } from "./+types/cook";
 import { CookMode, getCookSessionHref, parseCookRecipeIds } from "~/modules/cooking";
-import { addCookedDate } from "~/modules/recipe-domain";
+import { addCookHistoryEntry } from "~/modules/recipe-domain";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
@@ -64,7 +64,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     await service.update(
       {
-        ...addCookedDate(recipe, parsed.data.cookedOn),
+        ...addCookHistoryEntry(recipe, {
+          cookedOn: parsed.data.cookedOn,
+          createdAt: now,
+          lensKey: "original",
+          lensName: "Original",
+          recipeVersion: recipe.version,
+        }),
         updatedAt: now,
         version: recipe.version + 1,
       },

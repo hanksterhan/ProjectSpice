@@ -1,4 +1,13 @@
-import type { Recipe, RecipeDraft } from "./recipe.types";
+import type { Recipe, RecipeCookHistoryEntry, RecipeDraft } from "./recipe.types";
+
+export type AddCookHistoryEntryInput = {
+  cookedOn: string;
+  createdAt: string;
+  lensKey: string;
+  lensName: string;
+  note?: string;
+  recipeVersion?: number;
+};
 
 export function addCookedDate<T extends Recipe | RecipeDraft>(
   recipe: T,
@@ -7,6 +16,26 @@ export function addCookedDate<T extends Recipe | RecipeDraft>(
   return {
     ...recipe,
     cookedDates: normalizeCookedDates([...(recipe.cookedDates ?? []), cookedOn]),
+  };
+}
+
+export function addCookHistoryEntry<T extends Recipe | RecipeDraft>(
+  recipe: T,
+  input: AddCookHistoryEntryInput,
+): T {
+  const entry: RecipeCookHistoryEntry = {
+    cookedOn: input.cookedOn,
+    lensKey: input.lensKey,
+    lensName: input.lensName,
+    ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    ...(input.recipeVersion ? { recipeVersion: input.recipeVersion } : {}),
+    createdAt: input.createdAt,
+  };
+
+  return {
+    ...recipe,
+    cookedDates: normalizeCookedDates([...(recipe.cookedDates ?? []), input.cookedOn]),
+    cookHistory: normalizeCookHistory([...(recipe.cookHistory ?? []), entry]),
   };
 }
 
@@ -39,14 +68,39 @@ export function normalizeCookedDates(cookedDates: readonly string[]): string[] {
     .sort((firstDate, secondDate) => secondDate.localeCompare(firstDate));
 }
 
-export function getCookCount(recipe: Pick<Recipe | RecipeDraft, "cookedDates">): number {
-  return recipe.cookedDates?.length ?? 0;
+export function normalizeCookHistory(
+  cookHistory: readonly RecipeCookHistoryEntry[],
+): RecipeCookHistoryEntry[] {
+  return cookHistory
+    .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.cookedOn))
+    .slice()
+    .sort((firstEntry, secondEntry) => {
+      const dateOrder = secondEntry.cookedOn.localeCompare(firstEntry.cookedOn);
+
+      return dateOrder === 0
+        ? secondEntry.createdAt.localeCompare(firstEntry.createdAt)
+        : dateOrder;
+    });
+}
+
+export function getCookCount(
+  recipe: Pick<Recipe | RecipeDraft, "cookedDates" | "cookHistory">,
+): number {
+  const cookHistory = recipe.cookHistory ?? [];
+  const cookHistoryDateSet = new Set(cookHistory.map((entry) => entry.cookedOn));
+  const legacyCookedDates =
+    recipe.cookedDates?.filter((cookedOn) => !cookHistoryDateSet.has(cookedOn)) ?? [];
+
+  return cookHistory.length + legacyCookedDates.length;
 }
 
 export function getLastCookedDate(
-  recipe: Pick<Recipe | RecipeDraft, "cookedDates">,
+  recipe: Pick<Recipe | RecipeDraft, "cookedDates" | "cookHistory">,
 ): string | undefined {
-  return normalizeCookedDates(recipe.cookedDates ?? [])[0];
+  return normalizeCookedDates([
+    ...(recipe.cookHistory?.map((entry) => entry.cookedOn) ?? []),
+    ...(recipe.cookedDates ?? []),
+  ])[0];
 }
 
 function formatCookJournalDate(date: string): string {

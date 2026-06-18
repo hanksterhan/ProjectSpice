@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { ChefHat } from "lucide-react";
+import { ChefHat, PanelRightOpen } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/recipes.$recipeId";
-import { addCookJournalNote, addCookedDate } from "~/modules/recipe-domain";
+import { addCookHistoryEntry } from "~/modules/recipe-domain";
 import {
   appendAiChatTurn,
   buildRecipeFromAiDraft,
@@ -16,10 +16,13 @@ import {
 import { getCookSessionHref } from "~/modules/cooking";
 import {
   recipeLensKeySchema,
+  getRecipeLensDefinition,
+  getRecipeLensDetailPath,
   type RecipeLensKey,
 } from "~/modules/recipe-lenses";
 import {
   CookHistoryDrawer,
+  RecipeLensDrawer,
   RecipeViewer,
 } from "~/modules/recipe-viewer/RecipeViewer";
 import {
@@ -68,14 +71,15 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     throw new Response("Recipe not found", { status: 404 });
   }
 
-  const lenses = await getRecipeLensService(context).listByRecipeId(recipe.id);
+  const lensService = getRecipeLensService(context);
+  const lensSummaries = await lensService.listSummariesByRecipeId(recipe.id);
   const activeLensKey = parseActiveLensKey(request.url);
   const activeLens =
     activeLensKey === "original"
       ? null
-      : lenses.find((lens) => lens.lensKey === activeLensKey) ?? null;
+      : await lensService.getByRecipeIdAndKey(recipe.id, activeLensKey);
 
-  return { recipe, lenses, activeLensKey, activeLens };
+  return { recipe, lensSummaries, activeLensKey, activeLens };
 }
 
 export async function action({
@@ -111,11 +115,15 @@ export async function action({
     }
 
     const now = new Date().toISOString();
-    const cookedRecipe = addCookJournalNote(
-      addCookedDate(recipe, parsed.data.cookedOn),
-      parsed.data.cookedOn,
-      parsed.data.cookNote,
-    );
+    const activeLensKey = parseLensKeyFormValue(formData.get("lensKey")) ?? parseActiveLensKey(request.url);
+    const cookedRecipe = addCookHistoryEntry(recipe, {
+      cookedOn: parsed.data.cookedOn,
+      createdAt: now,
+      lensKey: activeLensKey,
+      lensName: getCookedLensName(activeLensKey),
+      note: parsed.data.cookNote,
+      recipeVersion: recipe.version,
+    });
     const updatedRecipe = await service.update(
       {
         ...cookedRecipe,
@@ -128,7 +136,7 @@ export async function action({
         : `Recorded cooked date: ${parsed.data.cookedOn}`,
     );
 
-    return redirect(getRecipeDetailPath(updatedRecipe));
+    return redirect(getRecipeLensDetailPath(updatedRecipe, activeLensKey));
   }
 
   if (intent === "transform") {
@@ -245,6 +253,7 @@ export default function RecipeDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [isCookHistoryOpen, setIsCookHistoryOpen] = useState(false);
+  const [isLensDrawerOpen, setIsLensDrawerOpen] = useState(false);
   const recipe = loaderData.recipe;
   const recipeId = recipe.id;
   const recipeTitle = recipe.title;
@@ -261,16 +270,34 @@ export default function RecipeDetail({
         recipe={recipe}
         activeLens={loaderData.activeLens}
         activeLensKey={loaderData.activeLensKey}
-        savedLensKeys={loaderData.lenses.map((lens) => lens.lensKey)}
       />
       <RecipeActionRail
         isCookHistoryOpen={isCookHistoryOpen}
-        onOpenCookHistory={() => setIsCookHistoryOpen(true)}
+        isLensDrawerOpen={isLensDrawerOpen}
+        onOpenCookHistory={() => {
+          setIsLensDrawerOpen(false);
+          setIsCookHistoryOpen(true);
+        }}
+        onOpenLensDrawer={() => {
+          setIsCookHistoryOpen(false);
+          setIsLensDrawerOpen(true);
+        }}
         recipeId={recipeId}
         recipeTitle={recipeTitle}
       />
+      {isLensDrawerOpen ? (
+        <RecipeLensDrawer
+          activeLens={loaderData.activeLens}
+          activeLensKey={loaderData.activeLensKey}
+          lensSummaries={loaderData.lensSummaries}
+          onClose={() => setIsLensDrawerOpen(false)}
+          recipe={recipe}
+        />
+      ) : null}
       {isCookHistoryOpen ? (
         <CookHistoryDrawer
+          activeLensKey={loaderData.activeLensKey}
+          activeLensName={getCookedLensName(loaderData.activeLensKey)}
           onClose={() => setIsCookHistoryOpen(false)}
           recipe={recipe}
         />
@@ -286,14 +313,36 @@ function parseActiveLensKey(url: string): RecipeLensKey | "original" {
   return parsedLensKey.success ? parsedLensKey.data : "original";
 }
 
+function parseLensKeyFormValue(value: FormDataEntryValue | null): RecipeLensKey | "original" | undefined {
+  if (value === "original") {
+    return "original";
+  }
+
+  const parsedLensKey = recipeLensKeySchema.safeParse(value);
+
+  return parsedLensKey.success ? parsedLensKey.data : undefined;
+}
+
+function getCookedLensName(lensKey: RecipeLensKey | "original"): string {
+  if (lensKey === "original") {
+    return "Original";
+  }
+
+  return getRecipeLensDefinition(lensKey)?.label ?? lensKey;
+}
+
 function RecipeActionRail({
   isCookHistoryOpen,
+  isLensDrawerOpen,
   onOpenCookHistory,
+  onOpenLensDrawer,
   recipeId,
   recipeTitle,
 }: {
   isCookHistoryOpen: boolean;
+  isLensDrawerOpen: boolean;
   onOpenCookHistory: () => void;
+  onOpenLensDrawer: () => void;
   recipeId: string;
   recipeTitle: string;
 }) {
@@ -317,6 +366,18 @@ function RecipeActionRail({
         <ChefHat aria-hidden="true" size={18} strokeWidth={2.4} />
         <span className="sr-only">Cook this recipe</span>
       </Link>
+      <button
+        className="recipe-rail-action"
+        data-tooltip="Recipe lenses"
+        type="button"
+        aria-controls="recipe-lens-drawer"
+        aria-expanded={isLensDrawerOpen}
+        aria-label="Recipe lenses"
+        onClick={onOpenLensDrawer}
+      >
+        <PanelRightOpen aria-hidden="true" size={18} strokeWidth={2.4} />
+        <span className="sr-only">Recipe lenses</span>
+      </button>
       <button
         className="recipe-rail-action"
         data-tooltip="Cook history"
