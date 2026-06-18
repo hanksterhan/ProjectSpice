@@ -66,14 +66,14 @@ describe("RecipeViewer recipe lenses", () => {
       </MemoryRouter>,
     );
 
-    expect(markup).toContain("Recipe view");
+    expect(markup).toContain("Recipe lenses");
     expect(markup).toContain("Original");
     expect(markup).toContain("Lower-Cal");
     expect(markup).toContain("Glucose");
     expect(markup).toContain("Quick");
     expect(markup).toContain("Max Flavor");
-    expect(markup).toContain("Saved lens");
-    expect(markup).toContain("Not saved");
+    expect(markup).toContain("Trim calories; keep flavor.");
+    expect(markup).toContain("Faster prep and cook time.");
     expect(markup).toContain("Uses one pan and prepped vegetables");
     expect(markup).toContain("Edit lens");
   });

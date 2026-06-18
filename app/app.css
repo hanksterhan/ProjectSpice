@@ -763,6 +763,7 @@ p {
   justify-content: center;
   min-height: 2.7rem;
   padding: 0 1rem;
+  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -2369,8 +2370,7 @@ p {
   font-weight: 800;
 }
 
-.recipe-lens-editor-intro,
-.recipe-lens-notes-editor,
+.recipe-lens-editor-panel,
 .recipe-lens-reset-form {
   background: var(--surface-raised);
   border: 1px solid var(--line);
@@ -2391,23 +2391,22 @@ p {
 .recipe-lens-editor-intro h1 {
   font-size: 1.45rem;
   line-height: 1.05;
-  margin-bottom: 0;
+  margin-bottom: 0.25rem;
 }
 
 .recipe-lens-menu {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .recipe-lens-menu a {
   border: 1px solid transparent;
-  border-left: 3px solid transparent;
   border-radius: 6px;
   color: var(--steel);
   display: grid;
   gap: 0.1rem;
-  min-height: 3rem;
-  padding: 0.5rem 0.65rem;
+  min-height: 3.1rem;
+  padding: 0.5rem 0.6rem;
   text-decoration: none;
 }
 
@@ -2419,8 +2418,8 @@ p {
 .recipe-lens-menu a.active {
   background: var(--surface-muted);
   border-color: var(--soft-border);
-  border-left-color: var(--accent);
   color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .recipe-lens-menu span {
@@ -2432,13 +2431,24 @@ p {
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 800;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recipe-lens-summary {
   border-top: 1px solid var(--line);
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
   padding-top: 0.85rem;
+}
+
+.recipe-lens-summary-header {
+  align-items: baseline;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
 }
 
 .recipe-lens-summary h3 {
@@ -2455,16 +2465,32 @@ p {
   margin-bottom: 0;
 }
 
-.recipe-lens-summary .button {
-  justify-self: start;
-  min-height: 2.25rem;
-  padding: 0.35rem 0.7rem;
+.recipe-lens-action {
+  border-radius: 5px;
+  color: var(--steel);
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.25rem 0.35rem;
+  text-decoration: none;
 }
 
-.recipe-lens-editor-intro,
-.recipe-lens-notes-editor,
+.recipe-lens-action:hover,
+.recipe-lens-action:focus-visible {
+  background: var(--surface-muted);
+  color: var(--ink);
+  outline: none;
+}
+
+.recipe-lens-editor-panel,
 .recipe-lens-reset-form {
   margin-bottom: 1rem;
+}
+
+.recipe-lens-editor-panel {
+  display: grid;
+  gap: 1rem;
 }
 
 .recipe-lens-editor-intro {
@@ -2475,7 +2501,15 @@ p {
 }
 
 .recipe-lens-editor-intro p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
   margin-bottom: 0;
+}
+
+.recipe-lens-notes-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
 }
 
 .recipe-lens-notes-editor textarea {
@@ -2483,8 +2517,38 @@ p {
 }
 
 .recipe-lens-reset-form {
+  align-items: center;
+  box-shadow: none;
   display: flex;
-  justify-content: flex-end;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.recipe-lens-reset-form strong {
+  color: var(--ink);
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.recipe-lens-reset-form p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 0;
+}
+
+.button-danger {
+  border-color: color-mix(in srgb, var(--accent-strong) 34%, var(--line));
+  color: var(--accent-strong);
+}
+
+.button-danger:hover,
+.button-danger:focus-visible {
+  background: var(--danger-wash);
+  border-color: color-mix(in srgb, var(--accent-strong) 54%, var(--line));
+  outline: none;
 }
 
 .recipe-side-panel {
@@ -2507,7 +2571,18 @@ p {
 }
 
 .recipe-lens-drawer {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  bottom: auto;
+  box-shadow: var(--shadow);
+  gap: 0.85rem;
   grid-template-rows: auto auto minmax(0, 1fr);
+  max-height: calc(100dvh - 7rem);
+  overflow: auto;
+  padding: 0.9rem;
+  right: clamp(3.6rem, 4vw, 4.25rem);
+  top: 5.4rem;
+  width: min(21rem, calc(100vw - 4.5rem));
 }
 
 .recipe-side-panel-header {
@@ -4470,6 +4545,15 @@ p {
     right: 50%;
     top: auto;
     transform: translateX(50%);
+  }
+
+  .recipe-lens-drawer {
+    bottom: 4.25rem;
+    left: 0.75rem;
+    max-height: min(28rem, calc(100dvh - 6rem));
+    right: 0.75rem;
+    top: auto;
+    width: auto;
   }
 
   .shell-current-page span {

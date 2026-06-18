@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChefHat, PanelRightOpen } from "lucide-react";
+import { Aperture, ChefHat } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -375,7 +375,7 @@ function RecipeActionRail({
         aria-label="Recipe lenses"
         onClick={onOpenLensDrawer}
       >
-        <PanelRightOpen aria-hidden="true" size={18} strokeWidth={2.4} />
+        <Aperture aria-hidden="true" size={18} strokeWidth={2.4} />
         <span className="sr-only">Recipe lenses</span>
       </button>
       <button

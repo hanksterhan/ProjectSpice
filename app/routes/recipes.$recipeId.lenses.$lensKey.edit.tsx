@@ -120,28 +120,30 @@ export default function EditRecipeLens({
 
   return (
     <div className="recipe-editor-route">
-      <div className="recipe-lens-editor-intro">
-        <div>
-          <span>Recipe lens</span>
-          <h1>{lensDefinition.label}</h1>
-          <p>{lensDefinition.description}</p>
+      <section className="recipe-lens-editor-panel" aria-labelledby="recipe-lens-editor-heading">
+        <div className="recipe-lens-editor-intro">
+          <div>
+            <span>Recipe lens</span>
+            <h1 id="recipe-lens-editor-heading">{lensDefinition.label}</h1>
+            <p>{lensDefinition.description}</p>
+          </div>
+          <Link className="button button-secondary" to={detailHref}>
+            Cancel
+          </Link>
         </div>
-        <Link className="button button-secondary" to={detailHref}>
-          Cancel
-        </Link>
-      </div>
 
-      <section className="recipe-lens-notes-editor" aria-labelledby="lens-notes-editor-heading">
-        <label className="field field-wide">
-          <span id="lens-notes-editor-heading">Lens Notes</span>
-          <textarea
-            name="lensNotes"
-            form="recipe-lens-editor-form"
-            defaultValue={lens?.notes ?? ""}
-            placeholder="Summarize what changed and why it improves this lens."
-            rows={4}
-          />
-        </label>
+        <div className="recipe-lens-notes-editor">
+          <label className="field field-wide">
+            <span>Lens Notes</span>
+            <textarea
+              name="lensNotes"
+              form="recipe-lens-editor-form"
+              defaultValue={lens?.notes ?? ""}
+              placeholder="Summarize what changed and why it improves this lens."
+              rows={4}
+            />
+          </label>
+        </div>
       </section>
 
       <RecipeEditorForm
@@ -155,10 +157,16 @@ export default function EditRecipeLens({
 
       {lens ? (
         <form className="recipe-lens-reset-form" method="post">
-          <input name="intent" type="hidden" value="reset-lens" />
-          <button className="button button-secondary" type="submit">
-            Reset Lens
-          </button>
+          <div>
+            <strong>Reset this lens</strong>
+            <p>Remove this saved lens and return to the canonical recipe view.</p>
+          </div>
+          <div>
+            <input name="intent" type="hidden" value="reset-lens" />
+            <button className="button button-secondary button-danger" type="submit">
+              Reset lens
+            </button>
+          </div>
         </form>
       ) : null}
     </div>

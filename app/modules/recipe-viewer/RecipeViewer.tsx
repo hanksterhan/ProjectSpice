@@ -279,10 +279,8 @@ export function RecipeLensDrawer({
     >
       <div className="recipe-side-panel-header">
         <div>
-          <span>Recipe view</span>
-          <h2 id="recipe-lens-drawer-heading">
-            {activeLensDefinition?.label ?? "Original"}
-          </h2>
+          <span>Switch view</span>
+          <h2 id="recipe-lens-drawer-heading">Recipe lenses</h2>
         </div>
         <button
           className="icon-button"
@@ -302,28 +300,34 @@ export function RecipeLensDrawer({
           to={getRecipeLensDetailPath(recipe)}
         >
           <span>Original</span>
-          <small>Saved recipe</small>
+          <small>Canonical saved recipe</small>
         </Link>
-        {builtInRecipeLenses.map((lens) => {
-          const lensSummary = lensSummaryByKey.get(lens.key);
-
-          return (
-            <Link
-              aria-current={activeLensKey === lens.key ? "page" : undefined}
-              className={activeLensKey === lens.key ? "active" : undefined}
-              key={lens.key}
-              to={getRecipeLensDetailPath(recipe, lens.key)}
-              title={lens.description}
-            >
-              <span>{lens.shortLabel}</span>
-              <small>{lensSummary ? "Saved lens" : "Not saved"}</small>
-            </Link>
-          );
-        })}
+        {builtInRecipeLenses.map((lens) => (
+          <Link
+            aria-current={activeLensKey === lens.key ? "page" : undefined}
+            className={activeLensKey === lens.key ? "active" : undefined}
+            key={lens.key}
+            to={getRecipeLensDetailPath(recipe, lens.key)}
+            title={lens.description}
+          >
+            <span>{lens.shortLabel}</span>
+            <small>{lens.description}</small>
+          </Link>
+        ))}
       </nav>
 
       <section className="recipe-lens-summary" aria-labelledby="lens-notes-heading">
-        <h3 id="lens-notes-heading">Lens Notes</h3>
+        <div className="recipe-lens-summary-header">
+          <h3 id="lens-notes-heading">Lens Notes</h3>
+          {activeLensDefinition ? (
+            <Link
+              className="recipe-lens-action"
+              to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
+            >
+              {activeLens ? "Edit lens" : "Create lens"}
+            </Link>
+          ) : null}
+        </div>
         {activeLensKey === "original" ? (
           <p>This is the canonical saved recipe.</p>
         ) : activeLensDefinition ? (
@@ -332,14 +336,6 @@ export function RecipeLensDrawer({
               lensSummaryByKey.get(activeLensDefinition.key)?.notes ??
               `No ${activeLensDefinition.label.toLowerCase()} lens saved yet.`}
           </p>
-        ) : null}
-        {activeLensDefinition ? (
-          <Link
-            className="button button-secondary"
-            to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
-          >
-            {activeLens ? "Edit lens" : "Create lens"}
-          </Link>
         ) : null}
       </section>
     </aside>
