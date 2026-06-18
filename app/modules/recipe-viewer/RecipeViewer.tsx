@@ -13,6 +13,7 @@ import {
   builtInRecipeLenses,
   getRecipeLensDetailPath,
   getRecipeLensEditPath,
+  getRecipeLensDefinition,
   type RecipeLens,
   type RecipeLensKey,
   type RecipeLensSummary,
@@ -344,7 +345,7 @@ export function RecipeLensDrawer({
 
 type CookHistoryDrawerProps = {
   activeLensKey: RecipeLensKey | "original";
-  activeLensName: string;
+  lensSummaries: RecipeLensSummary[];
   onClose: () => void;
   recipe: Recipe;
 };
@@ -358,7 +359,7 @@ type CookHistoryDisplayEntry = {
 
 export function CookHistoryDrawer({
   activeLensKey,
-  activeLensName,
+  lensSummaries,
   onClose,
   recipe,
 }: CookHistoryDrawerProps) {
@@ -385,6 +386,11 @@ export function CookHistoryDrawer({
   const recentCookHistory = [...structuredCookHistory, ...legacyCookHistory]
     .sort((firstEntry, secondEntry) => secondEntry.cookedOn.localeCompare(firstEntry.cookedOn))
     .slice(0, 12);
+  const availableCookLensKeys = new Set([
+    "original",
+    ...lensSummaries.map((lensSummary) => lensSummary.lensKey),
+  ]);
+  const defaultCookLensKey = availableCookLensKeys.has(activeLensKey) ? activeLensKey : "original";
   const today = getTodayDateInputValue();
 
   return (
@@ -420,11 +426,21 @@ export function CookHistoryDrawer({
 
       <Form className="cook-entry-form" method="post">
         <input name="intent" type="hidden" value="record-cooked" />
-        <input name="lensKey" type="hidden" value={activeLensKey} />
-        <div className="cook-entry-lens">
+        <label className="field cook-entry-version">
           <span>Recipe version</span>
-          <strong>{activeLensName}</strong>
-        </div>
+          <select name="lensKey" defaultValue={defaultCookLensKey}>
+            <option value="original">Original</option>
+            {lensSummaries.map((lensSummary) => {
+              const lensDefinition = getRecipeLensDefinition(lensSummary.lensKey);
+
+              return (
+                <option key={lensSummary.lensKey} value={lensSummary.lensKey}>
+                  {lensDefinition?.label ?? lensSummary.lensKey}
+                </option>
+              );
+            })}
+          </select>
+        </label>
         <label className="field">
           <span>Cooked on</span>
           <input name="cookedOn" type="date" max={today} defaultValue={today} />

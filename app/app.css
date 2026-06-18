@@ -2370,13 +2370,12 @@ p {
   font-weight: 800;
 }
 
-.recipe-lens-editor-panel,
-.recipe-lens-reset-form {
+.recipe-lens-editor-panel {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: clamp(0.9rem, 1.6vw, 1.1rem);
 }
 
 .recipe-lens-editor-intro span {
@@ -2389,7 +2388,7 @@ p {
 }
 
 .recipe-lens-editor-intro h1 {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   line-height: 1.05;
   margin-bottom: 0.25rem;
 }
@@ -2483,72 +2482,41 @@ p {
   outline: none;
 }
 
-.recipe-lens-editor-panel,
-.recipe-lens-reset-form {
+.recipe-lens-editor-panel {
   margin-bottom: 1rem;
 }
 
 .recipe-lens-editor-panel {
+  align-items: stretch;
   display: grid;
-  gap: 1rem;
+  gap: clamp(0.9rem, 2vw, 1.25rem);
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(18rem, 1.2fr);
 }
 
 .recipe-lens-editor-intro {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
+  align-content: start;
+  background: var(--surface-muted);
+  border: 1px solid var(--soft-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
 }
 
 .recipe-lens-editor-intro p {
   color: var(--muted);
   font-size: 0.92rem;
   font-weight: 800;
+  line-height: 1.4;
   margin-bottom: 0;
 }
 
 .recipe-lens-notes-editor {
-  border-top: 1px solid var(--line);
-  padding-top: 1rem;
+  min-width: 0;
 }
 
 .recipe-lens-notes-editor textarea {
-  min-height: 7rem;
-}
-
-.recipe-lens-reset-form {
-  align-items: center;
-  box-shadow: none;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-}
-
-.recipe-lens-reset-form strong {
-  color: var(--ink);
-  display: block;
-  font-size: 0.95rem;
-  margin-bottom: 0.2rem;
-}
-
-.recipe-lens-reset-form p {
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 800;
-  line-height: 1.35;
-  margin-bottom: 0;
-}
-
-.button-danger {
-  border-color: color-mix(in srgb, var(--accent-strong) 34%, var(--line));
-  color: var(--accent-strong);
-}
-
-.button-danger:hover,
-.button-danger:focus-visible {
-  background: var(--danger-wash);
-  border-color: color-mix(in srgb, var(--accent-strong) 54%, var(--line));
-  outline: none;
+  min-height: 8.5rem;
 }
 
 .recipe-side-panel {
@@ -2570,19 +2538,27 @@ p {
   z-index: 50;
 }
 
-.recipe-lens-drawer {
+.recipe-lens-drawer,
+.cook-history-drawer {
   border: 1px solid var(--line);
   border-radius: 8px;
   bottom: auto;
   box-shadow: var(--shadow);
   gap: 0.85rem;
-  grid-template-rows: auto auto minmax(0, 1fr);
   max-height: calc(100dvh - 7rem);
   overflow: auto;
   padding: 0.9rem;
   right: clamp(3.6rem, 4vw, 4.25rem);
   top: 5.4rem;
   width: min(21rem, calc(100vw - 4.5rem));
+}
+
+.recipe-lens-drawer {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.cook-history-drawer {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
 .recipe-side-panel-header {
@@ -2631,30 +2607,25 @@ p {
   gap: 0.75rem;
 }
 
-.cook-entry-lens {
-  background: var(--surface-muted);
-  border: 1px solid var(--soft-border);
-  border-radius: 8px;
-  display: grid;
-  gap: 0.2rem;
-  padding: 0.75rem;
-}
-
-.cook-entry-lens span {
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.cook-entry-lens strong {
-  color: var(--ink);
-  font-size: 1rem;
-}
-
 .cook-entry-form .field input,
+.cook-entry-form .field select,
 .cook-entry-form .field textarea {
   width: 100%;
+}
+
+.cook-entry-version select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) 50%,
+    calc(100% - 0.7rem) 50%;
+  background-size:
+    0.32rem 0.32rem,
+    0.32rem 0.32rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
 }
 
 .cook-entry-form .field textarea {
@@ -4547,13 +4518,22 @@ p {
     transform: translateX(50%);
   }
 
-  .recipe-lens-drawer {
+  .recipe-lens-drawer,
+  .cook-history-drawer {
     bottom: 4.25rem;
     left: 0.75rem;
     max-height: min(28rem, calc(100dvh - 6rem));
     right: 0.75rem;
     top: auto;
     width: auto;
+  }
+
+  .recipe-lens-editor-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-lens-notes-editor textarea {
+    min-height: 7rem;
   }
 
   .shell-current-page span {

@@ -297,7 +297,7 @@ export default function RecipeDetail({
       {isCookHistoryOpen ? (
         <CookHistoryDrawer
           activeLensKey={loaderData.activeLensKey}
-          activeLensName={getCookedLensName(loaderData.activeLensKey)}
+          lensSummaries={loaderData.lensSummaries}
           onClose={() => setIsCookHistoryOpen(false)}
           recipe={recipe}
         />

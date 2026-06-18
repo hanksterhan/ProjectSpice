@@ -1,4 +1,4 @@
-import { Link, redirect } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/recipes.$recipeId.lenses.$lensKey.edit";
 import {
@@ -71,12 +71,6 @@ export async function action({
   const formData = await request.formData();
   const lensService = getRecipeLensService(context);
 
-  if (formData.get("intent") === "reset-lens") {
-    await lensService.delete(recipe.id, lensKey);
-
-    return redirect(getRecipeLensDetailPath(recipe, lensKey));
-  }
-
   const notes = getFormString(formData, "lensNotes").trim();
 
   if (!notes) {
@@ -127,9 +121,6 @@ export default function EditRecipeLens({
             <h1 id="recipe-lens-editor-heading">{lensDefinition.label}</h1>
             <p>{lensDefinition.description}</p>
           </div>
-          <Link className="button button-secondary" to={detailHref}>
-            Cancel
-          </Link>
         </div>
 
         <div className="recipe-lens-notes-editor">
@@ -155,20 +146,6 @@ export default function EditRecipeLens({
         submitLabel="Save Lens"
       />
 
-      {lens ? (
-        <form className="recipe-lens-reset-form" method="post">
-          <div>
-            <strong>Reset this lens</strong>
-            <p>Remove this saved lens and return to the canonical recipe view.</p>
-          </div>
-          <div>
-            <input name="intent" type="hidden" value="reset-lens" />
-            <button className="button button-secondary button-danger" type="submit">
-              Reset lens
-            </button>
-          </div>
-        </form>
-      ) : null}
     </div>
   );
 }

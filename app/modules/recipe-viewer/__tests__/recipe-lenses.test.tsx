@@ -1,11 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter } from "react-router";
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { validRecipeDraftFixture, validRecipeFixture } from "~/modules/recipe-domain";
 import type { RecipeLens, RecipeLensSummary } from "~/modules/recipe-lenses";
 
-import { RecipeLensDrawer, RecipeViewer } from "../RecipeViewer";
+import { CookHistoryDrawer, RecipeLensDrawer, RecipeViewer } from "../RecipeViewer";
 
 const quickLens: RecipeLens = {
   id: "weeknight-sesame-chicken-bowls:quick",
@@ -76,6 +76,29 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("Faster prep and cook time.");
     expect(markup).toContain("Uses one pan and prepped vegetables");
     expect(markup).toContain("Edit lens");
+  });
+
+  it("offers saved recipe versions when recording cook history", () => {
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <CookHistoryDrawer
+            activeLensKey="quick"
+            lensSummaries={[quickLensSummary]}
+            onClose={() => undefined}
+            recipe={validRecipeFixture}
+          />
+        ),
+      },
+    ]);
+    const markup = renderToStaticMarkup(<RouterProvider router={router} />);
+
+    expect(markup).toContain("Cook History");
+    expect(markup).toContain("Recipe version");
+    expect(markup).toContain('<option value="original">Original</option>');
+    expect(markup).toContain('<option value="quick" selected="">Quick</option>');
+    expect(markup).not.toContain('<option value="lower-cal">Lower-Cal</option>');
   });
 });
 
