@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { Link, redirect } from "react-router";
+import { redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/cook";
@@ -86,17 +85,8 @@ export default function CookRoute({ loaderData }: Route.ComponentProps) {
   const recipes = loaderData.recipes;
   const recipeCount = recipes.length;
   const title = recipeCount === 1 ? "Cook Mode" : `Cook Mode (${recipeCount})`;
-  const actions = useMemo(
-    () => (
-      <Link className="button button-secondary" to="/">
-        Back to Library
-      </Link>
-    ),
-    [],
-  );
 
   useShellCommand({
-    actions,
     backHref: "/",
     backLabel: "Back to library",
     title,
