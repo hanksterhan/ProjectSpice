@@ -13,6 +13,10 @@ type RecipeEditorActionResult =
   | { ok: true; recipe: Recipe }
   | { ok: false; errors: string[] };
 
+type RecipeDraftEditorActionResult =
+  | { ok: true; draft: RecipeDraft }
+  | { ok: false; errors: string[] };
+
 export function parseRecipeEditorFormData(
   formData: FormData,
 ): RecipeEditorFormValues {
@@ -86,6 +90,30 @@ export function buildRecipeFromEditorFormData({
       createdAt: existingRecipe?.createdAt ?? now,
       updatedAt: now,
     },
+  };
+}
+
+export function buildRecipeDraftFromEditorFormData({
+  formData,
+  baseDraft,
+}: {
+  formData: FormData;
+  baseDraft: RecipeDraft;
+}): RecipeDraftEditorActionResult {
+  const parsedValues = recipeEditorFormSchema.safeParse(
+    parseRecipeEditorFormData(formData),
+  );
+
+  if (!parsedValues.success) {
+    return {
+      ok: false,
+      errors: parsedValues.error.issues.map((issue) => issue.message),
+    };
+  }
+
+  return {
+    ok: true,
+    draft: validateRecipeEditorDraft(parsedValues.data, toRecipeDraft(baseDraft)),
   };
 }
 

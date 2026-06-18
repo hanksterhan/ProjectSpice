@@ -22,7 +22,9 @@ type RecipeEditorFormProps = {
   cancelHref: string;
   errors?: string[];
   chrome?: "full" | "minimal";
+  formId?: string;
   secondaryAction?: ReactNode;
+  submitLabel?: string;
 };
 
 type EditorFieldProps = {
@@ -45,7 +47,9 @@ export function RecipeEditorForm({
   cancelHref,
   errors: actionErrors = [],
   chrome = "full",
+  formId,
   secondaryAction,
+  submitLabel = "Save Recipe",
 }: RecipeEditorFormProps) {
   const defaultValues = useMemo(() => getRecipeEditorDefaults(recipe), [recipe]);
   const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -64,7 +68,7 @@ export function RecipeEditorForm({
   }, [defaultValues.title]);
 
   return (
-    <Form className="recipe-editor-form" method="post">
+    <Form className="recipe-editor-form" id={formId} method="post">
       {"version" in recipe ? (
         <input
           type="hidden"
@@ -89,7 +93,7 @@ export function RecipeEditorForm({
               Cancel
             </Link>
             <Button type="submit" variant="primary" disabled={isSubmitting}>
-              Save Recipe
+              {submitLabel}
             </Button>
           </div>
         </header>
@@ -309,7 +313,7 @@ export function RecipeEditorForm({
             Cancel
           </Link>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            Save Recipe
+            {submitLabel}
           </Button>
         </div>
       </footer>

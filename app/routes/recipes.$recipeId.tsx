@@ -15,6 +15,10 @@ import {
 } from "~/modules/ai-workbench";
 import { getCookSessionHref } from "~/modules/cooking";
 import {
+  recipeLensKeySchema,
+  type RecipeLensKey,
+} from "~/modules/recipe-lenses";
+import {
   CookHistoryDrawer,
   RecipeViewer,
 } from "~/modules/recipe-viewer/RecipeViewer";
@@ -30,6 +34,7 @@ import {
   getRecipeAiService,
 } from "~/server/ai";
 import { requireAuthenticatedUser } from "~/server/auth";
+import { getRecipeLensService } from "~/server/recipe-lenses";
 import { RecipeVersionConflictError } from "~/server/recipes/recipe.repo";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
 
@@ -63,7 +68,14 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     throw new Response("Recipe not found", { status: 404 });
   }
 
-  return { recipe };
+  const lenses = await getRecipeLensService(context).listByRecipeId(recipe.id);
+  const activeLensKey = parseActiveLensKey(request.url);
+  const activeLens =
+    activeLensKey === "original"
+      ? null
+      : lenses.find((lens) => lens.lensKey === activeLensKey) ?? null;
+
+  return { recipe, lenses, activeLensKey, activeLens };
 }
 
 export async function action({
@@ -245,7 +257,12 @@ export default function RecipeDetail({
 
   return (
     <div className="recipe-detail-route">
-      <RecipeViewer recipe={recipe} />
+      <RecipeViewer
+        recipe={recipe}
+        activeLens={loaderData.activeLens}
+        activeLensKey={loaderData.activeLensKey}
+        savedLensKeys={loaderData.lenses.map((lens) => lens.lensKey)}
+      />
       <RecipeActionRail
         isCookHistoryOpen={isCookHistoryOpen}
         onOpenCookHistory={() => setIsCookHistoryOpen(true)}
@@ -260,6 +277,13 @@ export default function RecipeDetail({
       ) : null}
     </div>
   );
+}
+
+function parseActiveLensKey(url: string): RecipeLensKey | "original" {
+  const lensKey = new URL(url).searchParams.get("lens");
+  const parsedLensKey = recipeLensKeySchema.safeParse(lensKey);
+
+  return parsedLensKey.success ? parsedLensKey.data : "original";
 }
 
 function RecipeActionRail({

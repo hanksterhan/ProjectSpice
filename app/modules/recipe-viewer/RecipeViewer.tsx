@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { Form } from "react-router";
+import { Form, Link } from "react-router";
 
 import {
   formatDisplayTime,
@@ -9,6 +9,13 @@ import {
   getLastCookedDate,
   type Recipe,
 } from "~/modules/recipe-domain";
+import {
+  builtInRecipeLenses,
+  getRecipeLensDetailPath,
+  getRecipeLensEditPath,
+  type RecipeLens,
+  type RecipeLensKey,
+} from "~/modules/recipe-lenses";
 import { FavoriteStar, RatingStars, RecipeImage } from "~/modules/ui-shell/primitives";
 
 import {
@@ -19,15 +26,29 @@ import {
 
 type RecipeViewerProps = {
   recipe: Recipe;
+  activeLensKey?: RecipeLensKey | "original";
+  activeLens?: RecipeLens | null;
+  savedLensKeys?: RecipeLensKey[];
 };
 
-export function RecipeViewer({ recipe }: RecipeViewerProps) {
-  const prepTime = formatDisplayTime(recipe.times?.prepMinutes);
-  const cookTime = formatDisplayTime(recipe.times?.cookMinutes);
-  const totalTime = formatDisplayTime(recipe.times?.totalMinutes);
-  const directionIngredientIndex = buildDirectionIngredientIndex(recipe.ingredients);
+export function RecipeViewer({
+  recipe,
+  activeLensKey = "original",
+  activeLens = null,
+  savedLensKeys = [],
+}: RecipeViewerProps) {
+  const displayRecipe = getDisplayRecipe(recipe, activeLens);
+  const activeLensDefinition =
+    activeLensKey === "original"
+      ? undefined
+      : builtInRecipeLenses.find((lens) => lens.key === activeLensKey);
+  const prepTime = formatDisplayTime(displayRecipe.times?.prepMinutes);
+  const cookTime = formatDisplayTime(displayRecipe.times?.cookMinutes);
+  const totalTime = formatDisplayTime(displayRecipe.times?.totalMinutes);
+  const directionIngredientIndex = buildDirectionIngredientIndex(displayRecipe.ingredients);
   const cookCount = getCookCount(recipe);
   const lastCookedDate = getLastCookedDate(recipe);
+  const savedLensKeySet = new Set(savedLensKeys);
 
   return (
     <article className="recipe-detail-page">
@@ -36,13 +57,13 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           {recipe.favorite ? (
             <FavoriteStar favorite className="recipe-detail-favorite-marker" />
           ) : null}
-          <h1>{recipe.title}</h1>
-          {recipe.description ? <p>{recipe.description}</p> : null}
+          <h1>{displayRecipe.title}</h1>
+          {displayRecipe.description ? <p>{displayRecipe.description}</p> : null}
           <div className="recipe-meta large" aria-label="Recipe highlights and tags">
-            {recipe.rating !== undefined ? (
-              <RatingStars rating={recipe.rating} />
+            {displayRecipe.rating !== undefined ? (
+              <RatingStars rating={displayRecipe.rating} />
             ) : null}
-            {recipe.tags.slice(0, 5).map((tag) => (
+            {displayRecipe.tags.slice(0, 5).map((tag) => (
               <span className="tag" key={tag}>
                 {tag}
               </span>
@@ -52,15 +73,35 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
 
         <RecipeImage
           className="recipe-detail-image"
-          src={recipe.imageUrl}
-          title={recipe.title}
+          src={displayRecipe.imageUrl}
+          title={displayRecipe.title}
         />
       </header>
+
+      <nav className="recipe-lens-switcher" aria-label="Recipe lenses">
+        <Link
+          className={activeLensKey === "original" ? "active" : undefined}
+          to={getRecipeLensDetailPath(recipe)}
+        >
+          Original
+        </Link>
+        {builtInRecipeLenses.map((lens) => (
+          <Link
+            className={activeLensKey === lens.key ? "active" : undefined}
+            data-empty={!savedLensKeySet.has(lens.key) ? "true" : undefined}
+            key={lens.key}
+            to={getRecipeLensDetailPath(recipe, lens.key)}
+            title={lens.description}
+          >
+            {lens.shortLabel}
+          </Link>
+        ))}
+      </nav>
 
       <dl className="recipe-detail-stats" aria-label="Recipe overview">
         <div>
           <dt>Yield</dt>
-          <dd>{recipe.yield?.notes ?? "Not specified"}</dd>
+          <dd>{displayRecipe.yield?.notes ?? "Not specified"}</dd>
         </div>
         <div>
           <dt>Prep</dt>
@@ -88,13 +129,35 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
         <a href="#directions-heading">Directions</a>
-        <a href="#notes-heading">Notes</a>
+        <a href={activeLensKey === "original" ? "#notes-heading" : "#lens-notes-heading"}>
+          Notes
+        </a>
       </nav>
+
+      {activeLensKey !== "original" && activeLensDefinition ? (
+        <section className="recipe-lens-notes" aria-labelledby="lens-notes-heading">
+          <div>
+            <span>Recipe lens</span>
+            <h2 id="lens-notes-heading">{activeLensDefinition.label}</h2>
+          </div>
+          {activeLens ? (
+            <p>{activeLens.notes}</p>
+          ) : (
+            <p>No {activeLensDefinition.label.toLowerCase()} lens saved yet.</p>
+          )}
+          <Link
+            className="button button-primary"
+            to={getRecipeLensEditPath(recipe, activeLensDefinition.key)}
+          >
+            {activeLens ? "Edit lens" : "Create lens"}
+          </Link>
+        </section>
+      ) : null}
 
       <div className="recipe-detail-layout">
         <aside className="ingredient-rail" aria-labelledby="ingredients-heading">
           <h2 id="ingredients-heading">Ingredients</h2>
-          {recipe.ingredients.map((section) => (
+          {displayRecipe.ingredients.map((section) => (
             <section className="ingredient-section" key={section.id}>
               {shouldShowSectionTitle(section.title, "ingredients") ? (
                 <h3>{section.title}</h3>
@@ -128,7 +191,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
             ) : null}
           </div>
 
-          {recipe.directions.map((section) => (
+          {displayRecipe.directions.map((section) => (
             <section className="direction-section" key={section.id}>
               {shouldShowSectionTitle(section.title, "directions") ? (
                 <h3>{section.title}</h3>
@@ -136,7 +199,7 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
               <ol>
                 {getDisplayDirectionSteps(section.steps).map(({ displayOrder, displayText, step }) => {
                   const displayStep = { ...step, text: displayText };
-                  const textParts = enrichDirectionStepText(displayStep, recipe.ingredients);
+                  const textParts = enrichDirectionStepText(displayStep, displayRecipe.ingredients);
                   const mentionedIngredientIds = new Set(
                     textParts
                       .filter((part) => part.type === "ingredient")
@@ -196,9 +259,9 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
           ))}
 
           <section className="recipe-notes" aria-labelledby="notes-heading">
-            <h2 id="notes-heading">Notes</h2>
-            {recipe.notes && recipe.notes.length > 0 ? (
-              recipe.notes.map((note) => <p key={note}>{note}</p>)
+            <h2 id="notes-heading">Recipe Notes</h2>
+            {displayRecipe.notes && displayRecipe.notes.length > 0 ? (
+              displayRecipe.notes.map((note) => <p key={note}>{note}</p>)
             ) : (
               <p>No notes yet.</p>
             )}
@@ -207,6 +270,20 @@ export function RecipeViewer({ recipe }: RecipeViewerProps) {
       </div>
     </article>
   );
+}
+
+function getDisplayRecipe(recipe: Recipe, activeLens: RecipeLens | null): Recipe {
+  if (!activeLens) {
+    return recipe;
+  }
+
+  return {
+    ...activeLens.recipeDraft,
+    id: recipe.id,
+    version: recipe.version,
+    createdAt: recipe.createdAt,
+    updatedAt: activeLens.updatedAt,
+  };
 }
 
 type CookHistoryDrawerProps = {

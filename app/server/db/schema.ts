@@ -9,9 +9,16 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 import type { Recipe, RecipeDraft } from "~/modules/recipe-domain";
+import type { RecipeLensKey } from "~/modules/recipe-lenses";
 
 export const aiRunOperations = ["generate", "transform"] as const;
 export const aiRunStatuses = ["succeeded", "failed"] as const;
+export const recipeLensKeys = [
+  "lower-cal",
+  "glucose-conscious",
+  "quick",
+  "max-flavor",
+] as const;
 
 export type AiRunOperation = (typeof aiRunOperations)[number];
 export type AiRunStatus = (typeof aiRunStatuses)[number];
@@ -78,6 +85,31 @@ export const recipeVersions = sqliteTable(
   ],
 );
 
+export const recipeLenses = sqliteTable(
+  "recipe_lenses",
+  {
+    id: text("id").primaryKey(),
+    recipeId: text("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    lensKey: text("lens_key").$type<RecipeLensKey>().notNull(),
+    notes: text("notes").notNull(),
+    recipeDraftJson: text("recipe_draft_json", { mode: "json" })
+      .$type<RecipeDraft>()
+      .notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("recipe_lenses_recipe_id_lens_key_unique").on(
+      table.recipeId,
+      table.lensKey,
+    ),
+    index("recipe_lenses_recipe_id_idx").on(table.recipeId),
+    index("recipe_lenses_lens_key_idx").on(table.lensKey),
+  ],
+);
+
 export const aiRuns = sqliteTable(
   "ai_runs",
   {
@@ -110,12 +142,20 @@ export const aiRuns = sqliteTable(
 
 export const recipesRelations = relations(recipes, ({ many }) => ({
   versions: many(recipeVersions),
+  lenses: many(recipeLenses),
   aiRuns: many(aiRuns),
 }));
 
 export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
   recipe: one(recipes, {
     fields: [recipeVersions.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
+export const recipeLensesRelations = relations(recipeLenses, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeLenses.recipeId],
     references: [recipes.id],
   }),
 }));

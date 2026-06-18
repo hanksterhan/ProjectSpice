@@ -5,6 +5,7 @@ import {
   aiRunOperations,
   aiRuns,
   aiRunStatuses,
+  recipeLenses,
   recipes,
   recipeVersions,
 } from "../schema";
@@ -13,6 +14,7 @@ describe("db schema", () => {
   it("defines the persistence tables required by v1", () => {
     expect(getTableName(recipes)).toBe("recipes");
     expect(getTableName(recipeVersions)).toBe("recipe_versions");
+    expect(getTableName(recipeLenses)).toBe("recipe_lenses");
     expect(getTableName(aiRuns)).toBe("ai_runs");
   });
 
@@ -65,6 +67,20 @@ describe("db schema", () => {
         "status",
         "error",
         "changeSummary",
+      ]),
+    );
+  });
+
+  it("stores saved recipe lenses per recipe and built-in lens key", () => {
+    expect(Object.keys(getTableColumns(recipeLenses))).toEqual(
+      expect.arrayContaining([
+        "id",
+        "recipeId",
+        "lensKey",
+        "notes",
+        "recipeDraftJson",
+        "createdAt",
+        "updatedAt",
       ]),
     );
   });
