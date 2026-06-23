@@ -130,6 +130,45 @@ describe("RecipeService", () => {
     expect(repository.listSummaryPage).not.toHaveBeenCalled();
   });
 
+  it("reports filtered totals for derived library pages", async () => {
+    const manualSummary = {
+      id: "manual-recipe",
+      title: "Manual Recipe",
+      description: validRecipeFixture.description,
+      yield: validRecipeFixture.yield,
+      times: validRecipeFixture.times,
+      imageUrl: validRecipeFixture.imageUrl,
+      source: { type: "manual" as const, name: "Project Spice test kitchen" },
+      tags: validRecipeFixture.tags,
+      version: validRecipeFixture.version,
+      createdAt: validRecipeFixture.createdAt,
+      updatedAt: validRecipeFixture.updatedAt,
+    };
+    const cookbookSummary = {
+      ...manualSummary,
+      id: "cookbook-recipe",
+      title: "Cookbook Recipe",
+      source: { type: "imported" as const, name: "Author - Cookbook" },
+    };
+    const repository = createRepositoryDouble({
+      countSummaries: vi.fn(async () => 2),
+      listSummaries: vi.fn(async () => [manualSummary, cookbookSummary]),
+    });
+    const service = new RecipeService(repository);
+
+    await expect(
+      service.getLibraryPage(parseRecipeLibraryQuery("https://spice.test/?hideCookbooks=1")),
+    ).resolves.toMatchObject({
+      hasMore: false,
+      recipes: [manualSummary],
+      totalCount: 1,
+      visibleCount: 1,
+    });
+    expect(repository.listSummaries).toHaveBeenCalledOnce();
+    expect(repository.countSummaries).not.toHaveBeenCalled();
+    expect(repository.listSummaryPage).not.toHaveBeenCalled();
+  });
+
   it("updates with expected version and records the updated version", async () => {
     const updatedRecipe: Recipe = {
       ...validRecipeWithoutImageFixture,

@@ -1833,14 +1833,6 @@ p {
   margin-bottom: 0;
 }
 
-.results-count-detail {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0.2rem 0 0;
-}
-
 .results-header .tabs {
   flex: 0 0 16rem;
   margin-bottom: 0;

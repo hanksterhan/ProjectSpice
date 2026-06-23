@@ -136,10 +136,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const [isBulkMode, setIsBulkMode] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const initialPage = query.page ?? 1;
+  const queryStateKey = useMemo(() => getLibraryStateKey(query), [query]);
   const lastRequestedPageRef = useRef(initialPage);
+  const lastRequestedQueryKeyRef = useRef(queryStateKey);
   const loadedPageRef = useRef(initialPage);
   const loadMoreFetcher = useFetcher<RecipeLibrarySlice>();
-  const queryStateKey = useMemo(() => getLibraryStateKey(query), [query]);
   const [loadedRecipes, setLoadedRecipes] = useState(recipes);
   const [loadedPage, setLoadedPage] = useState(initialPage);
   const [loadedHasMore, setLoadedHasMore] = useState(recipePage.hasMore);
@@ -152,9 +153,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const isLoadingMore = loadMoreFetcher.state !== "idle";
   const resultLabel =
     loadedTotalCount === 1 ? "1 recipe" : `${loadedTotalCount} recipes`;
-  const visibleResultLabel = loadedHasMore
-    ? `Showing ${loadedRecipes.length} of ${loadedTotalCount}`
-    : `${loadedTotalCount} shown`;
   const drawer = useMemo(
     () => ({
       title: "Organize Library",
@@ -177,13 +175,18 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     setLoadedHasMore(recipePage.hasMore);
     setLoadedTotalCount(recipePage.totalCount);
     lastRequestedPageRef.current = initialPage;
+    lastRequestedQueryKeyRef.current = queryStateKey;
     loadedPageRef.current = initialPage;
   }, [initialPage, queryStateKey, recipePage.hasMore, recipePage.totalCount, recipes]);
 
   useEffect(() => {
     const loadedRecipePage = loadMoreFetcher.data;
 
-    if (!loadedRecipePage || loadedRecipePage.page <= loadedPageRef.current) {
+    if (
+      !loadedRecipePage ||
+      lastRequestedQueryKeyRef.current !== queryStateKey ||
+      loadedRecipePage.page <= loadedPageRef.current
+    ) {
       return;
     }
 
@@ -202,7 +205,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       "",
       getLibraryQueryHref({ ...query, page: loadedRecipePage.page }),
     );
-  }, [loadMoreFetcher.data, query]);
+  }, [loadMoreFetcher.data, query, queryStateKey]);
 
   useEffect(() => {
     const loadMoreNode = loadMoreRef.current;
@@ -218,6 +221,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         }
 
         lastRequestedPageRef.current = nextPage;
+        lastRequestedQueryKeyRef.current = queryStateKey;
         loadMoreFetcher.load(nextPageHref);
       },
       { rootMargin: "720px 0px 720px" },
@@ -226,7 +230,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     observer.observe(loadMoreNode);
 
     return () => observer.disconnect();
-  }, [isLoadingMore, loadMoreFetcher, nextPage, nextPageHref]);
+  }, [isLoadingMore, loadMoreFetcher, nextPage, nextPageHref, queryStateKey]);
 
   return (
     <div className="library-page">
@@ -234,7 +238,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         <div className="results-header">
           <div>
             <h2 id="results-heading">{resultLabel}</h2>
-            <p className="results-count-detail">{visibleResultLabel}</p>
           </div>
           <div className="results-header-actions">
             <Button
