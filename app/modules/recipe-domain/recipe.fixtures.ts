@@ -97,6 +97,24 @@ export const validRecipeFixture: Recipe = {
       ],
     },
   ],
+  variations: [
+    {
+      id: "turkey-bowls",
+      title: "Turkey sesame bowls",
+      directions: [
+        {
+          id: "turkey-bowls-directions",
+          steps: [
+            {
+              id: "swap-turkey",
+              order: 1,
+              text: "Use ground turkey instead of chicken and brown it before adding sauce.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
   notes: ["Add steamed snap peas for a greener bowl."],
   source: {
     type: "manual",
@@ -151,6 +169,24 @@ export const validRecipeDraftFixture: RecipeDraft = {
           id: "warm-beans",
           order: 1,
           text: "Warm the beans with olive oil, lemon zest, and a pinch of salt.",
+        },
+      ],
+    },
+  ],
+  variations: [
+    {
+      id: "herby-white-bean-toasts",
+      title: "Herby white bean toasts",
+      directions: [
+        {
+          id: "herby-white-bean-toasts-directions",
+          steps: [
+            {
+              id: "add-herbs",
+              order: 1,
+              text: "Fold in chopped parsley and chives before spooning the beans onto toast.",
+            },
+          ],
         },
       ],
     },

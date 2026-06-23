@@ -44,7 +44,7 @@ describe("extractCookbookEpub", () => {
     const extraction = extractCookbookEpub(epub);
 
     expect(extraction.metadata.title).toBe("The Complete Guide to Healthy Drinks");
-    expect(extraction.recipes.length).toBeGreaterThan(120);
+    expect(extraction.recipes.length).toBeGreaterThan(95);
     expect(extraction.techniques.length).toBeGreaterThan(12);
     expect(
       extraction.techniques.some((technique) => technique.title === "blenders"),
@@ -62,6 +62,42 @@ describe("extractCookbookEpub", () => {
         image.epubPath.includes("Reference_Page_021_Image_0001.jpg"),
       ),
     ).toBe(true);
+
+    const milkKefir = findRecipe(extraction.recipes, "milk kefir");
+    expect(milkKefir?.images[0]).toMatchObject({
+      epubPath: expect.stringContaining("Reference_Page_227_Image_0001.jpg"),
+      pageNumber: 227,
+    });
+    expect(milkKefir?.draftRecipe.variations?.map((variation) => variation.title)).toEqual([
+      "milk kefir with vanilla",
+      "milk kefir with maple and cinnamon",
+      "milk kefir with fruit preserves",
+    ]);
+    expect(findRecipe(extraction.recipes, "milk kefir with vanilla")).toBeUndefined();
+    expect(milkKefir?.images.some((image) => image.epubPath.includes("Page_214"))).toBe(
+      false,
+    );
+
+    const tepache = findRecipe(extraction.recipes, "tepache");
+    expect(tepache?.images[0]).toMatchObject({
+      epubPath: expect.stringContaining("Reference_Page_224_Image_0001.jpg"),
+      pageNumber: 224,
+    });
+
+    const kombucha = findRecipe(extraction.recipes, "kombucha");
+    expect(kombucha?.images[0]).toMatchObject({
+      epubPath: expect.stringContaining("Reference_Page_229_Image_"),
+      pageNumber: 229,
+    });
+    expect(kombucha?.images.some((image) => image.epubPath.includes("Page_vi"))).toBe(
+      false,
+    );
+    expect(
+      kombucha?.draftRecipe.variations?.some(
+        (variation) => variation.title === "sparkling mixed berry kombucha",
+      ),
+    ).toBe(true);
+    expect(findRecipe(extraction.recipes, "sparkling mixed berry kombucha")).toBeUndefined();
 
     const blendingTechnique = extraction.techniques.find((technique) =>
       technique.title.toLowerCase().includes("best blending techniques"),

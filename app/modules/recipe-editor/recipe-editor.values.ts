@@ -74,6 +74,7 @@ export function getRecipeEditorBaseDraft(recipe: Recipe | RecipeDraft): RecipeDr
     imageUrl: recipe.imageUrl,
     ingredients: recipe.ingredients,
     directions: recipe.directions,
+    variations: recipe.variations,
     notes: recipe.notes,
     source: recipe.source ?? { type: "manual" },
     tags: recipe.tags,

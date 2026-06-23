@@ -55,6 +55,7 @@ export function buildUpdatedRecipeFromAiDraft({
     rating: parsedDraft.rating ?? existingRecipe.rating,
     cookedDates: parsedDraft.cookedDates ?? existingRecipe.cookedDates,
     cookHistory: parsedDraft.cookHistory ?? existingRecipe.cookHistory,
+    variations: parsedDraft.variations ?? existingRecipe.variations,
     version: existingRecipe.version + 1,
     createdAt: existingRecipe.createdAt,
     updatedAt: now,

@@ -5,6 +5,7 @@ import {
   recipeDraftSchema,
   type DirectionSection,
   type IngredientSection,
+  type RecipeVariation,
 } from "~/modules/recipe-domain";
 
 import type {
@@ -43,6 +44,13 @@ type ImageCatalogEntry = {
   byteLength: number;
   index: number;
   pageNumber?: number;
+};
+
+type RankedImageCandidate = {
+  image: ImageCatalogEntry;
+  role: CookbookEpubImageRole;
+  alt?: string;
+  score: number;
 };
 
 type BlockType = "heading" | "paragraph" | "listItem" | "image" | "pagebreak" | "table";
@@ -526,12 +534,13 @@ function toExtractedRecipes(
   }
 
   const notes = extractNotes(segment.blocks);
+  const variations = toRecipeVariations(extractVariationRecipes(segment.blocks));
   const images = findImagesForSegment(segment, {
     imageCatalog,
     captionImageMap,
   });
   const warnings = images.length === 0 ? ["No matching recipe image was found."] : [];
-  const recipes: ExtractedCookbookRecipe[] = [{
+  return [{
     id: createStableId("cookbook-recipe", title, index),
     draftRecipe: recipeDraftSchema.parse(
       createDraftInput({
@@ -540,6 +549,7 @@ function toExtractedRecipes(
         yieldText: segment.blocks.find(isYieldBlock)?.text,
         ingredients,
         directions,
+        variations,
         notes,
         metadata,
       }),
@@ -550,40 +560,6 @@ function toExtractedRecipes(
     confidence: Math.min(1, 0.62 + ingredients.length * 0.08 + directions.length * 0.06 + images.length * 0.08),
     warnings,
   }];
-
-  extractVariationRecipes(segment.blocks).forEach((variation, variationIndex) => {
-    recipes.push({
-      id: createStableId(
-        "cookbook-recipe",
-        `${title}-${variation.title}`,
-        index + variationIndex + 1,
-      ),
-      draftRecipe: recipeDraftSchema.parse(
-        createDraftInput({
-          title: cleanTitle(variation.title),
-          description: extractDescription(segment.blocks),
-          yieldText: segment.blocks.find(isYieldBlock)?.text,
-          ingredients,
-          directions,
-          notes: [
-            ...notes,
-            `Variation from ${title}: ${variation.instructions}`,
-          ],
-          metadata,
-        }),
-      ),
-      sourceDocumentPath: segment.heading.documentPath,
-      pageNumber: segment.heading.pageNumber,
-      images,
-      confidence: Math.min(1, 0.52 + ingredients.length * 0.06 + directions.length * 0.05 + images.length * 0.08),
-      warnings: [
-        ...warnings,
-        "Derived from a cookbook variation; review ingredient substitutions before saving.",
-      ],
-    });
-  });
-
-  return recipes;
 }
 
 function createDraftInput({
@@ -592,6 +568,7 @@ function createDraftInput({
   yieldText,
   ingredients,
   directions,
+  variations,
   notes,
   metadata,
 }: {
@@ -600,6 +577,7 @@ function createDraftInput({
   yieldText?: string;
   ingredients: IngredientSection[];
   directions: DirectionSection[];
+  variations: RecipeVariation[];
   notes: string[];
   metadata: CookbookEpubMetadata;
 }) {
@@ -609,6 +587,7 @@ function createDraftInput({
     yield: parseYield(yieldText),
     ingredients,
     directions,
+    variations: variations.length > 0 ? variations : undefined,
     notes: notes.length > 0 ? notes : undefined,
     source: {
       type: "imported",
@@ -882,6 +861,36 @@ function toDirectionSections(blocks: ContentBlock[]): DirectionSection[] {
   ];
 }
 
+function toRecipeVariations(
+  variations: Array<{ title: string; instructions: string }>,
+): RecipeVariation[] {
+  return variations.map((variation, variationIndex) => {
+    const title = cleanTitle(variation.title);
+    const instructions = splitDirectionText(variation.instructions)
+      .map(normalizeText)
+      .filter(isText);
+
+    return removeUndefined({
+      id: createStableId("variation", title, variationIndex),
+      title,
+      directions:
+        instructions.length > 0
+          ? [
+              {
+                id: createStableId("variation-directions", title, variationIndex),
+                steps: instructions.map((instruction, instructionIndex) => ({
+                  id: createStableId("variation-step", `${title}-${instruction}`, instructionIndex),
+                  order: instructionIndex + 1,
+                  text: instruction,
+                  timerMinutes: parseTimerMinutes(instruction),
+                })),
+              },
+            ]
+          : undefined,
+    });
+  });
+}
+
 function findImagesForSegment(
   segment: RecipeSegment,
   {
@@ -893,12 +902,12 @@ function findImagesForSegment(
   },
 ): CookbookEpubImageRef[] {
   const imagesByPath = new Map(imageCatalog.map((image) => [image.epubPath, image]));
-  const refs: CookbookEpubImageRef[] = [];
+  const candidates: RankedImageCandidate[] = [];
   const captionKeys = getHeadingHrefKeys(segment.heading);
 
   for (const key of captionKeys) {
     for (const image of captionImageMap.get(key) ?? []) {
-      pushUniqueImageRef(refs, image, "caption-linked");
+      pushImageCandidate(candidates, segment, image, "caption-linked");
     }
   }
 
@@ -907,20 +916,23 @@ function findImagesForSegment(
       const image = imagesByPath.get(block.imagePath);
 
       if (image) {
-        pushUniqueImageRef(refs, image, "inline", block.imageAlt);
+        pushImageCandidate(candidates, segment, image, "inline", block.imageAlt);
       }
     }
   }
 
-  if (refs.length === 0) {
+  if (candidates.length === 0) {
     const nearby = findNearbyCatalogImages(segment, imageCatalog);
 
     for (const image of nearby) {
-      pushUniqueImageRef(refs, image, "nearby");
+      pushImageCandidate(candidates, segment, image, "nearby");
     }
   }
 
-  return refs.slice(0, 3);
+  return candidates
+    .sort((left, right) => right.score - left.score || left.image.index - right.image.index)
+    .map((candidate) => toImageRef(candidate.image, candidate.role, candidate.alt))
+    .slice(0, 3);
 }
 
 function findNearbyCatalogImages(
@@ -935,7 +947,8 @@ function findNearbyCatalogImages(
           .filter(
             (image) =>
               image.pageNumber !== undefined &&
-              Math.abs(image.pageNumber - pageNumber) <= 2,
+              Math.abs(image.pageNumber - pageNumber) <= 3 &&
+              isLikelyRecipeImage(image),
           )
           .sort(
             (a, b) =>
@@ -948,21 +961,65 @@ function findNearbyCatalogImages(
   }
 
   return imageCatalog
-    .filter((image) => image.epubPath.startsWith(path.dirname(segment.heading.documentPath)))
+    .filter(
+      (image) =>
+        image.epubPath.startsWith(path.dirname(segment.heading.documentPath)) &&
+        isLikelyRecipeImage(image),
+    )
     .slice(0, 1);
 }
 
-function pushUniqueImageRef(
-  refs: CookbookEpubImageRef[],
+function pushImageCandidate(
+  candidates: RankedImageCandidate[],
+  segment: RecipeSegment,
   image: ImageCatalogEntry,
   role: CookbookEpubImageRole,
   alt?: string,
 ): void {
-  if (refs.some((ref) => ref.epubPath === image.epubPath)) {
+  if (!isLikelyRecipeImage(image)) {
     return;
   }
 
-  refs.push(toImageRef(image, role, alt));
+  const score = scoreImageCandidate(segment, image, role);
+  const existing = candidates.find((candidate) => candidate.image.epubPath === image.epubPath);
+
+  if (existing) {
+    if (score > existing.score) {
+      existing.role = role;
+      existing.alt = alt;
+      existing.score = score;
+    }
+
+    return;
+  }
+
+  candidates.push({ image, role, alt, score });
+}
+
+function scoreImageCandidate(
+  segment: RecipeSegment,
+  image: ImageCatalogEntry,
+  role: CookbookEpubImageRole,
+): number {
+  const pageNumber = segment.heading.pageNumber;
+  const pageDistance =
+    pageNumber !== undefined && image.pageNumber !== undefined
+      ? Math.abs(image.pageNumber - pageNumber)
+      : 8;
+  const roleScore =
+    role === "inline" ? 18 : role === "caption-linked" ? 14 : role === "nearby" ? 10 : 0;
+  const pageScore = Math.max(0, 30 - pageDistance * 9);
+  const imageSizeScore = Math.min(12, image.byteLength / 90_000);
+
+  return pageScore + roleScore + imageSizeScore;
+}
+
+function isLikelyRecipeImage(image: ImageCatalogEntry): boolean {
+  if (/reference[_-]page[_-](?:vi|iv|ix|x|v)\b/i.test(image.epubPath)) {
+    return false;
+  }
+
+  return image.byteLength >= 180_000;
 }
 
 function toImageRef(
@@ -1033,7 +1090,7 @@ function extractDescription(blocks: ContentBlock[]): string | undefined {
 
 function extractNotes(blocks: ContentBlock[]): string[] {
   return blocks
-    .filter((block) => /note|sidebar|var_/i.test(block.className ?? ""))
+    .filter((block) => /note|sidebar/i.test(block.className ?? ""))
     .map((block) => block.text)
     .filter((text) => text.length > 0)
     .slice(0, 12);
@@ -1245,6 +1302,12 @@ function parseHtmlTableRows(html: string): string[][] {
 function parsePageNumber(value: string | undefined): number | undefined {
   if (!value) {
     return undefined;
+  }
+
+  const referencePageMatch = /reference[_\s-]?page[_\s-]?(\d{1,4})/i.exec(value);
+
+  if (referencePageMatch) {
+    return Number(referencePageMatch[1]);
   }
 
   const match = /(?:page[_\s-]?|p)?(\d{1,4})/i.exec(value);

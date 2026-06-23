@@ -114,6 +114,9 @@ export function RecipeViewer({
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
         <a href="#directions-heading">Directions</a>
+        {displayRecipe.variations?.length ? (
+          <a href="#variations-heading">Variations</a>
+        ) : null}
         <a href="#notes-heading">Notes</a>
       </nav>
 
@@ -220,6 +223,53 @@ export function RecipeViewer({
               </ol>
             </section>
           ))}
+
+          {displayRecipe.variations?.length ? (
+            <section className="recipe-variations" aria-labelledby="variations-heading">
+              <h2 id="variations-heading">Variations</h2>
+              <div className="recipe-variation-list">
+                {displayRecipe.variations.map((variation) => (
+                  <article className="recipe-variation" key={variation.id}>
+                    <h3>{variation.title}</h3>
+                    {variation.description ? <p>{variation.description}</p> : null}
+                    {variation.ingredients?.map((section) => (
+                      <section className="recipe-variation-ingredients" key={section.id}>
+                        {shouldShowSectionTitle(section.title, "ingredients") ? (
+                          <h4>{section.title}</h4>
+                        ) : null}
+                        <ul>
+                          {section.items.map((ingredient) => (
+                            <li key={ingredient.id}>
+                              {formatIngredientDisplayText(ingredient)}
+                              {ingredient.optional ? <span>Optional</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    ))}
+                    {variation.directions?.map((section) => (
+                      <section className="recipe-variation-directions" key={section.id}>
+                        {shouldShowSectionTitle(section.title, "directions") ? (
+                          <h4>{section.title}</h4>
+                        ) : null}
+                        <ol>
+                          {getDisplayDirectionSteps(section.steps).map(
+                            ({ displayOrder, displayText, step }) => (
+                              <li key={`${step.id}-${displayOrder}`}>
+                                <span>{displayOrder}</span>
+                                <p>{displayText}</p>
+                              </li>
+                            ),
+                          )}
+                        </ol>
+                      </section>
+                    ))}
+                    {variation.notes?.map((note) => <p key={note}>{note}</p>)}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="recipe-notes" aria-labelledby="notes-heading">
             <h2 id="notes-heading">Recipe Notes</h2>

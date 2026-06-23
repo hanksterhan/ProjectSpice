@@ -530,6 +530,105 @@ const recipeAiProviderDraftJsonSchema = {
             },
           },
         },
+        variations: {
+          type: ["array", "null"],
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "id",
+              "title",
+              "description",
+              "ingredients",
+              "directions",
+              "notes",
+            ],
+            properties: {
+              id: { type: "string" },
+              title: { type: "string" },
+              description: { type: ["string", "null"] },
+              ingredients: {
+                type: ["array", "null"],
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["id", "title", "items"],
+                  properties: {
+                    id: { type: "string" },
+                    title: { type: ["string", "null"] },
+                    items: {
+                      type: "array",
+                      minItems: 1,
+                      items: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: [
+                          "id",
+                          "raw",
+                          "quantity",
+                          "unit",
+                          "item",
+                          "preparation",
+                          "optional",
+                        ],
+                        properties: {
+                          id: { type: "string" },
+                          raw: { type: "string" },
+                          quantity: { type: ["number", "null"], exclusiveMinimum: 0 },
+                          unit: { type: ["string", "null"] },
+                          item: { type: "string" },
+                          preparation: { type: ["string", "null"] },
+                          optional: { type: ["boolean", "null"] },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              directions: {
+                type: ["array", "null"],
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["id", "title", "steps"],
+                  properties: {
+                    id: { type: "string" },
+                    title: { type: ["string", "null"] },
+                    steps: {
+                      type: "array",
+                      minItems: 1,
+                      items: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: [
+                          "id",
+                          "order",
+                          "text",
+                          "timerMinutes",
+                          "ingredientRefs",
+                        ],
+                        properties: {
+                          id: { type: "string" },
+                          order: { type: "integer", minimum: 1 },
+                          text: { type: "string" },
+                          timerMinutes: { type: ["integer", "null"], minimum: 1 },
+                          ingredientRefs: {
+                            type: ["array", "null"],
+                            items: { type: "string" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              notes: {
+                type: ["array", "null"],
+                items: { type: "string" },
+              },
+            },
+          },
+        },
         notes: { type: "array", items: { type: "string" } },
         source: {
           type: "object",

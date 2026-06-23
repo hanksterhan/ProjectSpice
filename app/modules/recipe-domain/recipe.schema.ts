@@ -100,6 +100,17 @@ export const directionSectionSchema = z
   })
   .strict();
 
+export const recipeVariationSchema = z
+  .object({
+    id: recipeIdSchema,
+    title: requiredTrimmedTextSchema,
+    description: optionalTrimmedTextSchema,
+    ingredients: z.array(ingredientSectionSchema).optional(),
+    directions: z.array(directionSectionSchema).optional(),
+    notes: z.array(requiredTrimmedTextSchema).optional(),
+  })
+  .strict();
+
 export const recipeSchema = z
   .object({
     id: recipeIdSchema,
@@ -110,6 +121,7 @@ export const recipeSchema = z
     imageUrl: z.url().optional(),
     ingredients: z.array(ingredientSectionSchema).min(1),
     directions: z.array(directionSectionSchema).min(1),
+    variations: z.array(recipeVariationSchema).optional(),
     notes: z.array(requiredTrimmedTextSchema).optional(),
     source: recipeSourceSchema.optional(),
     tags: z.array(requiredTrimmedTextSchema),

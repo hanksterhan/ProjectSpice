@@ -57,6 +57,46 @@ export const projectSpiceRecipeOutputSpec = {
         ],
       },
     ],
+    variations: [
+      {
+        id: "stable slug-like string",
+        title: "variation name",
+        description: "string | optional",
+        ingredients: [
+          {
+            id: "stable slug-like string",
+            title: "string | optional",
+            items: [
+              {
+                id: "stable slug-like string",
+                raw: "readable ingredient line",
+                quantity: "number > 0 | optional",
+                unit: "string | optional",
+                item: "ingredient name",
+                preparation: "string | optional",
+                optional: "boolean | optional",
+              },
+            ],
+          },
+        ],
+        directions: [
+          {
+            id: "stable slug-like string",
+            title: "string | optional",
+            steps: [
+              {
+                id: "stable slug-like string",
+                order: "positive integer step number starting at 1",
+                text: "variation direction text",
+                timerMinutes: "positive integer | optional",
+                ingredientRefs: ["ingredient item ids | optional"],
+              },
+            ],
+          },
+        ],
+        notes: ["string | optional"],
+      },
+    ],
     notes: ["string | optional"],
     source: {
       type: "ai",

@@ -7,6 +7,7 @@ import type {
   ingredientSectionSchema,
   recipeDraftSchema,
   recipeCookHistoryEntrySchema,
+  recipeVariationSchema,
   recipeSchema,
   recipeSummarySchema,
   recipeSourceSchema,
@@ -26,6 +27,7 @@ export type IngredientItem = z.infer<typeof ingredientItemSchema>;
 export type IngredientSection = z.infer<typeof ingredientSectionSchema>;
 export type DirectionStep = z.infer<typeof directionStepSchema>;
 export type DirectionSection = z.infer<typeof directionSectionSchema>;
+export type RecipeVariation = z.infer<typeof recipeVariationSchema>;
 export type Recipe = z.infer<typeof recipeSchema>;
 export type RecipeSummary = z.infer<typeof recipeSummarySchema>;
 export type RecipeDraft = z.infer<typeof recipeDraftSchema>;

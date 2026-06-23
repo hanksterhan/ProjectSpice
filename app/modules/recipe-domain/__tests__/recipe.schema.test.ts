@@ -73,6 +73,25 @@ describe("recipeSchema", () => {
     });
   });
 
+  it("accepts structured recipe variations", () => {
+    expect(recipeSchema.parse(validRecipeFixture)).toMatchObject({
+      variations: [
+        {
+          title: "Turkey sesame bowls",
+          directions: [
+            {
+              steps: [
+                {
+                  text: "Use ground turkey instead of chicken and brown it before adding sauce.",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   it("rejects recipe ratings outside 0 to 10 or finer than 0.1", () => {
     expect(recipeSchema.safeParse({ ...validRecipeFixture, rating: 10.1 }).success).toBe(
       false,
