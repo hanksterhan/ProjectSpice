@@ -5,6 +5,7 @@ import {
   type Recipe,
   type RecipeDraft,
 } from "~/modules/recipe-domain";
+import { formatRecipeLensPromptGuidance } from "~/modules/recipe-lenses";
 
 export type RecipeAiOperation = "generate" | "transform";
 
@@ -118,6 +119,7 @@ export const recipeAiResponseFormat = {
     "The JSON object must include draftRecipe and changeSummary keys.",
     "draftRecipe must conform to the Project Spice RecipeDraft schema.",
     "changeSummary must be an array of short user-facing strings.",
+    "For transformed recipes, changeSummary must name the most important ingredient or portion deltas and include confidence/caveat language when the user's nutritional goal cannot be verified exactly.",
     "Do not include id, version, createdAt, or updatedAt in draftRecipe.",
     "Use source.type = \"ai\".",
   ].join(" "),
@@ -187,6 +189,7 @@ export function buildTransformRecipePrompt(
           request.currentDraft
             ? "Only change the parts needed to satisfy the request; preserve the rest of the current draft."
             : "Preserve the recipe's intent unless the request explicitly changes it.",
+          formatTransformQualityGuidance(request),
           formatConversation(request.conversation),
           formatPreferences(request.preferences),
           "Existing recipe JSON:",
@@ -226,6 +229,22 @@ function formatPreferences(preferences: string[] | undefined): string {
   }
 
   return `Preferences:\n${preferences.map((preference) => `- ${preference}`).join("\n")}`;
+}
+
+function formatTransformQualityGuidance(request: RecipeAiTransformRequest): string {
+  const lensGuidance = formatRecipeLensPromptGuidance(
+    [request.prompt, ...(request.preferences ?? [])].join("\n"),
+  );
+  const generalGuidance = [
+    "Transform quality requirements:",
+    "- Preserve serving count unless the user explicitly asks for portion changes; if portion changes drive the result, say so.",
+    "- Make the most important ingredient quantity changes explicit in changeSummary.",
+    "- Use cautious wording for nutrition, glucose, diet, allergy, or medical-adjacent claims unless exact validated data is available.",
+  ].join("\n");
+
+  return lensGuidance
+    ? [generalGuidance, "Recipe lens requirements:", lensGuidance].join("\n\n")
+    : generalGuidance;
 }
 
 function formatConversation(

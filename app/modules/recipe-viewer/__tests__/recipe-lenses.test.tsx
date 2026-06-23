@@ -72,7 +72,9 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("Glucose");
     expect(markup).toContain("Quick");
     expect(markup).toContain("Max Flavor");
-    expect(markup).toContain("Trim calories; keep flavor.");
+    expect(markup).toContain(
+      "Reduce estimated calories while keeping the recipe satisfying.",
+    );
     expect(markup).toContain("Faster prep and cook time.");
     expect(markup).toContain("Uses one pan and prepped vegetables");
     expect(markup).toContain("Edit lens");

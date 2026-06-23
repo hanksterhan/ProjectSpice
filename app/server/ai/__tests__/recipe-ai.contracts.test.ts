@@ -62,6 +62,19 @@ describe("recipe AI prompt contracts", () => {
     expect(userContent).toContain("source.type = \"ai\"");
   });
 
+  it("adds recipe lens guardrails to matching transform prompts", () => {
+    const contract = buildTransformRecipePrompt({
+      recipe: validRecipeFixture,
+      prompt: "Make this glucose-conscious.",
+    });
+    const userContent = contract.messages.at(-1)?.content ?? "";
+
+    expect(userContent).toContain("Detected recipe lens: Glucose Conscious");
+    expect(userContent).toContain("Aim for at least a 40% added-sugar reduction");
+    expect(userContent).toContain("Use cautious wording");
+    expect(userContent).toContain("Do not describe the result as safe for diabetes");
+  });
+
   it("builds a transform revision prompt around the current unsaved draft", () => {
     const contract = buildTransformRecipePrompt({
       recipe: validRecipeFixture,

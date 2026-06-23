@@ -35,6 +35,22 @@ describe("myPaprikaRecipes", () => {
     );
   });
 
+  it("keeps the classic cinnamon rolls directions de-duplicated", () => {
+    const recipe = myPaprikaRecipes.find(
+      (candidate) => candidate.id === "the-best-classic-cinnamon-rolls",
+    );
+    const steps = recipe?.directions[0]?.steps ?? [];
+
+    expect(steps).toHaveLength(12);
+    expect(steps.map((step) => step.order)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+    ]);
+    expect(new Set(steps.map((step) => step.id)).size).toBe(12);
+    expect(steps.map((step) => step.text).some((text) => text.startsWith(")."))).toBe(
+      false,
+    );
+  });
+
   it("does not invent Paprika labels for personal recipes without an export source", () => {
     const sourceLessImportedRecipes = myPaprikaRecipes.filter(
       (recipe) =>
