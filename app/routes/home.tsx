@@ -7,7 +7,6 @@ import { getCookSessionHref } from "~/modules/cooking";
 import { formatDisplayTime } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
-  getActiveLibraryFilters,
   getLibraryQueryHref,
   getRecipeLibraryPage,
   getRecipeCookbookTree,
@@ -49,10 +48,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   return {
     drawerData: {
-      activeFilters: getActiveLibraryFilters(query),
       cookbookTree: getRecipeCookbookTree(allRecipes, query),
       facets: getRecipeLibraryFacets(allRecipes, query),
-      hasSearch: query.q.length > 0,
       query,
     },
     query,
@@ -149,10 +146,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       title: "Organize Library",
       content: (
         <LibraryOrganizerDrawer
-          activeFilters={drawerData?.activeFilters ?? getActiveLibraryFilters(query)}
           cookbookTree={drawerData?.cookbookTree ?? getRecipeCookbookTree(recipes, query)}
           facets={drawerData?.facets ?? getRecipeLibraryFacets(recipes, query)}
-          hasSearch={drawerData?.hasSearch ?? query.q.length > 0}
           query={query}
         />
       ),

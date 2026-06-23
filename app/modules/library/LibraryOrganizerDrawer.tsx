@@ -7,6 +7,7 @@ import {
   Globe2,
   Heart,
   History,
+  House,
   LayoutGrid,
   Search,
   Star,
@@ -17,7 +18,6 @@ import {
 import { Form, Link, NavLink, useNavigate } from "react-router";
 
 import {
-  getActiveLibraryFilters,
   getDefaultSortDirection,
   getLibraryQueryHref,
   getRecipeCookbookTree,
@@ -27,18 +27,14 @@ import {
 } from "~/modules/library/recipe-library";
 
 type LibraryOrganizerDrawerProps = {
-  activeFilters: ReturnType<typeof getActiveLibraryFilters>;
   cookbookTree: ReturnType<typeof getRecipeCookbookTree>;
   facets: ReturnType<typeof getRecipeLibraryFacets>;
-  hasSearch: boolean;
   query: RecipeLibraryQuery;
 };
 
 export function LibraryOrganizerDrawer({
-  activeFilters,
   cookbookTree,
   facets,
-  hasSearch,
   query,
 }: LibraryOrganizerDrawerProps) {
   const navigate = useNavigate();
@@ -98,11 +94,6 @@ export function LibraryOrganizerDrawer({
         {query.cookbooks.map((cookbook) => (
           <input key={`cookbook:${cookbook}`} type="hidden" name="cookbook" value={cookbook} />
         ))}
-        <FilterStateChips
-          activeFilters={activeFilters}
-          hasSearch={hasSearch}
-          query={query}
-        />
       </Form>
 
       <LibraryModePicker query={query} />
@@ -192,71 +183,6 @@ function CollapsibleFacetGroup({
         </div>
       ) : null}
     </section>
-  );
-}
-
-function FilterStateChips({
-  activeFilters,
-  hasSearch,
-  query,
-}: {
-  activeFilters: ReturnType<typeof getActiveLibraryFilters>;
-  hasSearch: boolean;
-  query: RecipeLibraryQuery;
-}) {
-  const hasAnyFilter =
-    hasSearch ||
-    activeFilters.length > 0 ||
-    query.favorite ||
-    query.topRated;
-
-  if (!hasAnyFilter) {
-    return (
-      <div className="drawer-filter-state" aria-label="Current filters">
-        <span className="filter-state-empty">All recipes</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="drawer-filter-state active" aria-label="Current filters">
-      {hasSearch ? (
-        <Link
-          className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, page: 1, q: "" })}
-        >
-          Search: {query.q}
-          <span aria-hidden="true">x</span>
-        </Link>
-      ) : null}
-      {activeFilters.map((filter) => (
-        <Link className="active-filter-chip" key={filter.id} to={filter.href}>
-          {filter.label}
-          <span aria-hidden="true">x</span>
-        </Link>
-      ))}
-      {query.favorite ? (
-        <Link
-          className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, favorite: false, page: 1 })}
-        >
-          Favorites
-          <span aria-hidden="true">x</span>
-        </Link>
-      ) : null}
-      {query.topRated ? (
-        <Link
-          className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, page: 1, topRated: false })}
-        >
-          Top rated
-          <span aria-hidden="true">x</span>
-        </Link>
-      ) : null}
-      <Link className="active-filter-chip clear" to={getClearFiltersHref(query)}>
-        Clear
-      </Link>
-    </div>
   );
 }
 
@@ -539,6 +465,10 @@ function LibraryFacetIcon({ id }: { id: RecipeLibraryFacet }) {
 }
 
 function LibraryModeIcon({ id }: { id: string }) {
+  if (id === "all-recipes") {
+    return <House className="drawer-icon" />;
+  }
+
   if (id === "favorites") {
     return <Heart className="drawer-icon" />;
   }
@@ -567,11 +497,30 @@ function getLibraryModeId(query: RecipeLibraryQuery) {
     return "top-rated";
   }
 
+  if (
+    query.q.length === 0 &&
+    query.tags.length === 0 &&
+    query.chapters.length === 0 &&
+    query.sources.length === 0 &&
+    query.cookbooks.length === 0 &&
+    query.websites.length === 0 &&
+    query.sort === "recent" &&
+    query.direction === getDefaultSortDirection("recent")
+  ) {
+    return "all-recipes";
+  }
+
   return query.sort;
 }
 
 function getLibraryModes(query: RecipeLibraryQuery) {
   const modes: LibraryMode[] = [
+    {
+      id: "all-recipes",
+      label: "All Recipes",
+      reset: true,
+      sort: "recent",
+    },
     {
       id: "recent",
       canToggleDirection: true,
@@ -615,6 +564,7 @@ type LibraryMode = {
   favorite?: boolean;
   id: string;
   label: string;
+  reset?: boolean;
   sort: RecipeLibraryQuery["sort"];
   topRated?: boolean;
 };
@@ -624,10 +574,28 @@ function getLibraryModeHref(
   mode: {
     direction?: RecipeLibraryQuery["direction"];
     favorite?: boolean;
+    reset?: boolean;
     sort: RecipeLibraryQuery["sort"];
     topRated?: boolean;
   },
 ) {
+  if (mode.reset) {
+    return getLibraryQueryHref({
+      ...query,
+      chapters: [],
+      cookbooks: [],
+      direction: getDefaultSortDirection("recent"),
+      favorite: false,
+      page: 1,
+      q: "",
+      sort: "recent",
+      sources: [],
+      tags: [],
+      topRated: false,
+      websites: [],
+    });
+  }
+
   return getLibraryQueryHref({
     ...query,
     direction: mode.direction ?? getDefaultSortDirection(mode.sort),
@@ -659,19 +627,4 @@ function getDirectionPillLabel(
   }
 
   return direction === "asc" ? "Oldest" : "Newest";
-}
-
-function getClearFiltersHref(query: RecipeLibraryQuery) {
-  return getLibraryQueryHref({
-    ...query,
-    chapters: [],
-    cookbooks: [],
-    favorite: false,
-    page: 1,
-    q: "",
-    sources: [],
-    tags: [],
-    topRated: false,
-    websites: [],
-  });
 }

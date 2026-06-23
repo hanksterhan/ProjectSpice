@@ -16,10 +16,8 @@ import type { Route } from "./+types/root";
 import { AppShell } from "./modules/ui-shell/AppShell";
 import { LibraryOrganizerDrawer } from "./modules/library/LibraryOrganizerDrawer";
 import {
-  getActiveLibraryFilters,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
-  type RecipeLibraryActiveFilter,
   type RecipeLibraryAuthorNode,
   type RecipeLibraryFacetGroup,
   type RecipeLibraryQuery,
@@ -44,10 +42,8 @@ export const middleware: Route.MiddlewareFunction[] = [
 ];
 
 type RootLibraryDrawerData = {
-  activeFilters: RecipeLibraryActiveFilter[];
   cookbookTree: RecipeLibraryAuthorNode[];
   facets: RecipeLibraryFacetGroup[];
-  hasSearch: boolean;
   query: RecipeLibraryQuery;
 };
 
@@ -107,10 +103,8 @@ async function loadRootAppData(
   return {
     authBypassed,
     libraryDrawer: {
-      activeFilters: getActiveLibraryFilters(query),
       cookbookTree: getRecipeCookbookTree(recipes, query),
       facets: getRecipeLibraryFacets(recipes, query),
-      hasSearch: query.q.length > 0,
       query,
     },
   };

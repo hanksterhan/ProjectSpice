@@ -1154,27 +1154,6 @@ p {
   color: color-mix(in srgb, var(--muted) 78%, transparent);
 }
 
-.drawer-filter-state {
-  align-items: center;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.25rem;
-  min-height: 1.8rem;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.drawer-filter-state.active {
-  padding-top: 0.05rem;
-}
-
-.filter-state-empty {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  padding-inline: 0.15rem;
-}
-
 .sort-picker {
   position: relative;
 }
@@ -1702,37 +1681,6 @@ p {
 
 .facet-option.selected:hover .mode-direction {
   border-color: var(--accent-border);
-}
-
-.active-filter-list {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 1rem;
-}
-
-.active-filter-chip {
-  align-items: center;
-  background: var(--chip-steel-bg);
-  border: 1px solid var(--soft-border);
-  border-radius: 999px;
-  color: var(--steel);
-  display: inline-flex;
-  font-size: 0.72rem;
-  font-weight: 500;
-  gap: 0.28rem;
-  line-height: 1;
-  min-height: 1.55rem;
-  padding: 0.27rem 0.48rem;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
-.active-filter-chip.clear {
-  background: transparent;
-  border-color: transparent;
-  color: var(--muted);
 }
 
 .library-organizer-form {
