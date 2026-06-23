@@ -8,6 +8,7 @@ import {
   getRecipeLibraryFacets,
   getRecipeLibraryPage,
   getRecipeLibraryResults,
+  getRecipeLibrarySlice,
   getRecipeSourceFilterLink,
   otherWebsitesFacetValue,
   parseBulkTagText,
@@ -83,6 +84,23 @@ describe("recipe library query helpers", () => {
       visibleCount: 80,
     });
     expect(expandedPage.recipes).toHaveLength(80);
+  });
+
+  it("returns only the requested library slice for dynamic scrolling", () => {
+    const recipes = Array.from({ length: 80 }, (_, index) => ({
+      ...seedRecipes[index % seedRecipes.length],
+      id: `recipe-${index}`,
+    }));
+    const secondSlice = getRecipeLibrarySlice(recipes, { page: 2 });
+
+    expect(secondSlice).toMatchObject({
+      hasMore: false,
+      page: 2,
+      totalCount: 80,
+      visibleCount: 80,
+    });
+    expect(secondSlice.recipes).toHaveLength(8);
+    expect(secondSlice.recipes[0]?.id).toBe("recipe-72");
   });
 
   it("filters across title, description, tags, yield, and source text", () => {

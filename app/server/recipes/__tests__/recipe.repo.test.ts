@@ -40,6 +40,37 @@ describe("RecipeRepository", () => {
     });
   });
 
+  it("counts and pages recipe summaries for library scrolling", async () => {
+    const repository = new RecipeRepository(new FakeRecipeD1Database());
+
+    await repository.create(validRecipeFixture);
+    await repository.create({
+      ...validRecipeWithoutImageFixture,
+      id: "alpha-toast",
+      title: "Alpha Toast",
+    });
+    await repository.create({
+      ...validRecipeWithoutImageFixture,
+      id: "zesty-toast",
+      title: "Zesty Toast",
+    });
+
+    await expect(repository.countSummaries()).resolves.toBe(3);
+    await expect(
+      repository.listSummaryPage({
+        direction: "asc",
+        limit: 1,
+        offset: 1,
+        sort: "title",
+      }),
+    ).resolves.toMatchObject([
+      {
+        id: "weeknight-sesame-chicken-bowls",
+        title: "Weeknight Sesame Chicken Bowls",
+      },
+    ]);
+  });
+
   it("creates duplicate recipe titles without slug collisions", async () => {
     const repository = new RecipeRepository(new FakeRecipeD1Database());
 
@@ -267,6 +298,12 @@ class FakeRecipeD1PreparedStatement {
   async first<T>() {
     const normalizedQuery = normalizeSql(this.query);
 
+    if (normalizedQuery.startsWith("SELECT COUNT(*) AS count")) {
+      const count = [...this.database.rows.values()].filter((row) => !row.deletedAt).length;
+
+      return { count } as T;
+    }
+
     if (normalizedQuery.startsWith("SELECT recipe_json FROM recipes WHERE id")) {
       const id = String(this.values[0]);
       const row = this.database.rows.get(id);
@@ -296,6 +333,20 @@ class FakeRecipeD1PreparedStatement {
     }
 
     if (normalizedQuery.startsWith("SELECT id, title, description")) {
+      if (normalizedQuery.includes("LIMIT ? OFFSET ?")) {
+        const limit = Number(this.values[0]);
+        const offset = Number(this.values[1]);
+        const results = [...this.database.rows.values()]
+          .filter((row) => !row.deletedAt)
+          .sort((firstRow, secondRow) =>
+            firstRow.recipe.title.localeCompare(secondRow.recipe.title),
+          )
+          .slice(offset, offset + limit)
+          .map((row) => recipeToSummaryRow(row.recipe));
+
+        return { results } as T;
+      }
+
       const results = [...this.database.rows.values()]
         .filter((row) => !row.deletedAt)
         .sort((firstRow, secondRow) =>

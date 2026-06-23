@@ -4,7 +4,11 @@ import {
   type RuntimeLoadContext,
 } from "~/server/runtime-context";
 
-import { RecipeRepository, type RecipeRepositoryDatabase } from "./recipe.repo";
+import {
+  RecipeRepository,
+  type RecipeRepositoryDatabase,
+  type RecipeSummaryPageOptions,
+} from "./recipe.repo";
 import { RecipeVersionConflictError } from "./recipe.repo";
 import { RecipeService, type RecipeServiceRepository } from "./recipe.service";
 
@@ -110,6 +114,18 @@ class MemoryRecipeRepository implements RecipeServiceRepository {
     return (await this.list()).map(toRecipeSummary);
   }
 
+  async countSummaries(): Promise<number> {
+    return (await this.listSummaries()).length;
+  }
+
+  async listSummaryPage(options: RecipeSummaryPageOptions): Promise<RecipeSummary[]> {
+    return (await this.listSummaries())
+      .sort((firstRecipe, secondRecipe) =>
+        compareRecipeSummaries(firstRecipe, secondRecipe, options),
+      )
+      .slice(options.offset, options.offset + options.limit);
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     if (this.deletedRecipeIds.has(id)) {
       return null;
@@ -186,6 +202,18 @@ class DevelopmentSeedRecipeRepository implements RecipeServiceRepository {
     return this.repository.listSummaries();
   }
 
+  async countSummaries(): Promise<number> {
+    await this.ensureSeeded();
+
+    return this.repository.countSummaries();
+  }
+
+  async listSummaryPage(options: RecipeSummaryPageOptions): Promise<RecipeSummary[]> {
+    await this.ensureSeeded();
+
+    return this.repository.listSummaryPage(options);
+  }
+
   async getById(id: string): Promise<Recipe | null> {
     await this.ensureSeeded();
 
@@ -244,6 +272,32 @@ async function seedMissingRecipes(repository: RecipeServiceRepository): Promise<
 
 function cloneRecipe(recipe: Recipe): Recipe {
   return JSON.parse(JSON.stringify(recipe)) as Recipe;
+}
+
+function compareRecipeSummaries(
+  firstRecipe: RecipeSummary,
+  secondRecipe: RecipeSummary,
+  options: RecipeSummaryPageOptions,
+): number {
+  const multiplier = options.direction === "asc" ? 1 : -1;
+
+  if (options.sort === "title") {
+    return firstRecipe.title.localeCompare(secondRecipe.title) * multiplier;
+  }
+
+  if (options.sort === "time") {
+    return (
+      ((firstRecipe.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER) -
+        (secondRecipe.times?.totalMinutes ?? Number.MAX_SAFE_INTEGER)) *
+      multiplier
+    );
+  }
+
+  if (options.sort === "rating") {
+    return ((firstRecipe.rating ?? -1) - (secondRecipe.rating ?? -1)) * multiplier;
+  }
+
+  return firstRecipe.updatedAt.localeCompare(secondRecipe.updatedAt) * multiplier;
 }
 
 function toRecipeSummary(recipe: Recipe): RecipeSummary {

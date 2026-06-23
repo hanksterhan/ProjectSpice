@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChefHat, Tag } from "lucide-react";
-import { Form, Link, redirect, useNavigate, useNavigation } from "react-router";
+import { Form, Link, redirect, useFetcher } from "react-router";
 
 import type { Route } from "./+types/home";
 import { getCookSessionHref } from "~/modules/cooking";
@@ -8,17 +8,16 @@ import { formatDisplayTime } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
   getLibraryQueryHref,
-  getRecipeLibraryPage,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeSourceFilterLink,
-  getRecipeLibraryResults,
   maxRecipeTags,
   parseBulkTagText,
   parseRecipeLibraryQuery,
   removeRecipeTags,
   type RecipeLibraryItem,
   type RecipeLibraryQuery,
+  type RecipeLibrarySlice,
 } from "~/modules/library/recipe-library";
 import { LibraryOrganizerDrawer } from "~/modules/library/LibraryOrganizerDrawer";
 import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
@@ -42,9 +41,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   await requireAuthenticatedUser({ request, context, params: {} });
 
   const query = parseRecipeLibraryQuery(request.url);
-  const allRecipes = await getRecipeService(context).listSummaries();
-  const matchingRecipes = getRecipeLibraryResults(allRecipes, query);
-  const recipePage = getRecipeLibraryPage(matchingRecipes, query);
+  const service = getRecipeService(context);
+  const allRecipes = await service.listSummaries();
+  const recipePage = await service.getLibraryPage(query);
 
   return {
     drawerData: {
@@ -136,23 +135,26 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const lastRequestedPageRef = useRef(query.page ?? 1);
-  const navigate = useNavigate();
-  const navigation = useNavigation();
+  const initialPage = query.page ?? 1;
+  const lastRequestedPageRef = useRef(initialPage);
+  const loadedPageRef = useRef(initialPage);
+  const loadMoreFetcher = useFetcher<RecipeLibrarySlice>();
+  const queryStateKey = useMemo(() => getLibraryStateKey(query), [query]);
+  const [loadedRecipes, setLoadedRecipes] = useState(recipes);
+  const [loadedPage, setLoadedPage] = useState(initialPage);
+  const [loadedHasMore, setLoadedHasMore] = useState(recipePage.hasMore);
+  const [loadedTotalCount, setLoadedTotalCount] = useState(recipePage.totalCount);
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
-  const currentPage = query.page ?? 1;
-  const nextPageHref = recipePage.hasMore
-    ? getLibraryQueryHref({ ...query, page: currentPage + 1 })
+  const nextPage = loadedPage + 1;
+  const nextPageHref = loadedHasMore
+    ? getLibraryRecipesApiHref(query, nextPage)
     : undefined;
-  const isLoadingMore =
-    navigation.state !== "idle" &&
-    navigation.location?.pathname === "/" &&
-    navigation.location.search === new URL(nextPageHref ?? "/", "https://spice.local").search;
+  const isLoadingMore = loadMoreFetcher.state !== "idle";
   const resultLabel =
-    recipePage.totalCount === 1 ? "1 recipe" : `${recipePage.totalCount} recipes`;
-  const visibleResultLabel = recipePage.hasMore
-    ? `Showing ${recipePage.visibleCount} of ${recipePage.totalCount}`
-    : `${recipePage.totalCount} shown`;
+    loadedTotalCount === 1 ? "1 recipe" : `${loadedTotalCount} recipes`;
+  const visibleResultLabel = loadedHasMore
+    ? `Showing ${loadedRecipes.length} of ${loadedTotalCount}`
+    : `${loadedTotalCount} shown`;
   const drawer = useMemo(
     () => ({
       title: "Organize Library",
@@ -170,8 +172,37 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   useShellDrawer(drawer);
 
   useEffect(() => {
-    lastRequestedPageRef.current = currentPage;
-  }, [currentPage]);
+    setLoadedRecipes(recipes);
+    setLoadedPage(initialPage);
+    setLoadedHasMore(recipePage.hasMore);
+    setLoadedTotalCount(recipePage.totalCount);
+    lastRequestedPageRef.current = initialPage;
+    loadedPageRef.current = initialPage;
+  }, [initialPage, queryStateKey, recipePage.hasMore, recipePage.totalCount, recipes]);
+
+  useEffect(() => {
+    const loadedRecipePage = loadMoreFetcher.data;
+
+    if (!loadedRecipePage || loadedRecipePage.page <= loadedPageRef.current) {
+      return;
+    }
+
+    loadedPageRef.current = loadedRecipePage.page;
+    setLoadedRecipes((currentRecipes) => [
+      ...currentRecipes,
+      ...loadedRecipePage.recipes.filter(
+        (recipe) => !currentRecipes.some((currentRecipe) => currentRecipe.id === recipe.id),
+      ),
+    ]);
+    setLoadedPage(loadedRecipePage.page);
+    setLoadedHasMore(loadedRecipePage.hasMore);
+    setLoadedTotalCount(loadedRecipePage.totalCount);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      getLibraryQueryHref({ ...query, page: loadedRecipePage.page }),
+    );
+  }, [loadMoreFetcher.data, query]);
 
   useEffect(() => {
     const loadMoreNode = loadMoreRef.current;
@@ -182,17 +213,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const nextPage = currentPage + 1;
-
         if (!entry?.isIntersecting || lastRequestedPageRef.current >= nextPage) {
           return;
         }
 
         lastRequestedPageRef.current = nextPage;
-        navigate(nextPageHref, {
-          preventScrollReset: true,
-          replace: true,
-        });
+        loadMoreFetcher.load(nextPageHref);
       },
       { rootMargin: "720px 0px 720px" },
     );
@@ -200,7 +226,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     observer.observe(loadMoreNode);
 
     return () => observer.disconnect();
-  }, [currentPage, isLoadingMore, navigate, nextPageHref]);
+  }, [isLoadingMore, loadMoreFetcher, nextPage, nextPageHref]);
 
   return (
     <div className="library-page">
@@ -229,7 +255,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             </div>
           ) : null}
 
-          {recipes.length > 0 ? (
+          {loadedRecipes.length > 0 ? (
             <Form className="library-organizer-form" method="post">
               {showBulkTools ? (
                 <div className="bulk-tag-toolbar">
@@ -272,7 +298,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       : "recipe-card-grid"
                 }
               >
-                {recipes.map((recipe) =>
+                {loadedRecipes.map((recipe) =>
                   isListView ? (
                     <article className="recipe-row large selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
@@ -339,7 +365,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   ),
                 )}
               </div>
-              {recipePage.hasMore ? (
+              {loadedHasMore ? (
                 <div
                   ref={loadMoreRef}
                   className="library-scroll-loader"
@@ -450,4 +476,16 @@ function getViewTabs(query: RecipeLibraryQuery) {
 
 function getSearchHref(query: RecipeLibraryQuery, tag: string) {
   return getLibraryQueryHref({ ...query, page: 1, tags: [tag] });
+}
+
+function getLibraryRecipesApiHref(query: RecipeLibraryQuery, page: number) {
+  const libraryHref = getLibraryQueryHref({ ...query, page });
+
+  return libraryHref === "/"
+    ? "/api/library/recipes"
+    : `/api/library/recipes${libraryHref.slice(1)}`;
+}
+
+function getLibraryStateKey(query: RecipeLibraryQuery) {
+  return getLibraryQueryHref({ ...query, page: 1 });
 }

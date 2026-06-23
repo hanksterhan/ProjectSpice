@@ -3,6 +3,10 @@ import type {
   RecipeSourceType,
   RecipeSummary,
 } from "~/modules/recipe-domain";
+import type {
+  RecipeLibrarySort,
+  RecipeLibrarySortDirection,
+} from "~/modules/library/recipe-library";
 import {
   createRecipeSlug,
   getCookCount,
@@ -51,6 +55,17 @@ type RecipeSummaryRow = {
   version: number;
   created_at: string;
   updated_at: string;
+};
+
+export type RecipeSummaryPageOptions = {
+  direction: RecipeLibrarySortDirection;
+  limit: number;
+  offset: number;
+  sort: RecipeLibrarySort;
+};
+
+type RecipeCountRow = {
+  count: number;
 };
 
 export class RecipeRepository {
@@ -159,6 +174,52 @@ export class RecipeRepository {
         WHERE deleted_at IS NULL
         ORDER BY title COLLATE NOCASE ASC`,
       )
+      .all<RecipeSummaryRow>();
+
+    return result.results.map(rowToRecipeSummary);
+  }
+
+  async countSummaries(): Promise<number> {
+    const row = await this.database
+      .prepare(
+        `SELECT COUNT(*) AS count
+        FROM recipes
+        WHERE deleted_at IS NULL`,
+      )
+      .first<RecipeCountRow>();
+
+    return row?.count ?? 0;
+  }
+
+  async listSummaryPage(options: RecipeSummaryPageOptions): Promise<RecipeSummary[]> {
+    const result = await this.database
+      .prepare(
+        `SELECT
+          id,
+          title,
+          description,
+          image_url,
+          source_type,
+          source_name,
+          source_url,
+          tags_json,
+          yield_quantity,
+          yield_unit,
+          yield_notes,
+          prep_minutes,
+          cook_minutes,
+          total_minutes,
+          favorite,
+          rating,
+          version,
+          created_at,
+          updated_at
+        FROM recipes
+        WHERE deleted_at IS NULL
+        ORDER BY ${getRecipeSummaryOrderBy(options)}
+        LIMIT ? OFFSET ?`,
+      )
+      .bind(options.limit, options.offset)
       .all<RecipeSummaryRow>();
 
     return result.results.map(rowToRecipeSummary);
@@ -294,6 +355,24 @@ export class RecipeRepository {
 
     return result.meta.changes === 1;
   }
+}
+
+function getRecipeSummaryOrderBy(options: RecipeSummaryPageOptions): string {
+  const direction = options.direction === "asc" ? "ASC" : "DESC";
+
+  if (options.sort === "title") {
+    return `title COLLATE NOCASE ${direction}, id ASC`;
+  }
+
+  if (options.sort === "time") {
+    return `COALESCE(total_minutes, 2147483647) ${direction}, title COLLATE NOCASE ASC, id ASC`;
+  }
+
+  if (options.sort === "rating") {
+    return `COALESCE(rating, -1) ${direction}, title COLLATE NOCASE ASC, id ASC`;
+  }
+
+  return `updated_at ${direction}, title COLLATE NOCASE ASC, id ASC`;
 }
 
 function toRecipeSummary(recipe: Recipe) {

@@ -80,6 +80,10 @@ export type RecipeLibraryPage = {
   visibleCount: number;
 };
 
+export type RecipeLibrarySlice = RecipeLibraryPage & {
+  page: number;
+};
+
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const searchParams = new URL(url).searchParams;
   const sort = searchParams.get("sort");
@@ -116,6 +120,23 @@ export function getRecipeLibraryPage(
   return {
     hasMore: visibleCount < recipes.length,
     recipes: recipes.slice(0, visibleCount),
+    totalCount: recipes.length,
+    visibleCount,
+  };
+}
+
+export function getRecipeLibrarySlice(
+  recipes: readonly RecipeLibraryItem[],
+  query: Pick<RecipeLibraryQuery, "page">,
+): RecipeLibrarySlice {
+  const page = query.page ?? 1;
+  const startIndex = (page - 1) * recipeLibraryPageSize;
+  const visibleCount = Math.min(recipes.length, page * recipeLibraryPageSize);
+
+  return {
+    hasMore: visibleCount < recipes.length,
+    page,
+    recipes: recipes.slice(startIndex, visibleCount),
     totalCount: recipes.length,
     visibleCount,
   };
