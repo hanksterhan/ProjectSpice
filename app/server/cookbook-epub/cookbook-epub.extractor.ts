@@ -123,7 +123,8 @@ export function extractCookbookContentFromDocuments({
   const blocks = documents.flatMap((document) => parseContentBlocks(document));
   const captionImageMap = buildCaptionImageMap(blocks, imageCatalog);
   const recipeSegments = findRecipeSegments(blocks);
-  const recipes = recipeSegments
+  const recipes = dedupeRecipeImages(
+    recipeSegments
     .flatMap((segment, index) =>
       toExtractedRecipes(segment, {
         index,
@@ -132,7 +133,8 @@ export function extractCookbookContentFromDocuments({
         captionImageMap,
       }),
     )
-    .filter((recipe): recipe is ExtractedCookbookRecipe => recipe !== undefined);
+    .filter((recipe): recipe is ExtractedCookbookRecipe => recipe !== undefined),
+  );
   const recipeHeadingKeys = new Set(
     recipeSegments.map((segment) => blockKey(segment.heading)),
   );
@@ -538,6 +540,7 @@ function toExtractedRecipes(
   const images = findImagesForSegment(segment, {
     imageCatalog,
     captionImageMap,
+    allowNearbyFallback: false,
   });
   const warnings = images.length === 0 ? ["No matching recipe image was found."] : [];
   return [{
@@ -593,8 +596,66 @@ function createDraftInput({
       type: "imported",
       name: metadata.title,
     },
-    tags: ["cookbook", metadata.title?.toLowerCase()].filter(isText),
+    tags: [],
   });
+}
+
+function dedupeRecipeImages(
+  recipes: ExtractedCookbookRecipe[],
+): ExtractedCookbookRecipe[] {
+  const owners = new Map<string, { recipeIndex: number; imageIndex: number; score: number }>();
+
+  recipes.forEach((recipe, recipeIndex) => {
+    recipe.images.forEach((image, imageIndex) => {
+      const score = scoreAssignedImage(recipe, image, imageIndex);
+      const current = owners.get(image.epubPath);
+
+      if (
+        !current ||
+        score > current.score ||
+        (score === current.score && recipeIndex < current.recipeIndex)
+      ) {
+        owners.set(image.epubPath, { recipeIndex, imageIndex, score });
+      }
+    });
+  });
+
+  return recipes.map((recipe, recipeIndex) => {
+    const images = recipe.images.filter((image, imageIndex) => {
+      const owner = owners.get(image.epubPath);
+
+      return owner?.recipeIndex === recipeIndex && owner.imageIndex === imageIndex;
+    });
+
+    if (images.length === recipe.images.length) {
+      return recipe;
+    }
+
+    return {
+      ...recipe,
+      images,
+      warnings: images.length === 0
+        ? Array.from(new Set([...recipe.warnings, "No matching recipe image was found."]))
+        : recipe.warnings,
+    };
+  });
+}
+
+function scoreAssignedImage(
+  recipe: ExtractedCookbookRecipe,
+  image: CookbookEpubImageRef,
+  imageIndex: number,
+): number {
+  const roleScore =
+    image.role === "inline" ? 40 : image.role === "caption-linked" ? 30 : 10;
+  const pageDistance =
+    recipe.pageNumber !== undefined && image.pageNumber !== undefined
+      ? Math.abs(image.pageNumber - recipe.pageNumber)
+      : 8;
+  const pageScore = Math.max(0, 24 - pageDistance * 8);
+  const positionScore = Math.max(0, 4 - imageIndex);
+
+  return roleScore + pageScore + positionScore;
 }
 
 function toExtractedTechnique(
@@ -624,6 +685,7 @@ function toExtractedTechnique(
   const images = findImagesForSegment(segment, {
     imageCatalog,
     captionImageMap,
+    allowNearbyFallback: true,
   });
   const techniqueType = getTechniqueType(segment.heading, blocks);
   const title = createTechniqueTitle(segment.heading.text, body, blocks);
@@ -896,9 +958,11 @@ function findImagesForSegment(
   {
     imageCatalog,
     captionImageMap,
+    allowNearbyFallback,
   }: {
     imageCatalog: ImageCatalogEntry[];
     captionImageMap: Map<string, ImageCatalogEntry[]>;
+    allowNearbyFallback: boolean;
   },
 ): CookbookEpubImageRef[] {
   const imagesByPath = new Map(imageCatalog.map((image) => [image.epubPath, image]));
@@ -921,7 +985,7 @@ function findImagesForSegment(
     }
   }
 
-  if (candidates.length === 0) {
+  if (allowNearbyFallback && candidates.length === 0) {
     const nearby = findNearbyCatalogImages(segment, imageCatalog);
 
     for (const image of nearby) {

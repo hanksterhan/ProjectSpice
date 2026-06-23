@@ -24,6 +24,15 @@ describe("extractCookbookEpub", () => {
 
     expect(extraction.metadata.title).toBe("Binging with Babish");
     expect(extraction.recipes.length).toBeGreaterThan(80);
+    expect(
+      extraction.recipes.flatMap((recipe) => recipe.images).some(
+        (image) => image.role === "nearby",
+      ),
+    ).toBe(false);
+    const primaryImages = extraction.recipes
+      .map((recipe) => recipe.images[0]?.epubPath)
+      .filter((imagePath): imagePath is string => imagePath !== undefined);
+    expect(new Set(primaryImages).size).toBe(primaryImages.length);
 
     const philly = findRecipe(extraction.recipes, "Philly Cheesesteak Sandwiches");
     expect(philly?.draftRecipe.yield?.notes).toBe("Makes 2");
@@ -37,6 +46,9 @@ describe("extractCookbookEpub", () => {
     expect(pizzaSauce?.images.some((image) => image.epubPath.endsWith("p034.jpg"))).toBe(
       true,
     );
+
+    const meatballs = findRecipe(extraction.recipes, "Meatballs");
+    expect(meatballs?.images).toHaveLength(0);
   });
 
   it("extracts healthy drinks recipes and technique sections", () => {

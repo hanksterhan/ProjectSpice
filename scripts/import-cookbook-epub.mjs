@@ -58,6 +58,8 @@ try {
     const extraction = cookbook.extractCookbookEpub(buffer);
     const bookTitle =
       extraction.metadata.title ?? titleFromFilename(absoluteEpubPath);
+    const sourceName = getCookbookSourceName(extraction.metadata, bookTitle);
+    const sourceNamesToReplace = [...new Set([bookTitle, sourceName])];
     const extractedTechniques = extraction.techniques;
     const bookSlug = createRecipeSlug(bookTitle) || "cookbook";
     const imageDir = resolve(
@@ -71,11 +73,13 @@ try {
     mkdirSync(imageDir, { recursive: true });
 
     const imageUrlByPath = new Map();
-    statements.push(
-      `DELETE FROM cookbook_techniques WHERE source_name = ${toSqlLiteral(bookTitle)};`,
-      `DELETE FROM recipe_versions WHERE recipe_id IN (SELECT id FROM recipes WHERE source_type = 'imported' AND source_name = ${toSqlLiteral(bookTitle)});`,
-      `DELETE FROM recipes WHERE source_type = 'imported' AND source_name = ${toSqlLiteral(bookTitle)};`,
-    );
+    for (const replaceSourceName of sourceNamesToReplace) {
+      statements.push(
+        `DELETE FROM cookbook_techniques WHERE source_name = ${toSqlLiteral(replaceSourceName)};`,
+        `DELETE FROM recipe_versions WHERE recipe_id IN (SELECT id FROM recipes WHERE source_type = 'imported' AND source_name = ${toSqlLiteral(replaceSourceName)});`,
+        `DELETE FROM recipes WHERE source_type = 'imported' AND source_name = ${toSqlLiteral(replaceSourceName)};`,
+      );
+    }
 
     const recipes = extraction.recipes.map((entry) => {
       const firstImage = entry.images[0];
@@ -92,14 +96,7 @@ try {
         : undefined;
       const now = new Date().toISOString();
       const draftRecipe = entry.draftRecipe;
-      const tags = Array.from(
-        new Set([
-          ...draftRecipe.tags,
-          "cookbook",
-          `cookbook:${bookSlug}`,
-          "cookbook-recipe",
-        ]),
-      );
+      const tags = inferRecipeTags(draftRecipe);
       const id = createImportedId(draftRecipe.title, `${bookSlug}:${entry.id}`);
       const recipe = recipeSchema.parse({
         ...draftRecipe,
@@ -107,7 +104,7 @@ try {
         imageUrl,
         source: {
           type: "imported",
-          name: bookTitle,
+          name: sourceName,
         },
         tags,
         version: 1,
@@ -146,14 +143,12 @@ try {
         title: technique.title,
         summary: technique.summary,
         techniqueType: technique.type,
-        sourceName: bookTitle,
+        sourceName,
         sourceDocumentPath: technique.sourceDocumentPath,
         pageNumber: technique.pageNumber,
         imageUrl,
         blocks: technique.blocks,
-        tags: Array.from(
-          new Set(["cookbook", `cookbook:${bookSlug}`, "technique", technique.type]),
-        ),
+        tags: Array.from(new Set(["technique", technique.type])),
         createdAt: now,
         updatedAt: now,
       };
@@ -166,6 +161,7 @@ try {
     summaries.push({
       epubPath: absoluteEpubPath,
       title: bookTitle,
+      sourceName,
       bookSlug,
       recipes: extraction.recipes.length,
       techniques: extractedTechniques.length,
@@ -238,6 +234,88 @@ function writeImageAsset({
   cache.set(imageRef.epubPath, imageUrl);
 
   return imageUrl;
+}
+
+function getCookbookSourceName(metadata, fallbackTitle) {
+  const title = normalizeCookbookText(metadata.title) || fallbackTitle;
+  const creator = normalizeCookbookCreator(metadata.creator);
+
+  if (!creator || title.toLowerCase().includes(creator.toLowerCase())) {
+    return title;
+  }
+
+  return `${creator} - ${title}`;
+}
+
+function normalizeCookbookCreator(value) {
+  const creator = normalizeCookbookText(value);
+
+  if (!creator) {
+    return "";
+  }
+
+  return creator
+    .replace(/\s*\(Firm\)\s*/gi, "")
+    .replace(/^America's Test Kitchen.*$/i, "America's Test Kitchen")
+    .trim();
+}
+
+function normalizeCookbookText(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function inferRecipeTags(recipe) {
+  const titleText = String(recipe.title ?? "").toLowerCase();
+  const ingredientText = getRecipeIngredientTagText(recipe);
+  const text = [
+    titleText,
+    String(recipe.description ?? "").toLowerCase(),
+    ingredientText,
+  ].join(" ");
+  const tags = [];
+
+  addTagIf(tags, "Beverage", /\b(kombucha|kefir|lassi|smoothie|juice|soda|shrub|tea|coffee|lemonade|drink|cocktail|mocktail|hot chocolate|horchata|agua fresca)\b/.test(titleText));
+  addTagIf(tags, "Fermented", /\b(kombucha|kefir|ferment|fermented|pickle|pickled|kimchi|sauerkraut|sourdough)\b/.test(text));
+  addTagIf(tags, "Dessert", /\b(cake|pie|tart|cookie|brownie|pudding|custard|ice cream|gelato|sorbet|mousse|babka|chocolate|caramel|fudge|banana split|sweet roll|dessert|pastry|doughnut|donut|muffin)\b/.test(titleText));
+  addTagIf(tags, "Bread", /\b(bread|loaf|brioche|pita|naan|focaccia|bagel|bun|roll|tortilla|pizza dough|pie dough|puff pastry|flatbread)\b/.test(titleText));
+  addTagIf(tags, "Sauce", /\b(sauce|salsa|gravy|dressing|aioli|mayo|mayonnaise|chutney|glaze|syrup|dip|broth|stock|tare|remoulade|rémoulade|tzatziki|tahini)\b/.test(titleText));
+  addTagIf(tags, "Salad", /\b(salad|slaw|coleslaw|tabbouleh)\b/.test(titleText));
+  addTagIf(tags, "Curry", /\b(curry|masala|korma|vindaloo)\b/.test(titleText));
+  addTagIf(tags, "Snacks", /\b(popcorn|chips|crackers|nuggets?|fries|fritos|snack)\b/.test(titleText));
+  addTagIf(tags, "Fish", /\b(fish|salmon|tuna|cod|halibut|trout|yellowtail|shrimp|prawn|crab|lobster|clam|mussel|oyster|scallop|sardine|seafood)\b/.test(titleText));
+  addTagIf(tags, "Protein", hasProtein(`${titleText} ${ingredientText}`));
+  addTagIf(tags, "Vegetarian", !hasAnimalProtein(text) && hasVegetableFocus(text));
+
+  return tags.slice(0, 5);
+}
+
+function getRecipeIngredientTagText(recipe) {
+  return (recipe.ingredients ?? [])
+    .flatMap((section) =>
+      (section.items ?? []).map((item) => `${item.raw ?? ""} ${item.item ?? ""}`),
+    )
+    .join(" ")
+    .toLowerCase();
+}
+
+function hasProtein(text) {
+  return /\b(beef|steak|pork|bacon|ham|sausage|chicken|turkey|duck|lamb|goat|veal|meatball|burger|rib|brisket|chorizo|salami|pepperoni|egg|tofu|tempeh|fish|salmon|tuna|cod|halibut|trout|yellowtail|shrimp|prawn|crab|lobster|clam|mussel|oyster|scallop)\b/.test(text);
+}
+
+function hasAnimalProtein(text) {
+  return /\b(beef|steak|pork|bacon|ham|sausage|chicken|turkey|duck|lamb|goat|veal|meatball|burger|rib|brisket|chorizo|salami|pepperoni|fish|salmon|tuna|cod|halibut|trout|yellowtail|shrimp|prawn|crab|lobster|clam|mussel|oyster|scallop|anchovy|gelatin)\b/.test(text);
+}
+
+function hasVegetableFocus(text) {
+  return /\b(vegetable|eggplant|mushroom|spinach|kale|cabbage|cauliflower|broccoli|carrot|squash|zucchini|pepper|tomato|tomatillo|potato|bean|lentil|chickpea|pea|corn|tofu|tempeh|greens?|herbs?)\b/.test(text);
+}
+
+function addTagIf(tags, tag, condition) {
+  if (condition && !tags.includes(tag)) {
+    tags.push(tag);
+  }
 }
 
 function toInsertStatement(recipe, { getCookCount, getLastCookedDate }) {
