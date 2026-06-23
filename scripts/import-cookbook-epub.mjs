@@ -58,6 +58,7 @@ try {
     const extraction = cookbook.extractCookbookEpub(buffer);
     const bookTitle =
       extraction.metadata.title ?? titleFromFilename(absoluteEpubPath);
+    const extractedTechniques = extraction.techniques;
     const bookSlug = createRecipeSlug(bookTitle) || "cookbook";
     const imageDir = resolve(
       root,
@@ -124,7 +125,7 @@ try {
       return recipe;
     });
 
-    const techniques = extraction.techniques.map((technique) => {
+    const techniques = extractedTechniques.map((technique) => {
       const firstImage = technique.images[0];
       const imageUrl = firstImage
         ? writeImageAsset({
@@ -167,7 +168,7 @@ try {
       title: bookTitle,
       bookSlug,
       recipes: extraction.recipes.length,
-      techniques: extraction.techniques.length,
+      techniques: extractedTechniques.length,
       importedRows: recipes.length,
       importedTechniques: techniques.length,
       imageFiles: imageUrlByPath.size,

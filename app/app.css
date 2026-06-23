@@ -1991,6 +1991,20 @@ p {
   font-size: 0.94rem;
 }
 
+.technique-library-card {
+  grid-template-rows: 9.25rem auto;
+  min-height: 0;
+}
+
+.technique-library-card .recipe-card-copy {
+  display: block;
+  padding: 0.65rem 0.75rem 0.7rem;
+}
+
+.technique-library-card h3 {
+  margin-bottom: 0;
+}
+
 .recipe-signals {
   align-items: center;
   display: flex;
@@ -2233,80 +2247,10 @@ p {
   gap: 1rem;
 }
 
-.techniques-page,
 .technique-detail-page {
   margin: 0 auto;
   max-width: 1180px;
   padding: 1.5rem;
-}
-
-.technique-results {
-  display: grid;
-  gap: 1rem;
-}
-
-.technique-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
-}
-
-.technique-card {
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  display: grid;
-  grid-template-rows: 11rem minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.technique-card-image-link {
-  background: var(--surface-muted);
-  display: block;
-  min-height: 0;
-}
-
-.technique-card-image,
-.technique-card-image-link .image-fallback {
-  height: 100%;
-  width: 100%;
-}
-
-.technique-card-copy {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.9rem;
-}
-
-.technique-card-copy h3,
-.technique-card-copy p {
-  margin: 0;
-}
-
-.technique-card-copy h3 {
-  font-size: 1.05rem;
-  line-height: 1.2;
-}
-
-.technique-card-copy p {
-  color: var(--steel);
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
-.technique-card-kicker {
-  color: var(--muted);
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
-  font-weight: 900;
-  gap: 0.45rem;
-  text-transform: uppercase;
-}
-
-.technique-source {
-  font-weight: 800;
 }
 
 .technique-detail-page {
@@ -4761,7 +4705,6 @@ p {
     gap: 0.75rem;
   }
 
-  .techniques-page,
   .technique-detail-page {
     padding: 0.75rem;
   }

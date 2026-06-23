@@ -647,10 +647,11 @@ function toExtractedTechnique(
     captionImageMap,
   });
   const techniqueType = getTechniqueType(segment.heading, blocks);
+  const title = createTechniqueTitle(segment.heading.text, body, blocks);
 
   return {
-    id: createStableId("cookbook-technique", segment.heading.text, index),
-    title: cleanTitle(segment.heading.text),
+    id: createStableId("cookbook-technique", title, index),
+    title,
     type: techniqueType,
     summary: body[0],
     blocks,
@@ -663,6 +664,74 @@ function toExtractedTechnique(
       0.5 + body.length * 0.04 + blocks.length * 0.03 + images.length * 0.05,
     ),
   };
+}
+
+function createTechniqueTitle(
+  headingText: string,
+  body: string[],
+  blocks: CookbookTechniqueBlock[],
+): string {
+  const title = cleanTitle(headingText);
+  const normalizedTitle = title.toLowerCase();
+  const contextText = [
+    ...body,
+    ...blocks.flatMap((block) => {
+      if (block.type === "paragraph" || block.type === "heading") {
+        return [block.text];
+      }
+
+      if (block.type === "callout") {
+        return [block.title, ...block.body].filter(isText);
+      }
+
+      if (block.type === "list") {
+        return block.items;
+      }
+
+      return [block.headers.join(" "), ...block.rows.map((row) => row.join(" "))];
+    }),
+  ]
+    .join(" ")
+    .toLowerCase();
+  const context = inferTechniqueTitleContext(contextText);
+
+  if (normalizedTitle === "best practices" && context) {
+    return `${context} best practices`;
+  }
+
+  if (normalizedTitle === "brewing" && context === "tea") {
+    return "tea brewing";
+  }
+
+  if (normalizedTitle === "making your first batch" && context === "kombucha") {
+    return "making your first batch of kombucha";
+  }
+
+  if (normalizedTitle === "tips for juice making") {
+    return "juice-making tips";
+  }
+
+  return title;
+}
+
+function inferTechniqueTitleContext(text: string): string | undefined {
+  if (/\bkombucha\b|pellicle|scoby/.test(text)) {
+    return "kombucha";
+  }
+
+  if (/\btea\b|earl grey|matcha|steep/.test(text)) {
+    return "tea";
+  }
+
+  if (/\bjuice\b|juicing|juicer/.test(text)) {
+    return "juice";
+  }
+
+  if (/\bkefir\b/.test(text)) {
+    return "kefir";
+  }
+
+  return undefined;
 }
 
 function toTechniqueBlocks(blocks: ContentBlock[]): CookbookTechniqueBlock[] {

@@ -27,8 +27,8 @@ export default function TechniquesIndex({ loaderData }: Route.ComponentProps) {
   });
 
   return (
-    <div className="techniques-page">
-      <section className="technique-results" aria-labelledby="techniques-heading">
+    <div className="library-page">
+      <section className="library-results" aria-labelledby="techniques-heading">
         <div className="results-header">
           <div>
             <h2 id="techniques-heading">
@@ -39,30 +39,26 @@ export default function TechniquesIndex({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
-        <div className="technique-grid">
+        <div className="recipe-card-grid">
           {techniques.map((technique) => (
-            <article className="technique-card" key={technique.id}>
+            <article className="recipe-card technique-library-card" key={technique.id}>
               <Link
                 aria-label={technique.title}
-                className="technique-card-image-link"
+                className="recipe-card-image-link"
                 to={`/techniques/${technique.slug}`}
               >
                 <RecipeImage
-                  className="technique-card-image"
+                  className="recipe-card-image"
                   src={technique.imageUrl}
                   title={technique.title}
                 />
               </Link>
-              <div className="technique-card-copy">
-                <div className="technique-card-kicker">
-                  <span>{formatTechniqueType(technique.type)}</span>
-                  {technique.pageNumber ? <span>Page {technique.pageNumber}</span> : null}
+              <div className="recipe-card-copy">
+                <div>
+                  <h3>
+                    <Link to={`/techniques/${technique.slug}`}>{technique.title}</Link>
+                  </h3>
                 </div>
-                <h3>
-                  <Link to={`/techniques/${technique.slug}`}>{technique.title}</Link>
-                </h3>
-                {technique.summary ? <p>{technique.summary}</p> : null}
-                <p className="technique-source">{technique.sourceName}</p>
               </div>
             </article>
           ))}
@@ -70,8 +66,4 @@ export default function TechniquesIndex({ loaderData }: Route.ComponentProps) {
       </section>
     </div>
   );
-}
-
-function formatTechniqueType(value: string): string {
-  return value.replace("-", " ");
 }

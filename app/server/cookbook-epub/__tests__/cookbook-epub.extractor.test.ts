@@ -67,6 +67,22 @@ describe("extractCookbookEpub", () => {
       technique.title.toLowerCase().includes("best blending techniques"),
     );
     expect(blendingTechnique?.body.join(" ")).toContain("ORDER IS VERY IMPORTANT");
+    expect(
+      extraction.techniques.some((technique) => technique.title === "best practices"),
+    ).toBe(false);
+    expect(
+      extraction.techniques.some(
+        (technique) => technique.title === "kombucha best practices",
+      ),
+    ).toBe(true);
+    expect(
+      extraction.techniques.some((technique) => technique.title === "tea brewing"),
+    ).toBe(true);
+    expect(
+      extraction.techniques.some(
+        (technique) => technique.title === "making your first batch of kombucha",
+      ),
+    ).toBe(true);
 
     const teaTemperatures = extraction.techniques.find((technique) =>
       technique.title.toLowerCase().includes("tea, times"),
