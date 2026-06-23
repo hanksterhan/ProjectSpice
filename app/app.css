@@ -1608,6 +1608,21 @@ p {
   width: 0.18rem;
 }
 
+.drawer-navigation-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.drawer-navigation-link:hover {
+  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
+}
+
+.drawer-navigation-link.selected {
+  background: var(--selected-surface);
+  border-color: var(--soft-border);
+  box-shadow: 0 1px 0 var(--soft-border);
+}
+
 .facet-option-label {
   align-items: center;
   display: flex;

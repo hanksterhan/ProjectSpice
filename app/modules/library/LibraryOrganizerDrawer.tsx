@@ -12,8 +12,9 @@ import {
   Star,
   Tags,
   Type,
+  Wrench,
 } from "lucide-react";
-import { Form, Link, useNavigate } from "react-router";
+import { Form, Link, NavLink, useNavigate } from "react-router";
 
 import {
   getActiveLibraryFilters,
@@ -112,8 +113,29 @@ export function LibraryOrganizerDrawer({
         {facets.map((group) => (
           <CollapsibleFacetGroup group={group} key={group.id} />
         ))}
+
+        <TechniqueNavigationLink />
       </div>
     </div>
+  );
+}
+
+function TechniqueNavigationLink() {
+  return (
+    <NavLink
+      className={({ isActive }) =>
+        isActive
+          ? "facet-group-header drawer-navigation-link selected"
+          : "facet-group-header drawer-navigation-link"
+      }
+      to="/techniques"
+    >
+      <div className="drawer-section-title">
+        <span className="tree-chevron-spacer" aria-hidden="true" />
+        <Wrench className="drawer-icon" />
+        <h3>Techniques</h3>
+      </div>
+    </NavLink>
   );
 }
 
