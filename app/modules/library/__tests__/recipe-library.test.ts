@@ -27,6 +27,7 @@ describe("recipe library query helpers", () => {
       cookbooks: ["Whats for Dessert"],
       direction: "desc",
       favorite: false,
+      hideCookbooks: false,
       page: 1,
       q: "mango",
       sort: "time",
@@ -53,6 +54,7 @@ describe("recipe library query helpers", () => {
       cookbooks: [],
       direction: "desc",
       favorite: false,
+      hideCookbooks: false,
       page: 1,
       q: "",
       sort: "recent",
@@ -61,6 +63,16 @@ describe("recipe library query helpers", () => {
       topRated: false,
       view: "grid",
       websites: [],
+    });
+
+    expect(
+      parseRecipeLibraryQuery(
+        "https://spice.test/?hideCookbooks=1&chapter=Smoothies&cookbook=Drinks",
+      ),
+    ).toMatchObject({
+      chapters: [],
+      cookbooks: [],
+      hideCookbooks: true,
     });
   });
 
@@ -110,6 +122,7 @@ describe("recipe library query helpers", () => {
       cookbooks: [],
       direction: "asc",
       favorite: false,
+      hideCookbooks: false,
       sort: "title",
       sources: [],
       tags: [],
@@ -127,6 +140,7 @@ describe("recipe library query helpers", () => {
       cookbooks: ["Claire Saffitz - Whats for Dessert"],
       direction: "asc",
       favorite: false,
+      hideCookbooks: false,
       q: "",
       sort: "title",
       sources: ["Cookbook"],
@@ -144,12 +158,29 @@ describe("recipe library query helpers", () => {
     ).toBe(true);
   });
 
+  it("filters out cookbook recipes with a shareable query flag", () => {
+    const query = parseRecipeLibraryQuery("https://spice.test/?hideCookbooks=1");
+    const results = getRecipeLibraryResults(seedRecipes, query);
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(getRecipeCookbookTree(results, query)).toHaveLength(0);
+    expect(getActiveLibraryFilters(query)).toContainEqual({
+      href: "/",
+      id: "hideCookbooks",
+      label: "Cookbooks hidden",
+    });
+    expect(
+      getRecipeCookbookTree(seedRecipes, query)[0]?.href.includes("hideCookbooks=1"),
+    ).toBe(false);
+  });
+
   it("sorts matching recipes by title and total time", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
       chapters: [],
       cookbooks: [],
       direction: "asc",
       favorite: false,
+      hideCookbooks: false,
       q: "dessert",
       sort: "title",
       sources: [],
@@ -163,6 +194,7 @@ describe("recipe library query helpers", () => {
       cookbooks: [],
       direction: "asc",
       favorite: false,
+      hideCookbooks: false,
       q: "dessert",
       sort: "time",
       sources: [],
@@ -186,6 +218,7 @@ describe("recipe library query helpers", () => {
       cookbooks: [],
       direction: "desc",
       favorite: false,
+      hideCookbooks: false,
       q: "dessert",
       sort: "title",
       sources: [],

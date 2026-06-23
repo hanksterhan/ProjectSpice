@@ -149,6 +149,7 @@ function canUseSummaryPageQuery(query: RecipeLibraryQuery): boolean {
     query.cookbooks.length === 0 &&
     query.sources.length === 0 &&
     query.websites.length === 0 &&
+    !query.hideCookbooks &&
     !query.favorite &&
     !query.topRated
   );

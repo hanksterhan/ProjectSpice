@@ -72,6 +72,9 @@ export function LibraryOrganizerDrawer({
         </label>
         <input type="hidden" name="view" value={query.view} />
         {query.favorite ? <input type="hidden" name="favorite" value="1" /> : null}
+        {query.hideCookbooks ? (
+          <input type="hidden" name="hideCookbooks" value="1" />
+        ) : null}
         {query.topRated ? <input type="hidden" name="topRated" value="1" /> : null}
         {query.sort !== "recent" ? (
           <input type="hidden" name="sort" value={query.sort} />
@@ -99,7 +102,7 @@ export function LibraryOrganizerDrawer({
       <LibraryModePicker query={query} />
 
       <div className="drawer-facet-list">
-        <CookbookTree tree={cookbookTree} />
+        <CookbookTree query={query} tree={cookbookTree} />
 
         {facets.map((group) => (
           <CollapsibleFacetGroup group={group} key={group.id} />
@@ -187,8 +190,10 @@ function CollapsibleFacetGroup({
 }
 
 function CookbookTree({
+  query,
   tree,
 }: {
+  query: RecipeLibraryQuery;
   tree: ReturnType<typeof getRecipeCookbookTree>;
 }) {
   const hasSelectedCookbook = tree.some(
@@ -243,6 +248,10 @@ function CookbookTree({
     });
   }
 
+  if (tree.length === 0) {
+    return null;
+  }
+
   return (
     <details
       className="facet-group cookbook-tree collapsible-facet-group"
@@ -258,6 +267,18 @@ function CookbookTree({
         <span>{tree.length}</span>
       </summary>
       <div className="cookbook-tree-list">
+        <Link
+          aria-pressed={query.hideCookbooks ? "true" : "false"}
+          className={
+            query.hideCookbooks
+              ? "cookbook-hide-toggle active"
+              : "cookbook-hide-toggle"
+          }
+          role="button"
+          to={getHideCookbooksHref(query)}
+        >
+          <span>Hide cookbook recipes</span>
+        </Link>
         {tree.map((author) => {
           const authorNodeId = getCookbookNodeId("author", author.id);
           const isAuthorOpen = openNodeIds.has(authorNodeId);
@@ -390,6 +411,16 @@ function getCookbookNodeId(type: "author" | "cookbook", id: string): string {
   return `${type}:${id}`;
 }
 
+function getHideCookbooksHref(query: RecipeLibraryQuery) {
+  return getLibraryQueryHref({
+    ...query,
+    chapters: [],
+    cookbooks: [],
+    hideCookbooks: !query.hideCookbooks,
+    page: 1,
+  });
+}
+
 function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {
   const activeModeId = getLibraryModeId(query);
   const modes = getLibraryModes(query);
@@ -504,6 +535,7 @@ function getLibraryModeId(query: RecipeLibraryQuery) {
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
     query.websites.length === 0 &&
+    !query.hideCookbooks &&
     query.sort === "recent" &&
     query.direction === getDefaultSortDirection("recent")
   ) {
@@ -586,6 +618,7 @@ function getLibraryModeHref(
       cookbooks: [],
       direction: getDefaultSortDirection("recent"),
       favorite: false,
+      hideCookbooks: false,
       page: 1,
       q: "",
       sort: "recent",

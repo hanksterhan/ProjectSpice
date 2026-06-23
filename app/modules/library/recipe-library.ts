@@ -59,6 +59,7 @@ export type RecipeLibraryQuery = {
   cookbooks: string[];
   direction: RecipeLibrarySortDirection;
   favorite: boolean;
+  hideCookbooks: boolean;
   page?: number;
   q: string;
   sort: RecipeLibrarySort;
@@ -91,14 +92,16 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const view = searchParams.get("view");
   const safeSort = isRecipeLibrarySort(sort) ? sort : "recent";
   const favorite = searchParams.get("favorite") === "1";
+  const hideCookbooks = searchParams.get("hideCookbooks") === "1";
 
   return {
-    chapters: parseQueryList(searchParams.getAll("chapter")),
-    cookbooks: parseQueryList(searchParams.getAll("cookbook")),
+    chapters: hideCookbooks ? [] : parseQueryList(searchParams.getAll("chapter")),
+    cookbooks: hideCookbooks ? [] : parseQueryList(searchParams.getAll("cookbook")),
     direction: isRecipeLibrarySortDirection(direction)
       ? direction
       : getDefaultSortDirection(safeSort),
     favorite,
+    hideCookbooks,
     page: parsePositiveInteger(searchParams.get("page")) ?? 1,
     q: searchParams.get("q")?.trim() ?? "",
     sort: safeSort,
@@ -159,6 +162,7 @@ export function getRecipeLibraryResults(
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
     query.websites.length === 0 &&
+    !query.hideCookbooks &&
     !query.favorite &&
     !query.topRated
       ? [...recipes]
@@ -178,6 +182,7 @@ export function getRecipeLibraryResults(
             terms.every((term) => haystack.includes(term)) &&
             (!query.favorite || recipe.favorite === true) &&
             (!query.topRated || (recipe.rating ?? -1) >= 8) &&
+            (!query.hideCookbooks || !getCookbookLabel(recipe)) &&
             matchesSelectedValues(recipe.tags, query.tags) &&
             matchesSelectedValues(getCookbookChapterLabelsForRecipe(recipe), query.chapters) &&
             matchesSelectedValues([getSourceTypeLabel(recipe)], query.sources) &&
@@ -265,6 +270,7 @@ export function getRecipeCookbookTree(
         ...query,
         cookbooks: cookbookLabels,
         chapters: [],
+        hideCookbooks: false,
         page: 1,
         tags: [],
       });
@@ -275,6 +281,7 @@ export function getRecipeCookbookTree(
             ...query,
             cookbooks: [cookbook],
             chapters: [],
+            hideCookbooks: false,
             page: 1,
             tags: [],
           }),
@@ -292,6 +299,7 @@ export function getRecipeCookbookTree(
                 ...query,
                 chapters: [chapter],
                 cookbooks: [cookbook],
+                hideCookbooks: false,
                 page: 1,
                 tags: [],
               }),
@@ -325,6 +333,19 @@ export function getActiveLibraryFilters(
   query: RecipeLibraryQuery,
 ): RecipeLibraryActiveFilter[] {
   return [
+    ...(query.hideCookbooks
+      ? [
+          {
+            href: getLibraryQueryHref({
+              ...query,
+              hideCookbooks: false,
+              page: 1,
+            }),
+            id: "hideCookbooks",
+            label: "Cookbooks hidden",
+          },
+        ]
+      : []),
     ...query.sources.map((value) => ({
       href: getLibraryQueryHref(toggleFacetValue(query, "source", value)),
       id: `source:${value}`,
@@ -368,6 +389,7 @@ export function getRecipeSourceFilterLink(
       href: getLibraryQueryHref({
         ...query,
         cookbooks: [cookbook],
+        hideCookbooks: false,
         page: 1,
         websites: [],
       }),
@@ -405,6 +427,10 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
 
   if (!query.favorite && query.topRated) {
     params.set("topRated", "1");
+  }
+
+  if (query.hideCookbooks) {
+    params.set("hideCookbooks", "1");
   }
 
   for (const value of query.tags) {
@@ -465,7 +491,12 @@ export function toggleFacetValue(
     return { ...query, page: 1, websites: toggleValue(query.websites, value) };
   }
 
-  return { ...query, cookbooks: toggleValue(query.cookbooks, value), page: 1 };
+  return {
+    ...query,
+    cookbooks: toggleValue(query.cookbooks, value),
+    hideCookbooks: false,
+    page: 1,
+  };
 }
 
 export function parseBulkTagText(value: string): string[] {

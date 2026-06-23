@@ -1432,6 +1432,48 @@ p {
   padding: 0.05rem 0 0 0.85rem;
 }
 
+.cookbook-hide-toggle {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--steel);
+  display: grid;
+  font-size: 0.84rem;
+  font-weight: 650;
+  gap: 0.6rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 2rem;
+  padding: 0.18rem 0.42rem;
+}
+
+.cookbook-hide-toggle::after {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px var(--surface-muted);
+  content: "";
+  height: 0.95rem;
+  width: 1.72rem;
+}
+
+.cookbook-hide-toggle:hover,
+.cookbook-hide-toggle.active {
+  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
+  color: var(--ink);
+}
+
+.cookbook-hide-toggle.active {
+  border-color: var(--accent-border);
+}
+
+.cookbook-hide-toggle.active::after {
+  background:
+    radial-gradient(circle at calc(100% - 0.44rem) center, var(--on-accent) 0 0.3rem, transparent 0.32rem),
+    var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
 .cookbook-tree-node {
   min-width: 0;
 }
