@@ -2233,6 +2233,213 @@ p {
   gap: 1rem;
 }
 
+.techniques-page,
+.technique-detail-page {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 1.5rem;
+}
+
+.technique-results {
+  display: grid;
+  gap: 1rem;
+}
+
+.technique-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.technique-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-rows: 11rem minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.technique-card-image-link {
+  background: var(--surface-muted);
+  display: block;
+  min-height: 0;
+}
+
+.technique-card-image,
+.technique-card-image-link .image-fallback {
+  height: 100%;
+  width: 100%;
+}
+
+.technique-card-copy {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+}
+
+.technique-card-copy h3,
+.technique-card-copy p {
+  margin: 0;
+}
+
+.technique-card-copy h3 {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.technique-card-copy p {
+  color: var(--steel);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.technique-card-kicker {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  text-transform: uppercase;
+}
+
+.technique-source {
+  font-weight: 800;
+}
+
+.technique-detail-page {
+  display: grid;
+  gap: 1rem;
+  max-width: 1040px;
+}
+
+.technique-detail-header {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+}
+
+.technique-detail-header > div {
+  align-content: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.25rem;
+}
+
+.technique-detail-header h1,
+.technique-detail-header p {
+  margin: 0;
+}
+
+.technique-detail-header h1 {
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 0.98;
+}
+
+.technique-detail-header > div > p:not(.recipe-kicker) {
+  color: var(--steel);
+  font-size: 1rem;
+  line-height: 1.55;
+  max-width: 66ch;
+}
+
+.technique-detail-image,
+.technique-detail-header .image-fallback {
+  border-radius: 8px;
+  height: 21rem;
+  width: 100%;
+}
+
+.technique-blocks {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.technique-blocks > p,
+.technique-blocks h2,
+.technique-callout p {
+  margin: 0;
+}
+
+.technique-blocks > p,
+.technique-list,
+.technique-callout p {
+  line-height: 1.6;
+}
+
+.technique-blocks h2,
+.technique-callout h2 {
+  font-size: 1rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.technique-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.technique-callout {
+  background: var(--surface-muted);
+  border: 1px solid var(--soft-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+}
+
+.technique-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.technique-table {
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 44rem;
+  width: 100%;
+}
+
+.technique-table th,
+.technique-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.technique-table th {
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.technique-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.technique-detail-footer {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .recipe-detail-hero {
   align-items: stretch;
   background: var(--surface-raised);
@@ -4552,6 +4759,24 @@ p {
 
   .recipe-detail-page {
     gap: 0.75rem;
+  }
+
+  .techniques-page,
+  .technique-detail-page {
+    padding: 0.75rem;
+  }
+
+  .technique-detail-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .technique-detail-image,
+  .technique-detail-header .image-fallback {
+    height: clamp(14rem, 64vw, 22rem);
+  }
+
+  .technique-table {
+    min-width: 38rem;
   }
 
   .recipe-detail-hero {

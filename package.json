@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
+    "cookbook:import": "node scripts/import-cookbook-epub.mjs",
     "cf-typegen": "wrangler types",
     "dev": "react-router dev",
     "preview": "pnpm build && vite preview",

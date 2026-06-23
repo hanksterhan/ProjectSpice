@@ -13,6 +13,8 @@ export default [
     "recipes/:recipeId/lenses/:lensKey/edit",
     "routes/recipes.$recipeId.lenses.$lensKey.edit.tsx",
   ),
+  route("techniques", "routes/techniques.tsx"),
+  route("techniques/:slug", "routes/techniques.$slug.tsx"),
   route("sign-in/*", "routes/sign-in.tsx"),
   route("sign-up/*", "routes/sign-up.tsx"),
 ] satisfies RouteConfig;

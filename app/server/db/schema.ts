@@ -13,6 +13,13 @@ import type { RecipeLensKey } from "~/modules/recipe-lenses";
 
 export const aiRunOperations = ["generate", "transform"] as const;
 export const aiRunStatuses = ["succeeded", "failed"] as const;
+export const cookbookTechniqueTypes = [
+  "checklist",
+  "formula",
+  "guide",
+  "table",
+  "troubleshooting",
+] as const;
 export const recipeLensKeys = [
   "lower-cal",
   "glucose-conscious",
@@ -22,6 +29,7 @@ export const recipeLensKeys = [
 
 export type AiRunOperation = (typeof aiRunOperations)[number];
 export type AiRunStatus = (typeof aiRunStatuses)[number];
+export type CookbookTechniqueType = (typeof cookbookTechniqueTypes)[number];
 
 export const recipes = sqliteTable(
   "recipes",
@@ -137,6 +145,34 @@ export const aiRuns = sqliteTable(
     index("ai_runs_operation_idx").on(table.operation),
     index("ai_runs_status_idx").on(table.status),
     index("ai_runs_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const cookbookTechniques = sqliteTable(
+  "cookbook_techniques",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    techniqueType: text("technique_type").$type<CookbookTechniqueType>().notNull(),
+    sourceName: text("source_name").notNull(),
+    sourceDocumentPath: text("source_document_path").notNull(),
+    pageNumber: integer("page_number"),
+    imageUrl: text("image_url"),
+    blocksJson: text("blocks_json", { mode: "json" })
+      .$type<Array<Record<string, unknown>>>()
+      .notNull(),
+    tagsJson: text("tags_json", { mode: "json" }).$type<string[]>().notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    deletedAt: text("deleted_at"),
+  },
+  (table) => [
+    uniqueIndex("cookbook_techniques_slug_unique").on(table.slug),
+    index("cookbook_techniques_source_name_idx").on(table.sourceName),
+    index("cookbook_techniques_technique_type_idx").on(table.techniqueType),
+    index("cookbook_techniques_deleted_at_idx").on(table.deletedAt),
   ],
 );
 
