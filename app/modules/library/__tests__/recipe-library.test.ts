@@ -364,6 +364,51 @@ describe("recipe library query helpers", () => {
     expect(results.some((recipe) => recipe.tags.length > 0)).toBe(true);
   });
 
+  it("uses explicit imported cookbook chapter markers outside tag facets", () => {
+    const recipes = [
+      {
+        ...seedRecipes[0],
+        id: "smoothie",
+        source: {
+          type: "imported" as const,
+          name: "America's Test Kitchen - The Complete Guide to Healthy Drinks",
+        },
+        tags: ["Beverage", "chapter:Smoothies"],
+      },
+      {
+        ...seedRecipes[1],
+        id: "juice",
+        source: {
+          type: "imported" as const,
+          name: "America's Test Kitchen - The Complete Guide to Healthy Drinks",
+        },
+        tags: ["Beverage", "chapter:Juices"],
+      },
+    ];
+    const query = parseRecipeLibraryQuery("https://spice.test/");
+    const tree = getRecipeCookbookTree(recipes, query);
+    const cookbook = tree[0]?.cookbooks[0];
+    const tagFacet = getRecipeLibraryFacets(recipes, query).find(
+      (facet) => facet.id === "tag",
+    );
+    const smoothieResults = getRecipeLibraryResults(
+      recipes,
+      parseRecipeLibraryQuery(
+        "https://spice.test/?chapter=Smoothies&cookbook=America%27s%20Test%20Kitchen%20-%20The%20Complete%20Guide%20to%20Healthy%20Drinks",
+      ),
+    );
+
+    expect(cookbook?.chapters.map((chapter) => chapter.label).sort()).toEqual([
+      "Juices",
+      "Smoothies",
+    ]);
+    expect(cookbook?.chapters.find((chapter) => chapter.label === "Smoothies")?.href).toBe(
+      "/?chapter=Smoothies&cookbook=America%27s+Test+Kitchen+-+The+Complete+Guide+to+Healthy+Drinks",
+    );
+    expect(tagFacet?.options.map((option) => option.value)).toEqual(["Beverage"]);
+    expect(smoothieResults.map((recipe) => recipe.id)).toEqual(["smoothie"]);
+  });
+
   it("keeps the full tag facet list for scalable vertical browsing", () => {
     const manyTags = Array.from({ length: 24 }, (_, index) => `tag-${index + 1}`);
     const facets = getRecipeLibraryFacets(

@@ -96,7 +96,11 @@ try {
         : undefined;
       const now = new Date().toISOString();
       const draftRecipe = entry.draftRecipe;
-      const tags = inferRecipeTags(draftRecipe);
+      const chapter = getCookbookImportChapter(sourceName, entry.sourceDocumentPath);
+      const tags = [
+        ...inferRecipeTags(draftRecipe),
+        ...(chapter ? [`chapter:${chapter}`] : []),
+      ];
       const id = createImportedId(draftRecipe.title, `${bookSlug}:${entry.id}`);
       const recipe = recipeSchema.parse({
         ...draftRecipe,
@@ -148,7 +152,13 @@ try {
         pageNumber: technique.pageNumber,
         imageUrl,
         blocks: technique.blocks,
-        tags: Array.from(new Set(["technique", technique.type])),
+        tags: Array.from(
+          new Set([
+            "technique",
+            technique.type,
+            ...getCookbookImportChapterTags(sourceName, technique.sourceDocumentPath),
+          ]),
+        ),
         createdAt: now,
         updatedAt: now,
       };
@@ -289,6 +299,42 @@ function inferRecipeTags(recipe) {
   addTagIf(tags, "Vegetarian", !hasAnimalProtein(text) && hasVegetableFocus(text));
 
   return tags.slice(0, 5);
+}
+
+function getCookbookImportChapterTags(sourceName, documentPath) {
+  const chapter = getCookbookImportChapter(sourceName, documentPath);
+
+  return chapter ? [`chapter:${chapter}`] : [];
+}
+
+function getCookbookImportChapter(sourceName, documentPath) {
+  if (sourceName === "Andrew Rea - Binging with Babish") {
+    return "The Recipes";
+  }
+
+  if (sourceName === "America's Test Kitchen - The Complete Guide to Healthy Drinks") {
+    if (/c01/i.test(documentPath)) {
+      return "Smoothies";
+    }
+
+    if (/c02/i.test(documentPath)) {
+      return "Juices";
+    }
+
+    if (/c03/i.test(documentPath)) {
+      return "Teas, Tisanes & More";
+    }
+
+    if (/c04/i.test(documentPath)) {
+      return "Flavored Waters";
+    }
+
+    if (/c05/i.test(documentPath)) {
+      return "Fermented, Soaked & Simmered";
+    }
+  }
+
+  return "";
 }
 
 function getRecipeIngredientTagText(recipe) {

@@ -622,6 +622,12 @@ function getCookbookChapterLabels(
     return chapterOverrides.map(normalizeTag).filter(Boolean);
   }
 
+  const explicitChapters = getExplicitCookbookChapterLabels(recipe);
+
+  if (explicitChapters.length > 0) {
+    return explicitChapters;
+  }
+
   const cookbookTitle = getCookbookTitleLabel(cookbook);
   const excludedTags = new Set([
     normalizeTag(author),
@@ -674,6 +680,7 @@ function getVisibleTagLabels(recipe: RecipeLibraryItem): string[] {
     normalizeTag(getCookbookAuthorLabel(cookbook)),
     normalizeTag(cookbook),
     normalizeTag(cookbookTitle),
+    ...tags.filter(isExplicitCookbookChapterTag),
     "Easy",
     "Medium",
     "Hard",
@@ -682,6 +689,23 @@ function getVisibleTagLabels(recipe: RecipeLibraryItem): string[] {
   ]);
 
   return tags.filter((tag) => !hiddenTags.has(tag));
+}
+
+function getExplicitCookbookChapterLabels(recipe: RecipeLibraryItem): string[] {
+  return [
+    ...new Set(
+      recipe.tags
+        .map(normalizeTag)
+        .filter(isExplicitCookbookChapterTag)
+        .map((tag) => tag.replace(/^chapter:\s*/i, ""))
+        .map(normalizeTag)
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function isExplicitCookbookChapterTag(tag: string): boolean {
+  return /^chapter:\s*\S/i.test(tag);
 }
 
 function getWebsiteFacetOptions(
