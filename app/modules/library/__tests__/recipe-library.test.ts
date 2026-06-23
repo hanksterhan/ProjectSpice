@@ -346,6 +346,28 @@ describe("recipe library query helpers", () => {
     );
   });
 
+  it("keeps the full cookbook tree available while marking selected chapter filters", () => {
+    const query = parseRecipeLibraryQuery(
+      "https://spice.test/?chapter=Staples%20From%20Scratch&cookbook=Joshua%20Weissman%20-%20An%20Unapologetic%20Cookbook",
+    );
+    const tree = getRecipeCookbookTree(seedRecipes, query);
+    const joshua = tree.find((author) => author.label === "Joshua Weissman");
+    const unapologetic = joshua?.cookbooks.find(
+      (cookbook) => cookbook.label === "An Unapologetic Cookbook",
+    );
+    const selectedChapter = unapologetic?.chapters.find(
+      (chapter) => chapter.label === "Staples From Scratch",
+    );
+
+    expect(tree.map((author) => author.label)).toContain("Claire Saffitz");
+    expect(joshua?.cookbooks.map((cookbook) => cookbook.label)).toEqual([
+      "An Unapologetic Cookbook",
+      "Texture Over Taste",
+    ]);
+    expect(unapologetic?.selected).toBe(false);
+    expect(selectedChapter?.selected).toBe(true);
+  });
+
   it("filters cookbook chapters separately from tags", () => {
     const results = getRecipeLibraryResults(
       seedRecipes,

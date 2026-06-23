@@ -50,8 +50,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     drawerData: {
       activeFilters: getActiveLibraryFilters(query),
-      cookbookTree: getRecipeCookbookTree(matchingRecipes, query),
-      facets: getRecipeLibraryFacets(matchingRecipes, query),
+      cookbookTree: getRecipeCookbookTree(allRecipes, query),
+      facets: getRecipeLibraryFacets(allRecipes, query),
       hasSearch: query.q.length > 0,
       query,
     },
