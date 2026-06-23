@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChefHat, Tag } from "lucide-react";
-import { Form, Link, redirect } from "react-router";
+import { Form, Link, redirect, useNavigate, useNavigation } from "react-router";
 
 import type { Route } from "./+types/home";
 import { getCookSessionHref } from "~/modules/cooking";
@@ -135,7 +135,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const isGridView = query.view === "grid";
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const lastRequestedPageRef = useRef(query.page ?? 1);
+  const navigate = useNavigate();
+  const navigation = useNavigation();
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
+  const currentPage = query.page ?? 1;
+  const nextPageHref = recipePage.hasMore
+    ? getLibraryQueryHref({ ...query, page: currentPage + 1 })
+    : undefined;
+  const isLoadingMore =
+    navigation.state !== "idle" &&
+    navigation.location?.pathname === "/" &&
+    navigation.location.search === new URL(nextPageHref ?? "/", "https://spice.local").search;
   const resultLabel =
     recipePage.totalCount === 1 ? "1 recipe" : `${recipePage.totalCount} recipes`;
   const visibleResultLabel = recipePage.hasMore
@@ -156,6 +168,39 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   );
 
   useShellDrawer(drawer);
+
+  useEffect(() => {
+    lastRequestedPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    const loadMoreNode = loadMoreRef.current;
+
+    if (!loadMoreNode || !nextPageHref || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const nextPage = currentPage + 1;
+
+        if (!entry?.isIntersecting || lastRequestedPageRef.current >= nextPage) {
+          return;
+        }
+
+        lastRequestedPageRef.current = nextPage;
+        navigate(nextPageHref, {
+          preventScrollReset: true,
+          replace: true,
+        });
+      },
+      { rootMargin: "720px 0px 720px" },
+    );
+
+    observer.observe(loadMoreNode);
+
+    return () => observer.disconnect();
+  }, [currentPage, isLoadingMore, navigate, nextPageHref]);
 
   return (
     <div className="library-page">
@@ -295,13 +340,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 )}
               </div>
               {recipePage.hasMore ? (
-                <div className="library-pagination">
-                  <Link
-                    className="button button-secondary"
-                    to={getLibraryQueryHref({ ...query, page: (query.page ?? 1) + 1 })}
-                  >
-                    Load more recipes
-                  </Link>
+                <div
+                  ref={loadMoreRef}
+                  className="library-scroll-loader"
+                  aria-live="polite"
+                  aria-busy={isLoadingMore ? "true" : "false"}
+                >
+                  <span className={isLoadingMore ? undefined : "sr-only"}>
+                    {isLoadingMore ? "Loading more recipes..." : "More recipes will load automatically."}
+                  </span>
                 </div>
               ) : null}
             </Form>

@@ -5,7 +5,7 @@ test("recipe loop covers library, CRUD, responsive detail, and mocked AI transfo
 }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /recipes$/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Load more recipes" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Load more recipes" })).toHaveCount(0);
 
   await page.goto("/recipes/new?mode=manual");
   await expect(

@@ -1838,11 +1838,19 @@ p {
   min-width: 0;
 }
 
-.library-pagination {
+.library-scroll-loader {
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: center;
+  min-height: 3.25rem;
   padding-top: 0.85rem;
+}
+
+.library-scroll-loader span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .recipe-grid-image-link {
