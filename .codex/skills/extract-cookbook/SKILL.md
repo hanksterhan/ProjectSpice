@@ -1,0 +1,65 @@
+---
+name: extract-cookbook
+description: This skill should be used when extracting cookbook EPUB files into ProjectSpice recipes, recipe images, cookbook chapters, and cookbook techniques, including auditing image matches, variants, deduplication, and sidebar/library integration.
+---
+
+# Extract Cookbook
+
+Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native in the recipe library. Prioritize a careful, auditable extraction over a blind bulk import.
+
+## Start Here
+
+1. Read `references/extraction-playbook.md` before changing extractor logic or running an import.
+2. Read `references/projectspice-integration.md` before touching ProjectSpice schema, importer, image output, tags, cookbook chapters, techniques, sidebar behavior, or tests.
+3. Inspect the target EPUB structure before assuming it matches previous books. Check OPF metadata, spine order, nav/TOC, XHTML class names, pagebreak markers, image paths, captions, and representative recipe pages.
+4. Work chapter by chapter. Confirm recipe counts, chapter labels, image coverage, and technique candidates for each chapter before applying data broadly.
+5. Treat the first import as a draft. Audit representative rows and images before applying to local D1 or committing generated assets.
+
+## Core ProjectSpice Rules
+
+- Store cookbook identity in `source.name`, usually `Author - Cookbook Title`; do not encode cookbook identity as normal recipe tags.
+- Store cookbook chapter membership as internal `chapter:<label>` tags so the library can render chapter rows under the cookbook tree. Keep those markers out of visible tag facets.
+- Use ordinary tags only for culinary facets such as `Protein`, `Vegetarian`, `Beverage`, `Dessert`, `Sauce`, `Bread`, `Fermented`, `Fish`, `Salad`, `Curry`, and `Snacks`.
+- Prefer no image over a bad image. Do not attach title cards, chapter headers, captions, decorative art, indexes, or low-confidence placeholders.
+- Accept that some real recipes do not have a picture.
+- Use captions, image anchors, page numbers, inline image placement, and nearby context to assign images to the right recipe. Reuse an image for only one recipe unless there is strong book evidence that the image truly represents multiple entries.
+- Fold small recipe variants into the parent recipe `variations` array when they are presented as variations of a base recipe. Do not create duplicate standalone recipes for those variants.
+- Record techniques separately from recipes when the content teaches a process, formula, table, checklist, troubleshooting guide, or reusable reference knowledge without a full recipe ingredient/direction structure.
+- Techniques are first-class reference content in ProjectSpice. Keep them available through `/techniques` and the left drawer, not hidden under a cookbook submenu.
+
+## Current Code Anchors
+
+- EPUB extraction: `app/server/cookbook-epub/cookbook-epub.extractor.ts`
+- EPUB extraction types: `app/server/cookbook-epub/cookbook-epub.types.ts`
+- EPUB import and image writing: `scripts/import-cookbook-epub.mjs`
+- Extractor tests and regression examples: `app/server/cookbook-epub/__tests__/cookbook-epub.extractor.test.ts`
+- Recipe schema and fixtures: `app/modules/recipe-domain/`
+- Library cookbook tree and hidden chapter tags: `app/modules/library/recipe-library.ts`
+- Cookbook techniques persistence: `app/server/db/migrations/0005_cookbook_techniques.sql`, `app/server/cookbook-techniques/`
+- Techniques UI: `app/routes/techniques.tsx`, `app/routes/techniques.$slug.tsx`
+- Cookbook image assets: `public/recipe-images/cookbooks/<book-slug>/`
+
+## Standard Workflow
+
+1. Inspect the EPUB metadata and structure.
+2. Identify real book chapters from the nav/TOC or spine/page ranges.
+3. Sample several pages per chapter, including at least one recipe with image, one recipe without image if present, one variant block, and one non-recipe technique/sidebar.
+4. Update extractor heuristics only as needed for durable patterns, not one-off title hacks.
+5. Run focused extractor tests and add regression assertions for new structural discoveries.
+6. Dry-run the importer and inspect the JSON summary plus generated SQL for source names, chapter markers, tag shape, recipe count, technique count, warnings, and image file count.
+7. Audit generated images by opening representative assets and comparing them to recipe titles/captions/page numbers.
+8. Apply locally only after the dry run looks right.
+9. Verify local D1 rows for sources, chapters, hidden tags, representative recipes, variants, techniques, and image URLs.
+10. Run `pnpm test`, `pnpm lint`, `pnpm typecheck`, and any targeted visual checks needed for sidebar/library behavior.
+
+## Useful Commands
+
+```bash
+pnpm test app/server/cookbook-epub/__tests__/cookbook-epub.extractor.test.ts
+pnpm test app/modules/library/__tests__/recipe-library.test.ts
+pnpm cookbook:import -- --out /tmp/projectspice-cookbook-import.sql "/absolute/path/to/book.epub"
+pnpm cookbook:import -- --apply --local "/absolute/path/to/book.epub"
+```
+
+Use `--remote` only when the user explicitly asks to update the remote Cloudflare D1 database.
+
