@@ -916,9 +916,11 @@ p {
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 8px;
+  content-visibility: auto;
   display: grid;
   gap: 0.75rem;
   grid-template-columns: 4rem minmax(0, 1fr);
+  contain-intrinsic-size: auto 5.75rem;
   min-height: 5rem;
   padding: 0.55rem;
 }
@@ -1841,6 +1843,14 @@ p {
   margin-bottom: 0;
 }
 
+.results-count-detail {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.2rem 0 0;
+}
+
 .results-header .tabs {
   flex: 0 0 16rem;
   margin-bottom: 0;
@@ -1872,10 +1882,19 @@ p {
 
 .recipe-grid-tile {
   align-content: start;
+  content-visibility: auto;
   display: grid;
   gap: 0.35rem;
   grid-template-rows: auto auto 1.1rem;
+  contain-intrinsic-size: auto 14.5rem;
   min-width: 0;
+}
+
+.library-pagination {
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: center;
+  padding-top: 0.85rem;
 }
 
 .recipe-grid-image-link {
@@ -1952,6 +1971,8 @@ p {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 8px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 18.5rem;
   display: grid;
   grid-template-rows: 9.25rem minmax(0, 1fr);
   min-height: 18.5rem;

@@ -59,6 +59,7 @@ export type RecipeLibraryQuery = {
   cookbooks: string[];
   direction: RecipeLibrarySortDirection;
   favorite: boolean;
+  page?: number;
   q: string;
   sort: RecipeLibrarySort;
   sources: string[];
@@ -69,6 +70,15 @@ export type RecipeLibraryQuery = {
 };
 
 export type RecipeLibraryItem = RecipeSummary;
+
+export const recipeLibraryPageSize = 72;
+
+export type RecipeLibraryPage = {
+  hasMore: boolean;
+  recipes: RecipeLibraryItem[];
+  totalCount: number;
+  visibleCount: number;
+};
 
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
   const searchParams = new URL(url).searchParams;
@@ -85,6 +95,7 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
       ? direction
       : getDefaultSortDirection(safeSort),
     favorite,
+    page: parsePositiveInteger(searchParams.get("page")) ?? 1,
     q: searchParams.get("q")?.trim() ?? "",
     sort: safeSort,
     sources: parseQueryList(searchParams.getAll("source")),
@@ -92,6 +103,21 @@ export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
     topRated: !favorite && searchParams.get("topRated") === "1",
     view: isRecipeLibraryView(view) ? view : "grid",
     websites: parseQueryList(searchParams.getAll("website")),
+  };
+}
+
+export function getRecipeLibraryPage(
+  recipes: readonly RecipeLibraryItem[],
+  query: Pick<RecipeLibraryQuery, "page">,
+): RecipeLibraryPage {
+  const page = query.page ?? 1;
+  const visibleCount = Math.min(recipes.length, page * recipeLibraryPageSize);
+
+  return {
+    hasMore: visibleCount < recipes.length,
+    recipes: recipes.slice(0, visibleCount),
+    totalCount: recipes.length,
+    visibleCount,
   };
 }
 
@@ -218,6 +244,7 @@ export function getRecipeCookbookTree(
         ...query,
         cookbooks: cookbookLabels,
         chapters: [],
+        page: 1,
         tags: [],
       });
       const cookbooks = [...authorGroup.cookbooks.entries()]
@@ -227,6 +254,7 @@ export function getRecipeCookbookTree(
             ...query,
             cookbooks: [cookbook],
             chapters: [],
+            page: 1,
             tags: [],
           }),
           id: `cookbook:${cookbook}`,
@@ -243,6 +271,7 @@ export function getRecipeCookbookTree(
                 ...query,
                 chapters: [chapter],
                 cookbooks: [cookbook],
+                page: 1,
                 tags: [],
               }),
               id: `chapter:${cookbook}:${chapter}`,
@@ -291,7 +320,11 @@ export function getActiveLibraryFilters(
       label: `Cookbook: ${getCookbookTitleLabel(value)}`,
     })),
     ...query.chapters.map((value) => ({
-      href: getLibraryQueryHref({ ...query, chapters: toggleValue(query.chapters, value) }),
+      href: getLibraryQueryHref({
+        ...query,
+        chapters: toggleValue(query.chapters, value),
+        page: 1,
+      }),
       id: `chapter:${value}`,
       label: `Chapter: ${value}`,
     })),
@@ -311,7 +344,12 @@ export function getRecipeSourceFilterLink(
 
   if (cookbook) {
     return {
-      href: getLibraryQueryHref({ ...query, cookbooks: [cookbook], websites: [] }),
+      href: getLibraryQueryHref({
+        ...query,
+        cookbooks: [cookbook],
+        page: 1,
+        websites: [],
+      }),
       label: cookbook,
     };
   }
@@ -320,7 +358,12 @@ export function getRecipeSourceFilterLink(
 
   if (website) {
     return {
-      href: getLibraryQueryHref({ ...query, cookbooks: [], websites: [website] }),
+      href: getLibraryQueryHref({
+        ...query,
+        cookbooks: [],
+        page: 1,
+        websites: [website],
+      }),
       label: website,
     };
   }
@@ -375,6 +418,10 @@ export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
     params.set("view", query.view);
   }
 
+  if ((query.page ?? 1) > 1) {
+    params.set("page", String(query.page));
+  }
+
   const search = params.toString();
 
   return search ? `/?${search}` : "/";
@@ -386,18 +433,18 @@ export function toggleFacetValue(
   value: string,
 ): RecipeLibraryQuery {
   if (facet === "tag") {
-    return { ...query, tags: toggleValue(query.tags, value) };
+    return { ...query, page: 1, tags: toggleValue(query.tags, value) };
   }
 
   if (facet === "source") {
-    return { ...query, sources: toggleValue(query.sources, value) };
+    return { ...query, page: 1, sources: toggleValue(query.sources, value) };
   }
 
   if (facet === "website") {
-    return { ...query, websites: toggleValue(query.websites, value) };
+    return { ...query, page: 1, websites: toggleValue(query.websites, value) };
   }
 
-  return { ...query, cookbooks: toggleValue(query.cookbooks, value) };
+  return { ...query, cookbooks: toggleValue(query.cookbooks, value), page: 1 };
 }
 
 export function parseBulkTagText(value: string): string[] {
@@ -467,6 +514,16 @@ function isRecipeLibrarySortDirection(
 
 function isRecipeLibraryView(value: string | null): value is RecipeLibraryView {
   return recipeLibraryViewOptions.includes(value as RecipeLibraryView);
+}
+
+function parsePositiveInteger(value: string | null): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 export function getDefaultSortDirection(

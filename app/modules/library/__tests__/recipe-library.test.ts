@@ -6,6 +6,7 @@ import {
   getActiveLibraryFilters,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
+  getRecipeLibraryPage,
   getRecipeLibraryResults,
   getRecipeSourceFilterLink,
   otherWebsitesFacetValue,
@@ -25,6 +26,7 @@ describe("recipe library query helpers", () => {
       cookbooks: ["Whats for Dessert"],
       direction: "desc",
       favorite: false,
+      page: 1,
       q: "mango",
       sort: "time",
       sources: ["Cookbook"],
@@ -50,6 +52,7 @@ describe("recipe library query helpers", () => {
       cookbooks: [],
       direction: "desc",
       favorite: false,
+      page: 1,
       q: "",
       sort: "recent",
       sources: [],
@@ -58,6 +61,28 @@ describe("recipe library query helpers", () => {
       view: "grid",
       websites: [],
     });
+  });
+
+  it("caps visible library recipes by page while preserving total counts", () => {
+    const recipes = Array.from({ length: 80 }, (_, index) => ({
+      ...seedRecipes[index % seedRecipes.length],
+      id: `recipe-${index}`,
+    }));
+    const firstPage = getRecipeLibraryPage(recipes, { page: 1 });
+    const expandedPage = getRecipeLibraryPage(recipes, { page: 2 });
+
+    expect(firstPage).toMatchObject({
+      hasMore: true,
+      totalCount: 80,
+      visibleCount: 72,
+    });
+    expect(firstPage.recipes).toHaveLength(72);
+    expect(expandedPage).toMatchObject({
+      hasMore: false,
+      totalCount: 80,
+      visibleCount: 80,
+    });
+    expect(expandedPage.recipes).toHaveLength(80);
   });
 
   it("filters across title, description, tags, yield, and source text", () => {

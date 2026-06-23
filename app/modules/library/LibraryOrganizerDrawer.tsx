@@ -54,7 +54,7 @@ export function LibraryOrganizerDrawer({
     }
 
     const timeout = window.setTimeout(() => {
-      navigate(getLibraryQueryHref({ ...query, q: searchValue }), { replace: true });
+      navigate(getLibraryQueryHref({ ...query, page: 1, q: searchValue }), { replace: true });
     }, 250);
 
     return () => window.clearTimeout(timeout);
@@ -223,7 +223,7 @@ function FilterStateChips({
       {hasSearch ? (
         <Link
           className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, q: "" })}
+          to={getLibraryQueryHref({ ...query, page: 1, q: "" })}
         >
           Search: {query.q}
           <span aria-hidden="true">x</span>
@@ -238,7 +238,7 @@ function FilterStateChips({
       {query.favorite ? (
         <Link
           className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, favorite: false })}
+          to={getLibraryQueryHref({ ...query, favorite: false, page: 1 })}
         >
           Favorites
           <span aria-hidden="true">x</span>
@@ -247,7 +247,7 @@ function FilterStateChips({
       {query.topRated ? (
         <Link
           className="active-filter-chip"
-          to={getLibraryQueryHref({ ...query, topRated: false })}
+          to={getLibraryQueryHref({ ...query, page: 1, topRated: false })}
         >
           Top rated
           <span aria-hidden="true">x</span>
@@ -632,6 +632,7 @@ function getLibraryModeHref(
     ...query,
     direction: mode.direction ?? getDefaultSortDirection(mode.sort),
     favorite: mode.favorite ?? false,
+    page: 1,
     sort: mode.sort,
     topRated: mode.topRated ?? false,
   });
@@ -666,6 +667,7 @@ function getClearFiltersHref(query: RecipeLibraryQuery) {
     chapters: [],
     cookbooks: [],
     favorite: false,
+    page: 1,
     q: "",
     sources: [],
     tags: [],

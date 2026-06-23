@@ -204,6 +204,12 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
   const [hasError, setHasError] = useState(false);
   const displaySrc = getDisplayImageSrc(src);
   const shouldUseFallback = !displaySrc || hasError || displaySrc.includes("/mock-images/");
+  const {
+    decoding = "async",
+    loading = "lazy",
+    sizes = "(max-width: 720px) 45vw, (max-width: 1180px) 22vw, 16vw",
+    ...imageProps
+  } = props;
 
   if (shouldUseFallback) {
     return (
@@ -218,8 +224,11 @@ export function RecipeImage({ src, title, alt, className = "", ...props }: Recip
       className={className}
       src={displaySrc}
       alt={alt ?? title}
+      decoding={decoding}
+      loading={loading}
       onError={() => setHasError(true)}
-      {...props}
+      sizes={sizes}
+      {...imageProps}
     />
   );
 }

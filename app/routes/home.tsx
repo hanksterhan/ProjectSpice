@@ -9,6 +9,7 @@ import {
   addRecipeTags,
   getActiveLibraryFilters,
   getLibraryQueryHref,
+  getRecipeLibraryPage,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeSourceFilterLink,
@@ -43,11 +44,20 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const query = parseRecipeLibraryQuery(request.url);
   const allRecipes = await getRecipeService(context).listSummaries();
-  const recipes = getRecipeLibraryResults(allRecipes, query);
+  const matchingRecipes = getRecipeLibraryResults(allRecipes, query);
+  const recipePage = getRecipeLibraryPage(matchingRecipes, query);
 
   return {
+    drawerData: {
+      activeFilters: getActiveLibraryFilters(query),
+      cookbookTree: getRecipeCookbookTree(matchingRecipes, query),
+      facets: getRecipeLibraryFacets(matchingRecipes, query),
+      hasSearch: query.q.length > 0,
+      query,
+    },
     query,
-    recipes,
+    recipePage,
+    recipes: recipePage.recipes,
   };
 }
 
@@ -115,29 +125,39 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const fallbackQuery = parseRecipeLibraryQuery("https://spice.local/");
   const {
+    drawerData,
     query = fallbackQuery,
     recipes = [],
   } = loaderData ?? {};
+  const recipePage = loaderData?.recipePage ?? {
+    hasMore: false,
+    recipes,
+    totalCount: recipes.length,
+    visibleCount: recipes.length,
+  };
   const isGridView = query.view === "grid";
   const isListView = query.view === "list";
   const [isBulkMode, setIsBulkMode] = useState(false);
   const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
   const resultLabel =
-    recipes.length === 1 ? "1 recipe" : `${recipes.length} recipes`;
+    recipePage.totalCount === 1 ? "1 recipe" : `${recipePage.totalCount} recipes`;
+  const visibleResultLabel = recipePage.hasMore
+    ? `Showing ${recipePage.visibleCount} of ${recipePage.totalCount}`
+    : `${recipePage.totalCount} shown`;
   const drawer = useMemo(
     () => ({
       title: "Organize Library",
       content: (
         <LibraryOrganizerDrawer
-          activeFilters={getActiveLibraryFilters(query)}
-          cookbookTree={getRecipeCookbookTree(recipes, query)}
-          facets={getRecipeLibraryFacets(recipes, query)}
-          hasSearch={query.q.length > 0}
+          activeFilters={drawerData?.activeFilters ?? getActiveLibraryFilters(query)}
+          cookbookTree={drawerData?.cookbookTree ?? getRecipeCookbookTree(recipes, query)}
+          facets={drawerData?.facets ?? getRecipeLibraryFacets(recipes, query)}
+          hasSearch={drawerData?.hasSearch ?? query.q.length > 0}
           query={query}
         />
       ),
     }),
-    [query, recipes],
+    [drawerData, query, recipes],
   );
 
   useShellDrawer(drawer);
@@ -148,6 +168,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         <div className="results-header">
           <div>
             <h2 id="results-heading">{resultLabel}</h2>
+            <p className="results-count-detail">{visibleResultLabel}</p>
           </div>
           <div className="results-header-actions">
             <Button
@@ -278,6 +299,16 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   ),
                 )}
               </div>
+              {recipePage.hasMore ? (
+                <div className="library-pagination">
+                  <Link
+                    className="button button-secondary"
+                    to={getLibraryQueryHref({ ...query, page: (query.page ?? 1) + 1 })}
+                  >
+                    Load more recipes
+                  </Link>
+                </div>
+              ) : null}
             </Form>
           ) : (
             <EmptyState
@@ -357,24 +388,24 @@ function getViewTabs(query: RecipeLibraryQuery) {
     {
       id: "grid",
       label: "Grid",
-      href: getLibraryQueryHref({ ...query, view: "grid" }),
+      href: getLibraryQueryHref({ ...query, page: 1, view: "grid" }),
       selected: query.view === "grid",
     },
     {
       id: "cards",
       label: "Cards",
-      href: getLibraryQueryHref({ ...query, view: "cards" }),
+      href: getLibraryQueryHref({ ...query, page: 1, view: "cards" }),
       selected: query.view === "cards",
     },
     {
       id: "list",
       label: "List",
-      href: getLibraryQueryHref({ ...query, view: "list" }),
+      href: getLibraryQueryHref({ ...query, page: 1, view: "list" }),
       selected: query.view === "list",
     },
   ];
 }
 
 function getSearchHref(query: RecipeLibraryQuery, tag: string) {
-  return getLibraryQueryHref({ ...query, tags: [tag] });
+  return getLibraryQueryHref({ ...query, page: 1, tags: [tag] });
 }
