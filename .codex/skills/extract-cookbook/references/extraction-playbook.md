@@ -18,6 +18,7 @@ Turn one or more cookbook EPUB files into high-confidence ProjectSpice recipe dr
 - `The Salad Lab` exposed a photo-order failure mode: Calibre split EPUBs can use standalone image-only documents immediately before recipe title pages, plus occasional decorative or second image pages between recipes. The first import assigned several photos to the previous recipe; `Panzanella` received the following potato salad photo until segment boundaries treated standalone lead-image pages as part of the next recipe.
 - `Mastering the Art of Japanese Home Cooking` exposed a multi-image failure mode: recipes can include ordered process-photo grids where several real inline images are smaller than a global "likely photo" byte threshold. `Vegetable Temaki` has five same-section step photos; `Spicy Tuna Temaki`, `Hakumai`, `Battera`, `Tamagoyaki`, `Gyoza`, and `Homemade Udon` are useful gallery-count audit cases. Strong inline/caption evidence may justify smaller images, while weak nearby fallback images should remain conservative.
 - `Half Baked Harvest Every Day` exposed a metadata enrichment gap: recipe pages had explicit `PREP`, `COOK`, `TOTAL`, and serving blocks, but the first import only populated servings. Future imports should inspect and preserve available prep/cook/total timing metadata, accepting that total time is sometimes omitted or unavailable for subrecipes and drinks.
+- `Half Baked Harvest Super Simple` exposed a same-file interstitial image failure mode: full-page/process/table-spread images can appear immediately before the next recipe title while actually belonging to the previous recipe or to a chapter/table spread. `Blackout Chocolate Cake` must use its own chocolate cake photo, not the preceding `Strawberry Naked Cake` process grid; `Easiest Cinnamon-Apple Tarts` must use its tart photo, not the multi-cake spread; `Spaghetti Squash Alfredo` must not steal the pot-sticker process grid. When a pre-title image is followed by a clear post-title recipe photo, prefer the post-title photo for the next recipe and audit whether the pre-title image belongs backward or should be excluded.
 
 ## EPUB Inspection Checklist
 
@@ -31,6 +32,7 @@ Inspect the EPUB before changing code:
 - Sample each major chapter rather than only the first recipe.
 - For photo-instructive cookbooks, inspect at least one process-heavy recipe with many images and one neighboring recipe with few or no images. Record the expected image count from raw XHTML before trusting import output.
 - For split-file cookbooks, map a short run of spine documents around representative recipes. Record whether the pattern is image page -> recipe page, recipe page -> image page, two image pages -> recipe page, or image inside the same recipe page.
+- For same-file chapter cookbooks, map image runs between adjacent recipe headings. Record whether a full-page or process-grid image appears before the next heading and whether that next recipe also has a post-title image; this often means the pre-title image should not be assigned forward.
 
 ## Recipe Detection
 
@@ -79,6 +81,8 @@ Rank evidence in this order:
 3. Caption-linked image where the caption anchor points to the recipe heading.
 4. Same-page or nearby-page image fallback for techniques, or for recipes only after explicit user acceptance and careful audit.
 
+Do not treat every pre-title image as a lead image. If a recipe title is followed by its own clear recipe photo, a pre-title image in the same XHTML file is more likely to belong to the previous recipe or to a non-specific table/process spread. Assign it backward only when it is inside the previous recipe's segment and visually matches that recipe; otherwise exclude it.
+
 Preserve image galleries:
 
 - Keep all high-confidence recipe photos in EPUB order when they are inline in the recipe segment, share a caption/title run, or belong to the same standalone lead-image run.
@@ -101,6 +105,8 @@ Audit split-file image runs:
 - If two standalone image pages occur between recipes, visually check both. The first may belong to the previous recipe and the second may belong to the next, but decorative plate/table images should be rejected or allowed only as secondary candidates, never silently made primary.
 - If several image blocks sit between a caption/title and the recipe ingredients/directions, treat them as a possible process-photo sequence and compare the raw count to generated `imageUrls.length`.
 - If an image appears immediately after a recipe's directions, verify whether it is a real recipe photo, an experiment/note marker, or a decorative asset. Small repeated note icons should not pass as recipe photos even when they are structurally inline.
+- If an image appears after one recipe's directions and immediately before the next recipe title in the same document, inspect both neighboring recipes. A process grid may belong to the previous recipe, while a multi-recipe table spread may belong to neither; it should not silently become the next recipe's primary image.
+- If a recipe has two candidate primary images and the first is a pre-title image while the second is a post-title `project_img`/inline recipe photo, open both bitmaps. Prefer the post-title recipe-specific image unless the source clearly marks the earlier image as the recipe's lead photo.
 - Print or query both title -> primary image and title -> image count maps for at least one suspicious chapter run. Look for one-off shifts where every recipe appears to have the next recipe's image, and count mismatches where process-heavy recipes have only one image.
 - Open representative bitmaps, not just filenames. Filename sequence numbers are weak evidence when the book has no page-numbered assets or captions.
 
@@ -110,6 +116,7 @@ Reject likely bad images:
 - Small assets under the current size threshold unless manual audit proves they are real.
 - Images whose filenames/classes/captions indicate TOC, chapter opener, border, icon, logo, caption, or decorative art.
 - Any image that visually contains only title text, chapter text, or design elements.
+- General table spreads or multi-recipe beauty shots that include several unrelated dishes, unless the book explicitly treats the spread as a gallery for one recipe.
 - Pure styling photos such as empty plates, utensils, table surfaces, or blank ingredient props unless the cookbook clearly uses them as the recipe's only intentional image.
 
 Deduplicate recipe images:
@@ -173,6 +180,8 @@ After extraction, inspect:
 - Representative recipes from every chapter.
 - Timing coverage: counts for recipes with prep, cook, and total minutes; spot-check representative values against raw XHTML. Missing total time is acceptable when the source omits it.
 - Top `imageUrls.length` galleries, recipes with `imageUrls.length === 0`, and recipes whose raw XHTML shows more images than imported JSON.
+- Recipes whose `imageUrls.length > 1` only because an image sits before the heading; verify those images are truly a gallery for that recipe.
+- Neighboring heading runs where a pre-title image is followed by a post-title image. Confirm the next recipe's primary image is recipe-specific and the interstitial image is assigned backward or excluded.
 - At least three image matches from each image assignment mode: inline, caption-linked, nearby if used.
 - At least one known process-heavy recipe by opening raw XHTML and comparing its inline/caption-linked image count to imported `imageUrls.length`.
 - For split-file layouts, at least one neighboring recipe run where photos were previously likely to shift backward or forward. Include concrete regression examples in tests.

@@ -63,6 +63,8 @@ Second-pass image audit:
 - Compare raw XHTML image blocks around representative recipes against generated `imageUrls.length`.
 - Print the top recipes by image count and spot-check their primary image plus several gallery thumbnails.
 - Inspect recipes with exactly `0` or `1` image when the raw source appears process-heavy.
+- Inspect recipes with `imageUrls.length > 1` where one candidate image appears before the recipe heading. If the next recipe has a clear post-title image, the pre-title candidate may belong to the previous recipe or to neither recipe.
+- Open interstitial process grids and table-spread images between adjacent recipe headings. Do not let a multi-recipe spread or neighboring process photo become a recipe's primary image simply because it is structurally adjacent.
 - Confirm small process photos were not dropped merely because they are below the hero-photo byte threshold.
 - Confirm decorative/title/chapter images did not enter galleries, especially when lowering thresholds for strong inline evidence.
 
@@ -83,6 +85,9 @@ When changing image heuristics, add regression tests with concrete recipes. Curr
 - Morimoto `Vegetable Temaki` preserves all five small inline process photos.
 - Morimoto `Spicy Tuna Temaki` preserves six inline process photos.
 - Morimoto `HAKUMAI: PERFECT WHITE RICE` and `BATTERA: PRESSED MACKEREL SUSHI` are useful gallery-count checks for page-spanning process images.
+- Half Baked Harvest Super Simple `Blackout Chocolate Cake` uses `OEBPS/images/414_GERA_9780525577072_art_r1.jpg`, not the preceding `Strawberry Naked Cake` process grid `OEBPS/images/184.jpg`.
+- Half Baked Harvest Super Simple `Easiest Cinnamon-Apple Tarts` uses `OEBPS/images/448_GERA_9780525577072_art_r1.jpg`, not the multi-cake spread `OEBPS/images/414_GERA_9780525577072_art_r11.jpg`.
+- Half Baked Harvest Super Simple `Spaghetti Squash Alfredo` uses `OEBPS/images/263_GERA_9780525577072_art_r1.jpg`, while `Hot-And-Spicy Pot Stickers` owns the preceding process grid `OEBPS/images/99.jpg`.
 
 ## Tags And Cookbook Chapters
 
@@ -164,6 +169,7 @@ Add regression coverage when:
 - Explicit prep/cook/total timing blocks are missing from `recipe.times` or import columns.
 - Small inline/caption-linked process photos require lower thresholds than nearby fallback images.
 - A no-image recipe was incorrectly assigned a decorative/title image.
+- A recipe incorrectly receives an interstitial image from a neighboring recipe or a general table spread, especially when a better post-title recipe photo exists.
 - A split-file cookbook has standalone image-only documents before recipe title pages or multiple image-only pages between neighboring recipes.
 - A variant was duplicated as a recipe.
 - A technique title needs contextual disambiguation.
@@ -180,6 +186,7 @@ After applying an import locally, query or inspect:
 - Representative recipe JSON for tags, variations, timing metadata, image URL, and source.
 - Timing coverage counts for `prep_minutes`, `cook_minutes`, `total_minutes`, plus spot checks that `recipe_json.times` matches the summary columns.
 - Representative recipe image URLs and `imageUrls.length` for known risky neighboring runs, especially where adjacent recipe photos could shift backward or forward or where process-photo grids should produce galleries.
+- Specific suspicious rows where one image sits between two recipes: verify primary image URLs and `recipe_json.imageUrls` against opened bitmap assets.
 - Technique rows for `source_name`, `technique_type`, `blocks_json`, and `image_url`.
 
 Keep generated image assets only when referenced by imported rows.
