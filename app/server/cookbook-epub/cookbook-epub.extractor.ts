@@ -422,7 +422,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
       headingLevel: tagName.startsWith("h") ? Number(tagName.slice(1)) : undefined,
       listValue: tagName === "li" ? parseListValue(attributes.value) : undefined,
       pageNumber: blockPageNumber,
-      blockIndex,
+      blockIndex: blocks.length,
       documentPath: document.path,
       spineIndex: document.spineIndex,
     });
@@ -554,6 +554,13 @@ function looksLikeCalibreSplitTitle(block: ContentBlock): boolean {
   return /class=["'][^"']*\bcalibre2\b/i.test(block.html);
 }
 
+function looksLikeMollyMoonRecipeHeading(block: ContentBlock): boolean {
+  return isMollyMoonDocumentPath(block.documentPath) &&
+    block.tagName === "h1" &&
+    /^(?:chapter|chapter1)$/i.test(block.className ?? "") &&
+    /^(?:c\d+|col\d+)$/i.test(block.id ?? "");
+}
+
 function looksLikeRecipeHeading(
   heading: ContentBlock,
   blocks: ContentBlock[],
@@ -566,6 +573,14 @@ function looksLikeRecipeHeading(
 
   if (/recipe[_-]?title|recipetitle|subrecipetitle/i.test(className)) {
     return true;
+  }
+
+  if (looksLikeMollyMoonRecipeHeading(heading)) {
+    return true;
+  }
+
+  if (isMollyMoonDocumentPath(heading.documentPath)) {
+    return false;
   }
 
   if (/mini_toc|toc|chapter|section|copyright|index/i.test(className)) {
@@ -1090,8 +1105,11 @@ function toIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
 
 function toDirectionSections(blocks: ContentBlock[]): DirectionSection[] {
   const saladLabDirections = toSaladLabDirectionLines(blocks);
+  const mollyMoonDirections = toMollyMoonDirectionLines(blocks);
   const lines = saladLabDirections.length > 0
     ? saladLabDirections
+    : mollyMoonDirections.length > 0
+      ? mollyMoonDirections
     : blocks
         .filter(isDirectionBlock)
         .flatMap((block) => splitDirectionText(block.text))
@@ -1268,6 +1286,46 @@ function looksLikeSaladLabDirectionLine(text: string): boolean {
   return /^(?:START OUT|WHISK|TOSS|ENJOY)\s*:/i.test(text);
 }
 
+function toMollyMoonDirectionLines(blocks: ContentBlock[]): string[] {
+  if (!blocks.some(looksLikeMollyMoonRecipeHeading)) {
+    return [];
+  }
+
+  const lines: string[] = [];
+  let hasYield = false;
+  let hasIngredient = false;
+
+  for (const block of blocks) {
+    if (block.type === "heading" || block.type === "image" || block.type === "pagebreak") {
+      continue;
+    }
+
+    if (isYieldBlock(block)) {
+      hasYield = true;
+      continue;
+    }
+
+    if (hasYield && looksLikeMollyMoonIngredientBlock(block)) {
+      hasIngredient = true;
+      continue;
+    }
+
+    if (!hasIngredient) {
+      continue;
+    }
+
+    if (/^notes?$/i.test(block.text)) {
+      break;
+    }
+
+    if (looksLikeMollyMoonDirectionBlock(block)) {
+      lines.push(...splitDirectionText(block.text).map(normalizeText).filter(isText));
+    }
+  }
+
+  return lines;
+}
+
 function looksLikeIngredientOrReferenceLine(text: string): boolean {
   return looksLikeIngredientLine(text) || /^[A-Z][\w\s-]+$/i.test(text);
 }
@@ -1295,7 +1353,7 @@ function looksLikeTwoListRecipeStructure(blocks: ContentBlock[]): boolean {
 }
 
 function looksLikeInstructionLine(text: string): boolean {
-  return /\b(preheat|cut|combine|whisk|stir|cook|bake|roast|toast|blend|slice|chop|place|add|serve|store|heat|bring|drain|rinse|season|select|lock|open|peel)\b/i.test(
+  return /\b(preheat|cut|combine|whisk|stir|cook|bake|roast|toast|blend|slice|chop|place|add|serve|store|heat|bring|drain|rinse|season|select|lock|open|peel|pour|freeze|transfer)\b/i.test(
     text,
   );
 }
@@ -1353,6 +1411,13 @@ function findImagesForSegment(
   }
 
   for (const block of segment.blocks) {
+    if (
+      looksLikeMollyMoonRecipeHeading(segment.heading) &&
+      block.documentPath !== segment.heading.documentPath
+    ) {
+      continue;
+    }
+
     if (block.type === "image" && block.imagePath) {
       const image = imagesByPath.get(block.imagePath);
 
@@ -1511,6 +1576,10 @@ function isDecorativeCookbookImage(
   image: ImageCatalogEntry,
   alt: string | undefined,
 ): boolean {
+  if (/neit_9781570617973_epub_l0[2-4]_r1\.jpg/i.test(image.epubPath)) {
+    return true;
+  }
+
   if (alt && !/^image$/i.test(alt)) {
     return true;
   }
@@ -1562,6 +1631,10 @@ function isIngredientBlock(block: ContentBlock): boolean {
     return true;
   }
 
+  if (looksLikeMollyMoonIngredientBlock(block)) {
+    return true;
+  }
+
   if (block.type !== "listItem") {
     return false;
   }
@@ -1574,7 +1647,8 @@ function isDirectionBlock(block: ContentBlock): boolean {
 
   return /step|method|direction|instruction|procedure/i.test(className) ||
     looksLikeMorimotoDirectionClass(className) ||
-    looksLikeHalfBakedHarvestDirectionBlock(block);
+    looksLikeHalfBakedHarvestDirectionBlock(block) ||
+    looksLikeMollyMoonDirectionBlock(block);
 }
 
 function isYieldBlock(block: ContentBlock): boolean {
@@ -1643,6 +1717,31 @@ function looksLikeHalfBakedHarvestDirectionBlock(block: ContentBlock): boolean {
     looksLikeInstructionLine(block.text);
 }
 
+function looksLikeMollyMoonIngredientBlock(block: ContentBlock): boolean {
+  const className = block.className ?? "";
+
+  return isMollyMoonDocumentPath(block.documentPath) &&
+    block.tagName === "p" &&
+    hasAnyClassToken(className, ["hanging", "hanging1", "extract3"]) &&
+    !/^(serves|makes|yields)\b/i.test(block.text) &&
+    looksLikeIngredientLine(block.text);
+}
+
+function looksLikeMollyMoonDirectionBlock(block: ContentBlock): boolean {
+  const className = block.className ?? "";
+
+  return isMollyMoonDocumentPath(block.documentPath) &&
+    block.tagName === "p" &&
+    hasAnyClassToken(className, ["nonindent", "extract", "extract3"]) &&
+    !isYieldBlock(block) &&
+    !looksLikeMollyMoonIngredientBlock(block) &&
+    looksLikeInstructionLine(block.text);
+}
+
+function isMollyMoonDocumentPath(documentPath: string): boolean {
+  return /Neit_9781570617973_epub_(?:c\d+|col\d+)_r1\.htm$/i.test(documentPath);
+}
+
 function looksLikeHalfBakedHarvestSectionHeading(block: ContentBlock): boolean {
   const className = block.className ?? "";
 
@@ -1709,12 +1808,23 @@ function isBackmatterBoundaryBlock(block: ContentBlock): boolean {
 }
 
 function looksLikeIngredientLine(text: string): boolean {
-  return /^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|one |two |three |four |five |six |seven |eight |nine |ten )/i.test(
+  return /^(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|one |two |three |four |five |six |seven |eight |nine |ten |pinch\b)/i.test(
     text,
   );
 }
 
 function extractDescription(blocks: ContentBlock[]): string | undefined {
+  if (blocks.some(looksLikeMollyMoonRecipeHeading)) {
+    const yieldIndex = blocks.findIndex(isYieldBlock);
+    const description = blocks
+      .slice(0, yieldIndex >= 0 ? yieldIndex : blocks.length)
+      .filter((block) => block.type === "paragraph")
+      .map((block) => block.text)
+      .find((text) => text.length > 40);
+
+    return description?.slice(0, 1200);
+  }
+
   const description = blocks
     .filter(
       (block) =>

@@ -25,6 +25,7 @@ const halfBakedHarvestEveryDayPath = resolve(
 const halfBakedHarvestSuperSimplePath = resolve(
   "zips/Half Baked Harvest Super Simple_ More Than 125 Recipes for -- Tieghan Gerard.epub",
 );
+const mollyMoonPath = resolve("zips/Molly Moon's Homemade Ice Cream.epub");
 
 describe("extractCookbookEpub", () => {
   it("extracts Babish recipes with caption-linked and inline images", () => {
@@ -374,6 +375,54 @@ describe("extractCookbookEpub", () => {
     expect(allImagePaths).not.toContain("OEBPS/images/clock.jpg");
     expect(allImagePaths).not.toContain("OEBPS/images/pan.jpg");
     expect(allImagePaths).not.toContain("OEBPS/images/pot.jpg");
+  });
+
+  it("extracts Molly Moon seasonal recipe chapters and recipe-list extras", () => {
+    const epub = readFileSync(mollyMoonPath);
+    const extraction = extractCookbookEpub(epub);
+
+    expect(extraction.metadata.title).toBe("Molly Moon's Homemade Ice Cream");
+    expect(extraction.metadata.creator).toBe("Molly Moon-Neitzel");
+    expect(extraction.recipes).toHaveLength(64);
+
+    const honeyLavender = findRecipe(extraction.recipes, "honey lavender ice cream");
+    expect(honeyLavender?.draftRecipe.yield?.notes).toBe("MAKES 1 TO 1½ QUARTS");
+    expect(honeyLavender?.draftRecipe.ingredients[0].items).toHaveLength(6);
+    expect(honeyLavender?.draftRecipe.directions[0].steps).toHaveLength(3);
+    expect(honeyLavender?.images).toEqual([
+      expect.objectContaining({
+        epubPath: "OEBPS/images/Neit_9781570617973_epub_012_r1.jpg",
+        role: "inline",
+      }),
+    ]);
+
+    const carrotCake = findRecipe(extraction.recipes, "carrot cake ice cream");
+    expect(carrotCake?.draftRecipe.description).toContain("carrot cake");
+    expect(carrotCake?.draftRecipe.directions[0].steps[0].text).toContain(
+      "Put the cream",
+    );
+    expect(carrotCake?.draftRecipe.directions[0].steps[0].text).not.toContain(
+      "Spring flavors",
+    );
+
+    const balsamicStrawberry = findRecipe(
+      extraction.recipes,
+      "make it balsamic strawberry ice cream",
+    );
+    expect(balsamicStrawberry?.draftRecipe.ingredients[0].items).toHaveLength(2);
+    expect(balsamicStrawberry?.draftRecipe.directions[0].steps).toHaveLength(2);
+    expect(balsamicStrawberry?.images[0]).toMatchObject({
+      epubPath: "OEBPS/images/Neit_9781570617973_epub_025_r1.jpg",
+      role: "inline",
+    });
+
+    const cornSyrup = findRecipe(extraction.recipes, "corn syrup substitute");
+    expect(cornSyrup?.draftRecipe.ingredients[0].items).toHaveLength(4);
+    expect(cornSyrup?.draftRecipe.directions[0].steps).toHaveLength(2);
+    expect(cornSyrup?.images).toHaveLength(0);
+
+    expect(findRecipe(extraction.recipes, "recipe list")).toBeUndefined();
+    expect(findRecipe(extraction.recipes, "How to Make an Ice Cream Cake")).toBeUndefined();
   });
 
   it("can extract image bytes by EPUB path", () => {

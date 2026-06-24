@@ -501,6 +501,31 @@ function getCookbookImportChapter(sourceName, documentPath) {
     }
   }
 
+  if (sourceName === "Molly Moon-Neitzel - Molly Moon's Homemade Ice Cream") {
+    const recipeIndex = Number(/Neit_9781570617973_epub_c(\d+)_r1\.htm/i.exec(documentPath)?.[1]);
+    const columnIndex = Number(/Neit_9781570617973_epub_col(\d+)_r1\.htm/i.exec(documentPath)?.[1]);
+
+    if ((recipeIndex >= 1 && recipeIndex <= 13) || columnIndex === 9) {
+      return "Spring";
+    }
+
+    if ((recipeIndex >= 14 && recipeIndex <= 27) || [11, 12, 13, 14, 16].includes(columnIndex)) {
+      return "Summer";
+    }
+
+    if ((recipeIndex >= 28 && recipeIndex <= 40) || [17, 18].includes(columnIndex)) {
+      return "Fall";
+    }
+
+    if ((recipeIndex >= 41 && recipeIndex <= 55) || [20, 22].includes(columnIndex)) {
+      return "Winter";
+    }
+
+    if (recipeIndex >= 56 && recipeIndex <= 59) {
+      return "Always";
+    }
+  }
+
   return "";
 }
 
