@@ -67,6 +67,7 @@ type ContentBlock = {
   imageAlt?: string;
   tableRows?: string[][];
   headingLevel?: number;
+  listValue?: number;
   pageNumber?: number;
   blockIndex: number;
   documentPath: string;
@@ -284,7 +285,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
   const blocks: ContentBlock[] = [];
   let currentPage: number | undefined;
   const pattern =
-    /<table\b([^>]*)>([\s\S]*?)<\/table>|<(h[1-6]|p|li|img|span)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/\3>)/gi;
+    /<table\b([^>]*)>([\s\S]*?)<\/table>|<(h[1-6]|p|li|img|span|blockquote)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/\3>)/gi;
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(document.html)) !== null) {
@@ -366,13 +367,42 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
     }
 
     const text = normalizeHtmlText(innerHtml);
+    const nestedImages = extractImageAttributes(innerHtml);
+
+    if (nestedImages.length > 0) {
+      for (const imageAttributes of nestedImages) {
+        if (!imageAttributes.src) {
+          continue;
+        }
+
+        blocks.push({
+          type: "image",
+          text: normalizeText(imageAttributes.alt ?? ""),
+          html: match[0],
+          tagName: "img",
+          className: imageAttributes.class ?? attributes.class,
+          id: imageAttributes.id ?? attributes.id,
+          hrefs: [],
+          imagePath: normalizeEpubPath(path.dirname(document.path), imageAttributes.src),
+          imageAlt: normalizeText(imageAttributes.alt ?? "") || undefined,
+          pageNumber: currentPage,
+          blockIndex: blocks.length,
+          documentPath: document.path,
+          spineIndex: document.spineIndex,
+        });
+      }
+    }
 
     if (!text) {
       continue;
     }
 
     blocks.push({
-      type: tagName.startsWith("h") ? "heading" : tagName === "li" ? "listItem" : "paragraph",
+      type: tagName.startsWith("h") || looksLikeFormattedTitle(innerHtml)
+        ? "heading"
+        : tagName === "li"
+          ? "listItem"
+          : "paragraph",
       text,
       html: match[0],
       tagName,
@@ -380,6 +410,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
       id: attributes.id,
       hrefs: extractHrefs(innerHtml, document.path),
       headingLevel: tagName.startsWith("h") ? Number(tagName.slice(1)) : undefined,
+      listValue: tagName === "li" ? parseListValue(attributes.value) : undefined,
       pageNumber: currentPage,
       blockIndex,
       documentPath: document.path,
@@ -425,17 +456,80 @@ function findRecipeSegments(blocks: ContentBlock[]): RecipeSegment[] {
 
   return headings.map((heading, index) => {
     const nextHeading = headings[index + 1];
+    const leadingImage = findLeadingImageBeforeHeading(blocks, heading);
+    const startBlock = leadingImage ?? heading;
+    const nextBoundary = findNextSegmentBoundary(blocks, heading);
+    const nextLeadingImage = nextBoundary
+      ? findLeadingImageBeforeHeading(blocks, nextBoundary)
+      : undefined;
+    const endBlock = nextLeadingImage ?? nextBoundary;
 
     return {
       heading,
       nextHeading,
       blocks: blocks.filter(
         (block) =>
-          compareBlockPosition(block, heading) >= 0 &&
-          (!nextHeading || compareBlockPosition(block, nextHeading) < 0),
+          compareBlockPosition(block, startBlock) >= 0 &&
+          (!endBlock || compareBlockPosition(block, endBlock) < 0),
       ),
     };
   });
+}
+
+function findNextSegmentBoundary(
+  blocks: ContentBlock[],
+  heading: ContentBlock,
+): ContentBlock | undefined {
+  return blocks.find(
+    (block) =>
+      compareBlockPosition(block, heading) > 0 &&
+      block.type === "heading" &&
+      blockKey(block) !== blockKey(heading),
+  );
+}
+
+function findLeadingImageBeforeHeading(
+  blocks: ContentBlock[],
+  heading: ContentBlock,
+): ContentBlock | undefined {
+  const headingPosition = blocks.findIndex((block) => blockKey(block) === blockKey(heading));
+
+  for (let index = headingPosition - 1; index >= Math.max(0, headingPosition - 3); index -= 1) {
+    const block = blocks[index];
+
+    if (!block || block.type === "pagebreak" || isNavigationBlock(block)) {
+      continue;
+    }
+
+    if (block.type !== "image") {
+      return undefined;
+    }
+
+    if (
+      block.documentPath === heading.documentPath ||
+      (looksLikeCalibreSplitTitle(heading) &&
+        isStandaloneImageDocument(blocks, block.documentPath))
+    ) {
+      return block;
+    }
+
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function isStandaloneImageDocument(blocks: ContentBlock[], documentPath: string): boolean {
+  const documentBlocks = blocks.filter((block) => block.documentPath === documentPath);
+  const meaningfulBlocks = documentBlocks.filter(
+    (block) => block.type !== "pagebreak" && !isNavigationBlock(block),
+  );
+
+  return meaningfulBlocks.length > 0 && meaningfulBlocks.every((block) => block.type === "image");
+}
+
+function looksLikeCalibreSplitTitle(block: ContentBlock): boolean {
+  return /class=["'][^"']*\bcalibre2\b/i.test(block.html);
 }
 
 function looksLikeRecipeHeading(
@@ -453,11 +547,25 @@ function looksLikeRecipeHeading(
   }
 
   const following = followingBlocks(blocks, heading, 18);
+  const extendedFollowing = followingBlocks(blocks, heading, 120);
   const hasYield = following.some((block) => isYieldBlock(block));
   const ingredientLines = following.filter((block) => isIngredientBlock(block));
   const methodLines = following.filter((block) => isDirectionBlock(block));
+  const hasSaladLabStructure =
+    extendedFollowing.some((block) => isYieldBlock(block)) &&
+    extendedFollowing.some(isSaladLabIngredientSectionHeading) &&
+    extendedFollowing.some(
+      (block) => block.type === "listItem" && looksLikeSaladLabDirectionLine(block.text),
+    );
+  const hasTwoListRecipeStructure =
+    extendedFollowing.some((block) => isYieldBlock(block)) &&
+    looksLikeTwoListRecipeStructure(extendedFollowing);
 
-  return hasYield && ingredientLines.length >= 2 && methodLines.length >= 1;
+  return (
+    (hasYield && ingredientLines.length >= 2 && methodLines.length >= 1) ||
+    hasSaladLabStructure ||
+    hasTwoListRecipeStructure
+  );
 }
 
 function findTechniqueSegments(
@@ -876,6 +984,18 @@ function parseRunInTitle(text: string): { title: string; body: string } | undefi
 }
 
 function toIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
+  const saladLabSections = toSaladLabIngredientSections(blocks);
+
+  if (saladLabSections.length > 0) {
+    return saladLabSections;
+  }
+
+  const firstListSections = toFirstListIngredientSections(blocks);
+
+  if (firstListSections.length > 0) {
+    return firstListSections;
+  }
+
   const ingredientBlocks = blocks.filter(isIngredientBlock);
   const lines = ingredientBlocks
     .map((block) => block.text)
@@ -900,11 +1020,14 @@ function toIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
 }
 
 function toDirectionSections(blocks: ContentBlock[]): DirectionSection[] {
-  const directionBlocks = blocks.filter(isDirectionBlock);
-  const lines = directionBlocks
-    .flatMap((block) => splitDirectionText(block.text))
-    .map(normalizeText)
-    .filter(isText);
+  const saladLabDirections = toSaladLabDirectionLines(blocks);
+  const lines = saladLabDirections.length > 0
+    ? saladLabDirections
+    : blocks
+        .filter(isDirectionBlock)
+        .flatMap((block) => splitDirectionText(block.text))
+        .map(normalizeText)
+        .filter(isText);
 
   if (lines.length === 0) {
     return [];
@@ -921,6 +1044,191 @@ function toDirectionSections(blocks: ContentBlock[]): DirectionSection[] {
       })),
     },
   ];
+}
+
+function toSaladLabIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
+  const sections: IngredientSection[] = [];
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+
+    if (!isSaladLabIngredientSectionHeading(block)) {
+      continue;
+    }
+
+    const title = normalizeSaladLabSectionTitle(block.text);
+    const lines: string[] = [];
+
+    for (let nextIndex = index + 1; nextIndex < blocks.length; nextIndex += 1) {
+      const nextBlock = blocks[nextIndex];
+
+      if (isSaladLabIngredientSectionHeading(nextBlock)) {
+        break;
+      }
+
+      if (nextBlock.type === "listItem") {
+        if (looksLikeSaladLabDirectionLine(nextBlock.text)) {
+          break;
+        }
+
+        lines.push(cleanIngredientLine(nextBlock.text));
+        continue;
+      }
+
+      if (nextBlock.type !== "image" && nextBlock.type !== "pagebreak") {
+        break;
+      }
+    }
+
+    if (lines.length > 0) {
+      sections.push(toIngredientSection(title, lines));
+    }
+  }
+
+  return sections;
+}
+
+function toFirstListIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
+  const firstList = firstListItemGroup(blocks);
+
+  if (
+    firstList.length < 1 ||
+    firstList.some((block) => looksLikeSaladLabDirectionLine(block.text)) ||
+    firstList.some((block) => !looksLikeIngredientOrReferenceLine(block.text))
+  ) {
+    return [];
+  }
+
+  return [toIngredientSection("Ingredients", firstList.map((block) => cleanIngredientLine(block.text)))];
+}
+
+function firstListItemGroup(blocks: ContentBlock[]): ContentBlock[] {
+  const firstListStart = blocks.findIndex((block) => block.type === "listItem");
+
+  if (firstListStart < 0) {
+    return [];
+  }
+
+  const group: ContentBlock[] = [];
+
+  for (let index = firstListStart; index < blocks.length; index += 1) {
+    const block = blocks[index];
+
+    if (block.type !== "listItem") {
+      if (group.length > 0) {
+        break;
+      }
+
+      continue;
+    }
+
+    if (group.length > 0 && block.listValue === 1) {
+      break;
+    }
+
+    group.push(block);
+  }
+
+  return group;
+}
+
+function toIngredientSection(title: string, lines: string[]): IngredientSection {
+  return {
+    id: createRecipeSlug(title) || "ingredients",
+    title,
+    items: lines.map((line, index) => ({
+      id: createStableId("ingredient", line, index),
+      raw: line,
+      item: parseIngredientItemName(line),
+      optional: /\boptional\b/i.test(line) ? true : undefined,
+    })),
+  };
+}
+
+function toSaladLabDirectionLines(blocks: ContentBlock[]): string[] {
+  const directionStart = blocks.findIndex(
+    (block) => block.type === "listItem" && looksLikeSaladLabDirectionLine(block.text),
+  );
+
+  if (directionStart >= 0) {
+    return blocks
+      .slice(directionStart)
+      .filter((block) => block.type === "listItem")
+      .map((block) => normalizeText(block.text))
+      .filter(isText);
+  }
+
+  const firstList = firstListItemGroup(blocks);
+
+  if (firstList.length === 0) {
+    return [];
+  }
+
+  const firstListKeys = new Set(firstList.map(blockKey));
+  const secondListStart = blocks.findIndex(
+    (block) => block.type === "listItem" && !firstListKeys.has(blockKey(block)),
+  );
+
+  if (secondListStart < 0) {
+    return [];
+  }
+
+  return blocks
+    .slice(secondListStart)
+    .filter((block) => block.type === "listItem")
+    .map((block) => normalizeText(block.text))
+    .filter(isText);
+}
+
+function isSaladLabIngredientSectionHeading(block: ContentBlock): boolean {
+  if (block.type !== "paragraph") {
+    return false;
+  }
+
+  return /^(?:START OUT|WHISK|TOSS)(?:\s*\([^)]+\))?$/i.test(block.text);
+}
+
+function normalizeSaladLabSectionTitle(text: string): string {
+  return cleanTitle(text)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function looksLikeSaladLabDirectionLine(text: string): boolean {
+  return /^(?:START OUT|WHISK|TOSS|ENJOY)\s*:/i.test(text);
+}
+
+function looksLikeIngredientOrReferenceLine(text: string): boolean {
+  return looksLikeIngredientLine(text) || /^[A-Z][\w\s-]+$/i.test(text);
+}
+
+function looksLikeTwoListRecipeStructure(blocks: ContentBlock[]): boolean {
+  const firstList = firstListItemGroup(blocks);
+
+  if (
+    firstList.length === 0 ||
+    firstList.some((block) => looksLikeSaladLabDirectionLine(block.text)) ||
+    firstList.some((block) => !looksLikeIngredientOrReferenceLine(block.text))
+  ) {
+    return false;
+  }
+
+  const firstListKeys = new Set(firstList.map(blockKey));
+  const secondList = blocks
+    .filter((block) => block.type === "listItem" && !firstListKeys.has(blockKey(block)))
+    .slice(0, 12);
+
+  return (
+    secondList.length > 0 &&
+    secondList.some((block) => looksLikeInstructionLine(block.text))
+  );
+}
+
+function looksLikeInstructionLine(text: string): boolean {
+  return /\b(preheat|cut|combine|whisk|stir|cook|bake|roast|toast|blend|slice|chop|place|add|serve|store|heat|bring|drain|rinse|season)\b/i.test(
+    text,
+  );
 }
 
 function toRecipeVariations(
@@ -1041,6 +1349,14 @@ function pushImageCandidate(
   alt?: string,
 ): void {
   if (!isLikelyRecipeImage(image)) {
+    return;
+  }
+
+  if (
+    role === "caption-linked" &&
+    segment.heading.pageNumber === undefined &&
+    image.pageNumber === undefined
+  ) {
     return;
   }
 
@@ -1353,6 +1669,26 @@ function parseAttributes(value: string): Record<string, string> {
   return attributes;
 }
 
+function extractImageAttributes(html: string): Array<Record<string, string>> {
+  return Array.from(html.matchAll(/<img\b([^>]*)\/?>/gi)).map((match) =>
+    parseAttributes(match[1]),
+  );
+}
+
+function looksLikeFormattedTitle(html: string): boolean {
+  return /\bclass=["'][^"']*\bcalibre[23]\b/i.test(html);
+}
+
+function parseListValue(value: string | undefined): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 function parseHtmlTableRows(html: string): string[][] {
   return Array.from(html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi))
     .map((rowMatch) =>
@@ -1374,7 +1710,7 @@ function parsePageNumber(value: string | undefined): number | undefined {
     return Number(referencePageMatch[1]);
   }
 
-  const match = /(?:page[_\s-]?|p)?(\d{1,4})/i.exec(value);
+  const match = /(?:page[_\s-]?|p)(\d{1,4})/i.exec(value);
 
   return match ? Number(match[1]) : undefined;
 }

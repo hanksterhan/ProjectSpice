@@ -16,6 +16,9 @@ const babishPath = resolve(
 const healthyDrinksPath = resolve(
   "zips/The complete guide to healthy drinks _ powerhouse -- America's Test Kitchen (Firm) -- New York, 2022 -- America's Test Kitchen.epub",
 );
+const saladLabPath = resolve(
+  "zips/The Salad Lab_ Whisk, Toss, Enjoy! _ Recipes for Making -- Darlene Schrijver.epub",
+);
 
 describe("extractCookbookEpub", () => {
   it("extracts Babish recipes with caption-linked and inline images", () => {
@@ -144,6 +147,81 @@ describe("extractCookbookEpub", () => {
     expect(
       teaTable?.rows.some((row) => row[0]?.includes("Earl Grey tea")),
     ).toBe(true);
+  });
+
+  it("extracts Salad Lab recipes from Calibre split markup", () => {
+    const epub = readFileSync(saladLabPath);
+    const extraction = extractCookbookEpub(epub);
+
+    expect(extraction.metadata.title).toBe(
+      "The Salad Lab: Recipes for Making Fabulous Salads Every Day",
+    );
+    expect(extraction.recipes).toHaveLength(109);
+    expect(extraction.techniques).toHaveLength(0);
+
+    const arugula = findRecipe(extraction.recipes, "Arugula Salad");
+    expect(arugula?.draftRecipe.yield?.notes).toBe(
+      "SERVES 2 TO 3 AS A MEAL OR 4 TO 6 AS A SIDE",
+    );
+    expect(arugula?.draftRecipe.ingredients.map((section) => section.title)).toEqual([
+      "Start Out",
+      "Whisk",
+      "Toss",
+    ]);
+    expect(arugula?.draftRecipe.ingredients[0].items[0].raw).toBe("Ice water");
+    expect(arugula?.draftRecipe.directions[0].steps).toHaveLength(4);
+    expect(arugula?.draftRecipe.directions[0].steps[0].text).toContain(
+      "Soak for 10 minutes",
+    );
+    expect(arugula?.images[0]).toMatchObject({
+      epubPath: "images/00058.jpg",
+      role: "inline",
+    });
+
+    const panzanella = findRecipe(extraction.recipes, "Panzanella");
+    expect(panzanella?.images[0]).toMatchObject({
+      epubPath: "images/00065.jpg",
+      role: "inline",
+    });
+    expect(panzanella?.images.some((image) => image.epubPath === "images/00100.jpg")).toBe(
+      false,
+    );
+
+    const frenchPotatoSalad = findRecipe(extraction.recipes, "French-Style Potato Salad");
+    expect(frenchPotatoSalad?.images[0]).toMatchObject({
+      epubPath: "images/00100.jpg",
+      role: "inline",
+    });
+
+    const fattoush = findRecipe(extraction.recipes, "Fattoush");
+    expect(fattoush?.images[0]).toMatchObject({
+      epubPath: "images/00091.jpg",
+      role: "inline",
+    });
+
+    const caesarDressing = findRecipe(extraction.recipes, "Caesar Dressing");
+    expect(caesarDressing?.draftRecipe.ingredients.map((section) => section.title)).toEqual([
+      "Start Out (Coddled Eggs)",
+      "Whisk",
+    ]);
+    expect(caesarDressing?.images).toHaveLength(0);
+
+    const roastedGarlic = findRecipe(extraction.recipes, "Roasted Garlic Purée");
+    expect(roastedGarlic?.draftRecipe.ingredients[0].title).toBe("Ingredients");
+    expect(roastedGarlic?.draftRecipe.ingredients[0].items[0].raw).toBe(
+      "2 large garlic bulbs",
+    );
+    expect(roastedGarlic?.draftRecipe.directions[0].steps[0].text).toContain(
+      "Preheat the oven",
+    );
+
+    const grilledChicken = findRecipe(extraction.recipes, "Grilled Chicken Breast");
+    expect(grilledChicken?.draftRecipe.directions[0].steps).toHaveLength(4);
+    expect(
+      grilledChicken?.draftRecipe.directions[0].steps.some((step) =>
+        step.text.includes("Lemon Basil Pasta Salad"),
+      ),
+    ).toBe(false);
   });
 
   it("can extract image bytes by EPUB path", () => {

@@ -334,6 +334,38 @@ function getCookbookImportChapter(sourceName, documentPath) {
     }
   }
 
+  if (sourceName === "Darlene Schrijver - The Salad Lab: Recipes for Making Fabulous Salads Every Day") {
+    const splitIndex = Number(/index_split_(\d+)\.html/i.exec(documentPath)?.[1]);
+
+    if (splitIndex >= 18 && splitIndex <= 39) {
+      return "Start Out with the Basics";
+    }
+
+    if (splitIndex >= 42 && splitIndex <= 50) {
+      return "Celebrity-Inspired Favorites";
+    }
+
+    if (splitIndex >= 53 && splitIndex <= 96) {
+      return "Let's Travel: Destination-Inspired Recipes";
+    }
+
+    if (splitIndex >= 99 && splitIndex <= 131) {
+      return "Seasonal and Holiday Favorites";
+    }
+
+    if (splitIndex >= 134 && splitIndex <= 151) {
+      return "Everything Is a Salad";
+    }
+
+    if (splitIndex >= 154 && splitIndex <= 177) {
+      return "Salad Lab Elements";
+    }
+
+    if (splitIndex >= 179 && splitIndex <= 186) {
+      return "A Few More Salad Lab Elements";
+    }
+  }
+
   return "";
 }
 

@@ -64,6 +64,10 @@ When changing image heuristics, add regression tests with concrete recipes. Curr
 - `tepache` uses page 224.
 - `kombucha` uses page 229 and must not use front-matter page `vi`.
 - `Mango Lassi` was previously identified by the user as a recipe that should not receive a picture.
+- Salad Lab `Panzanella` uses `images/00065.jpg`, not the following potato salad image.
+- Salad Lab `French-Style Potato Salad` uses `images/00100.jpg`.
+- Salad Lab `Fattoush` uses `images/00091.jpg`.
+- Salad Lab standalone image pages must not cascade backward into the previous recipe segment.
 
 ## Tags And Cookbook Chapters
 
@@ -142,6 +146,7 @@ Add regression coverage when:
 - A new EPUB class pattern is needed for recipe detection.
 - A specific image match was wrong or missing.
 - A no-image recipe was incorrectly assigned a decorative/title image.
+- A split-file cookbook has standalone image-only documents before recipe title pages or multiple image-only pages between neighboring recipes.
 - A variant was duplicated as a recipe.
 - A technique title needs contextual disambiguation.
 - A chapter marker must be hidden from normal tag facets.
@@ -155,7 +160,7 @@ After applying an import locally, query or inspect:
 - Counts by hidden `chapter:<label>` markers.
 - Rows containing fake tags such as `cookbook`, `cookbook-recipe`, or `cookbook:<slug>`.
 - Representative recipe JSON for tags, variations, image URL, and source.
+- Representative recipe image URLs for known risky neighboring runs, especially where adjacent recipe photos could shift backward or forward.
 - Technique rows for `source_name`, `technique_type`, `blocks_json`, and `image_url`.
 
 Keep generated image assets only when referenced by imported rows.
-

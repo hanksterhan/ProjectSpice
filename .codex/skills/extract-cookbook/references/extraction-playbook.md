@@ -15,6 +15,7 @@ Turn one or more cookbook EPUB files into high-confidence ProjectSpice recipe dr
 - Healthy Drinks variants such as `milk kefir with vanilla` and `sparkling mixed berry kombucha` should live as variations on the base recipe, not as duplicate recipe rows.
 - Generic headings such as `best practices`, `brewing`, and `making your first batch` need context from nearby body text so they become useful technique titles like `kombucha best practices`, `tea brewing`, and `making your first batch of kombucha`.
 - Techniques are not expandable in the sidebar yet. They are a direct reference section until there is enough volume to justify grouping by type or topic.
+- `The Salad Lab` exposed a photo-order failure mode: Calibre split EPUBs can use standalone image-only documents immediately before recipe title pages, plus occasional decorative or second image pages between recipes. The first import assigned several photos to the previous recipe; `Panzanella` received the following potato salad photo until segment boundaries treated standalone lead-image pages as part of the next recipe.
 
 ## EPUB Inspection Checklist
 
@@ -26,6 +27,7 @@ Inspect the EPUB before changing code:
 - Inspect image manifest paths and sizes. Page-numbered filenames are useful but must be verified against content.
 - Compare TOC anchors and caption links. Many cookbook captions link from a figure/caption to a recipe heading anchor.
 - Sample each major chapter rather than only the first recipe.
+- For split-file cookbooks, map a short run of spine documents around representative recipes. Record whether the pattern is image page -> recipe page, recipe page -> image page, two image pages -> recipe page, or image inside the same recipe page.
 
 ## Recipe Detection
 
@@ -62,8 +64,9 @@ Known examples:
 Rank evidence in this order:
 
 1. Inline image inside the recipe segment.
-2. Caption-linked image where the caption anchor points to the recipe heading.
-3. Same-page or nearby-page image fallback for techniques, or for recipes only after explicit user acceptance and careful audit.
+2. Standalone lead image page immediately before a recipe title when the raw spine pattern proves that this is how the book lays out recipe photos.
+3. Caption-linked image where the caption anchor points to the recipe heading.
+4. Same-page or nearby-page image fallback for techniques, or for recipes only after explicit user acceptance and careful audit.
 
 Score candidates with:
 
@@ -73,12 +76,21 @@ Score candidates with:
 - Image order in the EPUB as a tie-breaker.
 - Alt text when present.
 
+Audit split-file image runs:
+
+- If a standalone image-only document directly precedes a recipe title document and visual inspection confirms it is the recipe photo, include that image in the next recipe segment and stop the previous recipe segment before it.
+- If two standalone image pages occur between recipes, visually check both. The first may belong to the previous recipe and the second may belong to the next, but decorative plate/table images should be rejected or allowed only as secondary candidates, never silently made primary.
+- If an image appears immediately after a recipe's directions, verify whether it is a real recipe photo, an experiment/note marker, or a decorative asset. Small repeated note icons should not pass as recipe photos even when they are structurally inline.
+- Print or query a title -> primary image map for at least one suspicious chapter run. Look for one-off shifts where every recipe appears to have the next recipe's image.
+- Open representative bitmaps, not just filenames. Filename sequence numbers are weak evidence when the book has no page-numbered assets or captions.
+
 Reject likely bad images:
 
 - Roman-numeral front-matter images.
 - Small assets under the current size threshold unless manual audit proves they are real.
 - Images whose filenames/classes/captions indicate TOC, chapter opener, border, icon, logo, caption, or decorative art.
 - Any image that visually contains only title text, chapter text, or design elements.
+- Pure styling photos such as empty plates, utensils, table surfaces, or blank ingredient props unless the cookbook clearly uses them as the recipe's only intentional image.
 
 Deduplicate recipe images:
 
@@ -140,7 +152,7 @@ After extraction, inspect:
 - Warnings for no-image recipes.
 - Representative recipes from every chapter.
 - At least three image matches from each image assignment mode: inline, caption-linked, nearby if used.
+- For split-file layouts, at least one neighboring recipe run where photos were previously likely to shift backward or forward. Include concrete regression examples in tests.
 - Variants are folded and not duplicated as recipes.
 - Cookbook chapters are real book chapters.
 - Tags are culinary, not bookkeeping.
-
