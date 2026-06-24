@@ -22,6 +22,9 @@ const saladLabPath = resolve(
 const halfBakedHarvestEveryDayPath = resolve(
   "zips/Half Baked Harvest Every Day_ Recipes for Balanced, -- Gerard, Tieghan.epub",
 );
+const halfBakedHarvestSuperSimplePath = resolve(
+  "zips/Half Baked Harvest Super Simple_ More Than 125 Recipes for -- Tieghan Gerard.epub",
+);
 
 describe("extractCookbookEpub", () => {
   it("extracts Babish recipes with caption-linked and inline images", () => {
@@ -285,6 +288,92 @@ describe("extractCookbookEpub", () => {
       epubPath: "images/00145.jpg",
       role: "inline",
     });
+  });
+
+  it("extracts Half Baked Harvest Super Simple recipes without decorative icons", () => {
+    const epub = readFileSync(halfBakedHarvestSuperSimplePath);
+    const extraction = extractCookbookEpub(epub);
+
+    expect(extraction.metadata.title).toBe("Half Baked Harvest Super Simple");
+    expect(extraction.metadata.creator).toBe("Tieghan Gerard");
+    expect(extraction.recipes).toHaveLength(124);
+    expect(extraction.techniques).toHaveLength(0);
+
+    const frenchToast = findRecipe(
+      extraction.recipes,
+      "BAKED CINNAMON-BUTTER BRIOCHE FRENCH TOAST",
+    );
+    expect(frenchToast?.draftRecipe.times).toEqual({
+      prepMinutes: 15,
+      cookMinutes: 50,
+      totalMinutes: 60,
+    });
+    expect(frenchToast?.images).toEqual([
+      expect.objectContaining({
+        epubPath: "OEBPS/images/465_GERA_9780525577072_art_r1.jpg",
+        role: "inline",
+      }),
+    ]);
+    expect(
+      frenchToast?.images.some((image) => image.epubPath.endsWith("12.jpg")),
+    ).toBe(false);
+
+    const pressureCookerEggs = findRecipe(
+      extraction.recipes,
+      "PERFECT PRESSURE COOKER EGGS",
+    );
+    expect(pressureCookerEggs?.draftRecipe.ingredients[0].items[0].raw).toBe(
+      "4 TO 6 LARGE EGGS",
+    );
+    expect(pressureCookerEggs?.draftRecipe.directions[0].steps).toHaveLength(4);
+    expect(pressureCookerEggs?.draftRecipe.times).toEqual({ cookMinutes: 4 });
+    expect(pressureCookerEggs?.images).toHaveLength(0);
+
+    const walnutChicken = findRecipe(extraction.recipes, "WALNUT-CRUSTED CHICKEN");
+    expect(walnutChicken?.images[0]).toMatchObject({
+      epubPath: "OEBPS/images/201_GERA_9780525577072_art_r1.jpg",
+      role: "inline",
+    });
+    expect(
+      walnutChicken?.images.some((image) => image.epubPath.endsWith("121.jpg")),
+    ).toBe(false);
+
+    const potStickers = findRecipe(extraction.recipes, "HOT-AND-SPICY POT STICKERS");
+    expect(potStickers?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/209_GERA_9780525577072_art_r1.jpg",
+      "OEBPS/images/99.jpg",
+    ]);
+
+    const spaghettiSquash = findRecipe(extraction.recipes, "SPAGHETTI SQUASH ALFREDO");
+    expect(spaghettiSquash?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/263_GERA_9780525577072_art_r1.jpg",
+    ]);
+
+    const strawberryCake = findRecipe(extraction.recipes, "STRAWBERRY NAKED CAKE");
+    expect(strawberryCake?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/184.jpg",
+    ]);
+
+    const blackoutCake = findRecipe(extraction.recipes, "BLACKOUT CHOCOLATE CAKE");
+    expect(blackoutCake?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/414_GERA_9780525577072_art_r1.jpg",
+    ]);
+
+    const appleTarts = findRecipe(extraction.recipes, "EASIEST CINNAMON-APPLE TARTS");
+    expect(appleTarts?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/448_GERA_9780525577072_art_r1.jpg",
+    ]);
+
+    const allImagePaths = extraction.recipes.flatMap((recipe) =>
+      recipe.images.map((image) => image.epubPath),
+    );
+    expect(allImagePaths).not.toContain(
+      "OEBPS/images/414_GERA_9780525577072_art_r11.jpg",
+    );
+    expect(allImagePaths).not.toContain("OEBPS/images/sp.jpg");
+    expect(allImagePaths).not.toContain("OEBPS/images/clock.jpg");
+    expect(allImagePaths).not.toContain("OEBPS/images/pan.jpg");
+    expect(allImagePaths).not.toContain("OEBPS/images/pot.jpg");
   });
 
   it("can extract image bytes by EPUB path", () => {

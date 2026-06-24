@@ -411,6 +411,48 @@ function getCookbookImportChapter(sourceName, documentPath) {
     }
   }
 
+  if (sourceName === "Tieghan Gerard - Half Baked Harvest Super Simple") {
+    if (/c01\.xhtml/i.test(documentPath)) {
+      return "The Basics";
+    }
+
+    if (/c02\.xhtml/i.test(documentPath)) {
+      return "Breakfast & Brunch";
+    }
+
+    if (/c03\.xhtml/i.test(documentPath)) {
+      return "Appetizers & Sides";
+    }
+
+    if (/c04\.xhtml/i.test(documentPath)) {
+      return "Salad & Soup";
+    }
+
+    if (/c05\.xhtml/i.test(documentPath)) {
+      return "Pizza & Pasta";
+    }
+
+    if (/c06\.xhtml/i.test(documentPath)) {
+      return "Vegetarian";
+    }
+
+    if (/c07\.xhtml/i.test(documentPath)) {
+      return "Poultry & Pork";
+    }
+
+    if (/c08\.xhtml/i.test(documentPath)) {
+      return "Beef & Lamb";
+    }
+
+    if (/c09\.xhtml/i.test(documentPath)) {
+      return "Seafood & Fish";
+    }
+
+    if (/c10\.xhtml/i.test(documentPath)) {
+      return "Dessert";
+    }
+  }
+
   if (sourceName === "Masaharu Morimoto - Mastering the Art of Japanese Home Cooking") {
     const chapterIndex = Number(/Chapter_(\d+)/i.exec(documentPath)?.[1]);
 

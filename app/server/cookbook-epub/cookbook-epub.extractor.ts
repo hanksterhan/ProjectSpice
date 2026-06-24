@@ -516,6 +516,17 @@ function findLeadingImageBeforeHeading(
       return undefined;
     }
 
+    if (block.imageAlt) {
+      return undefined;
+    }
+
+    if (
+      block.documentPath === heading.documentPath &&
+      looksLikeHalfBakedHarvestInlineTitle(heading)
+    ) {
+      return undefined;
+    }
+
     if (
       block.documentPath === heading.documentPath ||
       (looksLikeCalibreSplitTitle(heading) &&
@@ -1284,7 +1295,7 @@ function looksLikeTwoListRecipeStructure(blocks: ContentBlock[]): boolean {
 }
 
 function looksLikeInstructionLine(text: string): boolean {
-  return /\b(preheat|cut|combine|whisk|stir|cook|bake|roast|toast|blend|slice|chop|place|add|serve|store|heat|bring|drain|rinse|season)\b/i.test(
+  return /\b(preheat|cut|combine|whisk|stir|cook|bake|roast|toast|blend|slice|chop|place|add|serve|store|heat|bring|drain|rinse|season|select|lock|open|peel)\b/i.test(
     text,
   );
 }
@@ -1405,7 +1416,7 @@ function pushImageCandidate(
   role: CookbookEpubImageRole,
   alt?: string,
 ): void {
-  if (!isLikelyRecipeImageForRole(image, role)) {
+  if (!isLikelyRecipeImageForRole(image, role, alt)) {
     return;
   }
 
@@ -1471,7 +1482,12 @@ function isLikelyRecipeImage(image: ImageCatalogEntry): boolean {
 function isLikelyRecipeImageForRole(
   image: ImageCatalogEntry,
   role: CookbookEpubImageRole,
+  alt?: string,
 ): boolean {
+  if (isDecorativeCookbookImage(image, alt)) {
+    return false;
+  }
+
   if (isLikelyRecipeImage(image)) {
     return true;
   }
@@ -1489,6 +1505,22 @@ function isLikelyRecipeImageForRole(
   }
 
   return image.byteLength >= 100_000;
+}
+
+function isDecorativeCookbookImage(
+  image: ImageCatalogEntry,
+  alt: string | undefined,
+): boolean {
+  if (alt && !/^image$/i.test(alt)) {
+    return true;
+  }
+
+  return (
+    /(?:^|\/)(?:sp|clock|pan|pot|left_orn|right_orn|3|5)\.jpg$/i.test(
+      image.epubPath,
+    ) ||
+    /(?:^|\/)414_GERA_9780525577072_art_r11\.jpg$/i.test(image.epubPath)
+  );
 }
 
 function getImagePageDistance(segment: RecipeSegment, image: ImageCatalogEntry): number {
@@ -1550,11 +1582,12 @@ function isYieldBlock(block: ContentBlock): boolean {
 
   return /yield|serves?|makes?/i.test(className) ||
     looksLikeMorimotoYieldClass(className) ||
+    /^ry$/i.test(className) ||
     /^(serves|makes|yields)\b/i.test(block.text);
 }
 
 function looksLikeRecipeTitleClass(className: string | undefined): boolean {
-  return /^(?:h3a|h3c|h3|h3tb|h4|h4p)$/i.test(className ?? "");
+  return /^(?:h3a|h3c|h3|h3tb|h4|h4p|rt)$/i.test(className ?? "");
 }
 
 function looksLikeMorimotoYieldClass(className: string): boolean {
@@ -1570,22 +1603,64 @@ function looksLikeMorimotoDirectionClass(className: string): boolean {
 }
 
 function looksLikeHalfBakedHarvestIngredientBlock(block: ContentBlock): boolean {
+  const className = block.className ?? "";
+
+  if (
+    block.tagName === "p" &&
+    hasClassToken(className, "ry") &&
+    !/^(serves|makes|yields)\b/i.test(block.text) &&
+    looksLikeIngredientOrReferenceLine(block.text)
+  ) {
+    return true;
+  }
+
+  if (
+    block.tagName === "p" &&
+    hasAnyClassToken(className, ["ril", "sril", "rilf", "srilf", "rilh", "rilhf"]) &&
+    looksLikeIngredientOrReferenceLine(block.text)
+  ) {
+    return true;
+  }
+
   return block.tagName === "blockquote" &&
     /^calibre_11$/i.test(block.className ?? "") &&
     looksLikeIngredientOrReferenceLine(block.text);
 }
 
 function looksLikeHalfBakedHarvestDirectionBlock(block: ContentBlock): boolean {
+  const className = block.className ?? "";
+
+  if (
+    block.tagName === "p" &&
+    hasAnyClassToken(className, ["rp", "srp", "rpf", "srpf", "rp2", "rps", "srps"]) &&
+    looksLikeInstructionLine(block.text)
+  ) {
+    return true;
+  }
+
   return block.type === "listItem" &&
     /^calibre_(?:18|20)$/i.test(block.className ?? "") &&
     looksLikeInstructionLine(block.text);
 }
 
 function looksLikeHalfBakedHarvestSectionHeading(block: ContentBlock): boolean {
+  const className = block.className ?? "";
+
+  if (
+    block.tagName === "p" &&
+    hasAnyClassToken(className, ["rvh1", "rilh", "rilhf"])
+  ) {
+    return true;
+  }
+
   return block.tagName === "p" &&
     /^calibre_3$/i.test(block.className ?? "") &&
     block.id === undefined &&
     /\bclass=["'][^"']*\bcalibre2\b/i.test(block.html);
+}
+
+function looksLikeHalfBakedHarvestInlineTitle(block: ContentBlock): boolean {
+  return block.tagName === "p" && hasClassToken(block.className ?? "", "rt");
 }
 
 function isMorimotoSpecialEquipmentItem(block: ContentBlock, blocks: ContentBlock[]): boolean {
@@ -1617,6 +1692,14 @@ function isMorimotoSpecialEquipmentItem(block: ContentBlock, blocks: ContentBloc
 
 function isNavigationBlock(block: ContentBlock): boolean {
   return /mini_toc|toc|caption|figcaption/i.test(block.className ?? "");
+}
+
+function hasAnyClassToken(className: string, tokens: string[]): boolean {
+  return tokens.some((token) => hasClassToken(className, token));
+}
+
+function hasClassToken(className: string, token: string): boolean {
+  return className.split(/\s+/).some((classToken) => classToken.toLowerCase() === token.toLowerCase());
 }
 
 function isBackmatterBoundaryBlock(block: ContentBlock): boolean {
@@ -1722,7 +1805,7 @@ function extractRecipeTimes(
 function parseRecipeTimeBlock(
   text: string,
 ): { key: "prepMinutes" | "cookMinutes" | "totalMinutes"; minutes: number } | undefined {
-  const match = /^(prep|cook|total)\s+(.+)$/i.exec(text.trim());
+  const match = /^(prep|cook|total)(?:\s+time)?\s*:?\s+(.+)$/i.exec(text.trim());
 
   if (!match) {
     return undefined;
