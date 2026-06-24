@@ -16,6 +16,7 @@ Turn one or more cookbook EPUB files into high-confidence ProjectSpice recipe dr
 - Generic headings such as `best practices`, `brewing`, and `making your first batch` need context from nearby body text so they become useful technique titles like `kombucha best practices`, `tea brewing`, and `making your first batch of kombucha`.
 - Techniques are not expandable in the sidebar yet. They are a direct reference section until there is enough volume to justify grouping by type or topic.
 - `The Salad Lab` exposed a photo-order failure mode: Calibre split EPUBs can use standalone image-only documents immediately before recipe title pages, plus occasional decorative or second image pages between recipes. The first import assigned several photos to the previous recipe; `Panzanella` received the following potato salad photo until segment boundaries treated standalone lead-image pages as part of the next recipe.
+- `Mastering the Art of Japanese Home Cooking` exposed a multi-image failure mode: recipes can include ordered process-photo grids where several real inline images are smaller than a global "likely photo" byte threshold. `Vegetable Temaki` has five same-section step photos; `Spicy Tuna Temaki`, `Hakumai`, `Battera`, `Tamagoyaki`, `Gyoza`, and `Homemade Udon` are useful gallery-count audit cases. Strong inline/caption evidence may justify smaller images, while weak nearby fallback images should remain conservative.
 
 ## EPUB Inspection Checklist
 
@@ -27,6 +28,7 @@ Inspect the EPUB before changing code:
 - Inspect image manifest paths and sizes. Page-numbered filenames are useful but must be verified against content.
 - Compare TOC anchors and caption links. Many cookbook captions link from a figure/caption to a recipe heading anchor.
 - Sample each major chapter rather than only the first recipe.
+- For photo-instructive cookbooks, inspect at least one process-heavy recipe with many images and one neighboring recipe with few or no images. Record the expected image count from raw XHTML before trusting import output.
 - For split-file cookbooks, map a short run of spine documents around representative recipes. Record whether the pattern is image page -> recipe page, recipe page -> image page, two image pages -> recipe page, or image inside the same recipe page.
 
 ## Recipe Detection
@@ -68,6 +70,14 @@ Rank evidence in this order:
 3. Caption-linked image where the caption anchor points to the recipe heading.
 4. Same-page or nearby-page image fallback for techniques, or for recipes only after explicit user acceptance and careful audit.
 
+Preserve image galleries:
+
+- Keep all high-confidence recipe photos in EPUB order when they are inline in the recipe segment, share a caption/title run, or belong to the same standalone lead-image run.
+- Use the first extracted image as the primary `imageUrl`; store the full ordered set in `imageUrls` when more than one real image exists.
+- Do not cap galleries arbitrarily. Cap only when evidence becomes weak or repeated decorative/noise images appear.
+- Treat byte size as supporting evidence, not a hard global gate. Strong inline or caption-linked process photos can be smaller than hero photos; nearby fallback candidates should still pass stricter size and visual checks.
+- Prefer EPUB/spine order for same-role process photos so step grids remain navigable in book order.
+
 Score candidates with:
 
 - Role strength: inline > caption-linked > nearby.
@@ -80,8 +90,9 @@ Audit split-file image runs:
 
 - If a standalone image-only document directly precedes a recipe title document and visual inspection confirms it is the recipe photo, include that image in the next recipe segment and stop the previous recipe segment before it.
 - If two standalone image pages occur between recipes, visually check both. The first may belong to the previous recipe and the second may belong to the next, but decorative plate/table images should be rejected or allowed only as secondary candidates, never silently made primary.
+- If several image blocks sit between a caption/title and the recipe ingredients/directions, treat them as a possible process-photo sequence and compare the raw count to generated `imageUrls.length`.
 - If an image appears immediately after a recipe's directions, verify whether it is a real recipe photo, an experiment/note marker, or a decorative asset. Small repeated note icons should not pass as recipe photos even when they are structurally inline.
-- Print or query a title -> primary image map for at least one suspicious chapter run. Look for one-off shifts where every recipe appears to have the next recipe's image.
+- Print or query both title -> primary image and title -> image count maps for at least one suspicious chapter run. Look for one-off shifts where every recipe appears to have the next recipe's image, and count mismatches where process-heavy recipes have only one image.
 - Open representative bitmaps, not just filenames. Filename sequence numbers are weak evidence when the book has no page-numbered assets or captions.
 
 Reject likely bad images:
@@ -151,7 +162,9 @@ After extraction, inspect:
 - Total technique count and whether technique titles are specific.
 - Warnings for no-image recipes.
 - Representative recipes from every chapter.
+- Top `imageUrls.length` galleries, recipes with `imageUrls.length === 0`, and recipes whose raw XHTML shows more images than imported JSON.
 - At least three image matches from each image assignment mode: inline, caption-linked, nearby if used.
+- At least one known process-heavy recipe by opening raw XHTML and comparing its inline/caption-linked image count to imported `imageUrls.length`.
 - For split-file layouts, at least one neighboring recipe run where photos were previously likely to shift backward or forward. Include concrete regression examples in tests.
 - Variants are folded and not duplicated as recipes.
 - Cookbook chapters are real book chapters.

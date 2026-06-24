@@ -32,6 +32,7 @@ Imported cookbook recipes should include:
 - `source.type = "imported"`.
 - `source.name = Author - Cookbook Title`.
 - Optional `imageUrl` only when image audit passes.
+- Optional `imageUrls` containing the ordered gallery of all high-confidence recipe images. Include the primary image in this array; keep `imageUrl` as the first/gallery-card image for compatibility.
 - Culinary tags plus optional hidden `chapter:<label>` markers.
 - Folded `variations` for dependent variants.
 - Stable direction step IDs and order numbers.
@@ -54,6 +55,16 @@ The importer writes only referenced assets. Keep filenames stable and filesystem
 
 Use the first extracted image as the recipe card/detail image. Keep image extraction conservative and auditable.
 
+For multi-image cookbooks, write every referenced recipe image asset and preserve the extracted order in `recipe_json.imageUrls`. Do not add a separate DB column unless the UI needs gallery counts in summary rows; the canonical recipe JSON can carry the full gallery while `image_url` remains the primary summary image.
+
+Second-pass image audit:
+
+- Compare raw XHTML image blocks around representative recipes against generated `imageUrls.length`.
+- Print the top recipes by image count and spot-check their primary image plus several gallery thumbnails.
+- Inspect recipes with exactly `0` or `1` image when the raw source appears process-heavy.
+- Confirm small process photos were not dropped merely because they are below the hero-photo byte threshold.
+- Confirm decorative/title/chapter images did not enter galleries, especially when lowering thresholds for strong inline evidence.
+
 When changing image heuristics, add regression tests with concrete recipes. Current important examples:
 
 - `Philly Cheesesteak Sandwiches` uses Babish `p036.jpg`.
@@ -68,6 +79,9 @@ When changing image heuristics, add regression tests with concrete recipes. Curr
 - Salad Lab `French-Style Potato Salad` uses `images/00100.jpg`.
 - Salad Lab `Fattoush` uses `images/00091.jpg`.
 - Salad Lab standalone image pages must not cascade backward into the previous recipe segment.
+- Morimoto `Vegetable Temaki` preserves all five small inline process photos.
+- Morimoto `Spicy Tuna Temaki` preserves six inline process photos.
+- Morimoto `HAKUMAI: PERFECT WHITE RICE` and `BATTERA: PRESSED MACKEREL SUSHI` are useful gallery-count checks for page-spanning process images.
 
 ## Tags And Cookbook Chapters
 
@@ -145,6 +159,8 @@ Add regression coverage when:
 
 - A new EPUB class pattern is needed for recipe detection.
 - A specific image match was wrong or missing.
+- A recipe with multiple real images imported with too few `imageUrls`.
+- Small inline/caption-linked process photos require lower thresholds than nearby fallback images.
 - A no-image recipe was incorrectly assigned a decorative/title image.
 - A split-file cookbook has standalone image-only documents before recipe title pages or multiple image-only pages between neighboring recipes.
 - A variant was duplicated as a recipe.
@@ -160,7 +176,7 @@ After applying an import locally, query or inspect:
 - Counts by hidden `chapter:<label>` markers.
 - Rows containing fake tags such as `cookbook`, `cookbook-recipe`, or `cookbook:<slug>`.
 - Representative recipe JSON for tags, variations, image URL, and source.
-- Representative recipe image URLs for known risky neighboring runs, especially where adjacent recipe photos could shift backward or forward.
+- Representative recipe image URLs and `imageUrls.length` for known risky neighboring runs, especially where adjacent recipe photos could shift backward or forward or where process-photo grids should produce galleries.
 - Technique rows for `source_name`, `technique_type`, `blocks_json`, and `image_url`.
 
 Keep generated image assets only when referenced by imported rows.

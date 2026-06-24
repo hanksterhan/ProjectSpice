@@ -1,6 +1,6 @@
 ---
 name: extract-cookbook
-description: This skill should be used when extracting cookbook EPUB files into ProjectSpice recipes, recipe images, cookbook chapters, and cookbook techniques, including auditing image matches, variants, deduplication, and sidebar/library integration.
+description: This skill should be used when extracting cookbook EPUB files into ProjectSpice recipes, single or multi-image recipe galleries, cookbook chapters, and cookbook techniques, including auditing image matches, variants, deduplication, and sidebar/library integration.
 ---
 
 # Extract Cookbook
@@ -14,7 +14,7 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 3. Inspect the target EPUB structure before assuming it matches previous books. Check OPF metadata, spine order, nav/TOC, XHTML class names, pagebreak markers, image paths, captions, and representative recipe pages.
 4. Work chapter by chapter. Confirm recipe counts, chapter labels, image coverage, and technique candidates for each chapter before applying data broadly.
 5. Treat the first import as a draft. Audit representative rows and images before applying to local D1 or committing generated assets.
-6. Always do a second image-assignment pass for new cookbook structures. Compare the raw spine order, standalone image-only documents, image-before-heading pages, image-after-recipe pages, generated SQL `imageUrl`s, and several opened bitmap assets against neighboring recipe titles.
+6. Always do a second image-assignment pass for new cookbook structures. Compare the raw spine order, standalone image-only documents, image-before-heading pages, image-after-recipe pages, generated SQL `imageUrl`/`imageUrls`, per-recipe image counts, and several opened bitmap assets against neighboring recipe titles.
 
 ## Core ProjectSpice Rules
 
@@ -24,6 +24,7 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 - Prefer no image over a bad image. Do not attach title cards, chapter headers, captions, decorative art, indexes, or low-confidence placeholders.
 - Accept that some real recipes do not have a picture.
 - Use captions, image anchors, page numbers, inline image placement, and nearby context to assign images to the right recipe. Reuse an image for only one recipe unless there is strong book evidence that the image truly represents multiple entries.
+- Preserve multiple real recipe images when the cookbook provides them, especially process-photo sequences, step grids, or same-caption image runs. Keep the first high-confidence image as `imageUrl` and store the ordered gallery in `imageUrls`.
 - Beware photo-only split files and back-to-back image pages. Some EPUBs place a recipe photo in a standalone document immediately before that recipe's title, while decorative or second photos can sit between recipes. Segment boundaries must prevent the previous recipe from stealing the next recipe's lead image.
 - Fold small recipe variants into the parent recipe `variations` array when they are presented as variations of a base recipe. Do not create duplicate standalone recipes for those variants.
 - Record techniques separately from recipes when the content teaches a process, formula, table, checklist, troubleshooting guide, or reusable reference knowledge without a full recipe ingredient/direction structure.
@@ -49,7 +50,7 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 4. Update extractor heuristics only as needed for durable patterns, not one-off title hacks.
 5. Run focused extractor tests and add regression assertions for new structural discoveries.
 6. Dry-run the importer and inspect the JSON summary plus generated SQL for source names, chapter markers, tag shape, recipe count, technique count, warnings, and image file count.
-7. Run the image second pass: inspect neighboring recipe/image runs around suspicious areas, especially recipes with no image, multiple candidate images, or a primary image that visually resembles a neighboring recipe.
+7. Run the image second pass: inspect neighboring recipe/image runs around suspicious areas, especially recipes with no image, multiple candidate images, unexpectedly low/high `imageUrls` counts, or a primary image that visually resembles a neighboring recipe.
 8. Audit generated images by opening representative assets and comparing them to recipe titles/captions/page numbers.
 9. Apply locally only after the dry run looks right.
 10. Verify local D1 rows for sources, chapters, hidden tags, representative recipes, variants, techniques, and image URLs.
@@ -63,5 +64,7 @@ pnpm test app/modules/library/__tests__/recipe-library.test.ts
 pnpm cookbook:import -- --out /tmp/projectspice-cookbook-import.sql "/absolute/path/to/book.epub"
 pnpm cookbook:import -- --apply --local "/absolute/path/to/book.epub"
 ```
+
+For multi-image audits, parse the generated SQL or local D1 rows into `title -> imageUrls.length` and inspect the top galleries plus known process-heavy recipes before applying or committing.
 
 Use `--remote` only when the user explicitly asks to update the remote Cloudflare D1 database.
