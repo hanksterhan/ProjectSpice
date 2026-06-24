@@ -82,18 +82,22 @@ try {
     }
 
     const recipes = extraction.recipes.map((entry) => {
-      const firstImage = entry.images[0];
-      const imageUrl = firstImage
-        ? writeImageAsset({
-            buffer,
-            bookSlug,
-            baseUrl,
-            imageDir,
-            imageRef: firstImage,
-            extractor: cookbook,
-            cache: imageUrlByPath,
-          })
-        : undefined;
+      const imageUrls = Array.from(
+        new Set(
+          entry.images.map((imageRef) =>
+            writeImageAsset({
+              buffer,
+              bookSlug,
+              baseUrl,
+              imageDir,
+              imageRef,
+              extractor: cookbook,
+              cache: imageUrlByPath,
+            }),
+          ),
+        ),
+      );
+      const imageUrl = imageUrls[0];
       const now = new Date().toISOString();
       const draftRecipe = entry.draftRecipe;
       const chapter = getCookbookImportChapter(sourceName, entry.sourceDocumentPath);
@@ -106,6 +110,7 @@ try {
         ...draftRecipe,
         id,
         imageUrl,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         source: {
           type: "imported",
           name: sourceName,

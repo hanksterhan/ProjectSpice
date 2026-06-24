@@ -12,6 +12,8 @@ const recipeIdSchema = requiredTrimmedTextSchema;
 
 const dateOnlySchema = z.iso.date();
 
+const recipeImageUrlSchema = z.url();
+
 export const recipeSourceTypeSchema = z.enum([
   "manual",
   "ai",
@@ -118,7 +120,8 @@ export const recipeSchema = z
     description: optionalTrimmedTextSchema,
     yield: recipeYieldSchema.optional(),
     times: recipeTimesSchema.optional(),
-    imageUrl: z.url().optional(),
+    imageUrl: recipeImageUrlSchema.optional(),
+    imageUrls: z.array(recipeImageUrlSchema).min(1).optional(),
     ingredients: z.array(ingredientSectionSchema).min(1),
     directions: z.array(directionSectionSchema).min(1),
     variations: z.array(recipeVariationSchema).optional(),
@@ -142,6 +145,7 @@ export const recipeSummarySchema = recipeSchema.pick({
   yield: true,
   times: true,
   imageUrl: true,
+  imageUrls: true,
   source: true,
   tags: true,
   favorite: true,

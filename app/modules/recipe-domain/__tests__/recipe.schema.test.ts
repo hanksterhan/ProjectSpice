@@ -23,6 +23,23 @@ describe("recipeSchema", () => {
     );
   });
 
+  it("accepts an ordered recipe image gallery", () => {
+    expect(
+      recipeSchema.parse({
+        ...validRecipeFixture,
+        imageUrls: [
+          "https://images.example.com/weeknight-sesame-chicken-bowls.jpg",
+          "https://images.example.com/weeknight-sesame-chicken-bowls-step-1.jpg",
+        ],
+      }),
+    ).toMatchObject({
+      imageUrls: [
+        "https://images.example.com/weeknight-sesame-chicken-bowls.jpg",
+        "https://images.example.com/weeknight-sesame-chicken-bowls-step-1.jpg",
+      ],
+    });
+  });
+
   it("accepts favorite and 0.1-granularity rating metadata", () => {
     expect(
       recipeSchema.parse({
@@ -124,6 +141,15 @@ describe("recipeSchema", () => {
     const result = recipeSchema.safeParse({
       ...validRecipeFixture,
       imageUrl: "not-a-url",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid recipe gallery image URLs", () => {
+    const result = recipeSchema.safeParse({
+      ...validRecipeFixture,
+      imageUrls: ["https://images.example.com/valid.jpg", "not-a-url"],
     });
 
     expect(result.success).toBe(false);

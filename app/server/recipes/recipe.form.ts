@@ -124,6 +124,7 @@ function toRecipeDraft(recipe: RecipeDraft): RecipeDraft {
     yield: recipe.yield,
     times: recipe.times,
     imageUrl: recipe.imageUrl,
+    imageUrls: recipe.imageUrls,
     ingredients: recipe.ingredients,
     directions: recipe.directions,
     variations: recipe.variations,

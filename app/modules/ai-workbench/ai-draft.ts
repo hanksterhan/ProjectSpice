@@ -52,6 +52,7 @@ export function buildUpdatedRecipeFromAiDraft({
     ...parsedDraft,
     id: existingRecipe.id,
     favorite: parsedDraft.favorite ?? existingRecipe.favorite,
+    imageUrls: parsedDraft.imageUrls ?? existingRecipe.imageUrls,
     rating: parsedDraft.rating ?? existingRecipe.rating,
     cookedDates: parsedDraft.cookedDates ?? existingRecipe.cookedDates,
     cookHistory: parsedDraft.cookHistory ?? existingRecipe.cookHistory,

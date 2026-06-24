@@ -316,6 +316,27 @@ describe("extractCookbookContentFromDocuments", () => {
             </body></html>
           `,
         },
+        {
+          path: "OEBPS/text/9780062344397_Chapter_2_sec13.xhtml",
+          spineIndex: 2,
+          html: `
+            <html><body>
+              <p class="h4p" id="sec13"><a href="nav.xhtml#rsec13"><i>Vegetable Temaki</i></a></p>
+              <p class="imaget"><span epub:type="pagebreak" title="57"/><img src="../images/f0057-01.jpg" alt="image"/></p>
+              <p class="imaget"><img src="../images/f0057-02.jpg" alt="image"/></p>
+              <p class="imaget"><img src="../images/f0057-03.jpg" alt="image"/></p>
+              <p class="imaget"><img src="../images/f0057-04.jpg" alt="image"/></p>
+              <p class="image"><img src="../images/f0057-05.jpg" alt="image"/></p>
+              <p class="hangmp5">MAKES 8 HAND ROLLS</p>
+              <p class="hang1a">4 nori seaweed sheets, halved lengthwise</p>
+              <p class="hang">About 2 cups cooked, vinegared short-grain white rice</p>
+              <p class="hang">About 1 1/2 teaspoons wasabi paste</p>
+              <p class="hang">8 fresh shiso leaves</p>
+              <p class="noindenta1a">To make each hand roll, hold a piece of nori shiny side down.</p>
+              <p class="noindenta1">Roll the nori around the filling to form a cone or cylinder.</p>
+            </body></html>
+          `,
+        },
       ],
       images: [
         {
@@ -330,6 +351,36 @@ describe("extractCookbookContentFromDocuments", () => {
           byteLength: 250_000,
           pageNumber: 188,
         },
+        {
+          epubPath: "OEBPS/images/f0057-01.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 120_000,
+          pageNumber: 57,
+        },
+        {
+          epubPath: "OEBPS/images/f0057-02.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 130_000,
+          pageNumber: 57,
+        },
+        {
+          epubPath: "OEBPS/images/f0057-03.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 140_000,
+          pageNumber: 57,
+        },
+        {
+          epubPath: "OEBPS/images/f0057-04.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 220_000,
+          pageNumber: 57,
+        },
+        {
+          epubPath: "OEBPS/images/f0057-05.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 110_000,
+          pageNumber: 57,
+        },
       ],
     });
 
@@ -337,6 +388,7 @@ describe("extractCookbookContentFromDocuments", () => {
       "HAKUMAI: PERFECT WHITE RICE",
       "FURIKAKE WITH SHRIMP SHELLS AND POTATO CHIPS",
       "HOMEMADE UDON NOODLES",
+      "Vegetable Temaki",
     ]);
     expect(findRecipe(extraction.recipes, "HAKUMAI: PERFECT WHITE RICE")).toMatchObject({
       pageNumber: 33,
@@ -350,6 +402,13 @@ describe("extractCookbookContentFromDocuments", () => {
       findRecipe(extraction.recipes, "HOMEMADE UDON NOODLES")?.draftRecipe.directions[0]
         .steps,
     ).toHaveLength(3);
+    expect(findRecipe(extraction.recipes, "Vegetable Temaki")?.images.map((image) => image.epubPath)).toEqual([
+      "OEBPS/images/f0057-01.jpg",
+      "OEBPS/images/f0057-02.jpg",
+      "OEBPS/images/f0057-03.jpg",
+      "OEBPS/images/f0057-04.jpg",
+      "OEBPS/images/f0057-05.jpg",
+    ]);
   });
 });
 

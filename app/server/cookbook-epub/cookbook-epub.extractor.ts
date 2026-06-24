@@ -51,6 +51,7 @@ type RankedImageCandidate = {
   role: CookbookEpubImageRole;
   alt?: string;
   score: number;
+  pageDistance: number;
 };
 
 type BlockType = "heading" | "paragraph" | "listItem" | "image" | "pagebreak" | "table";
@@ -1344,9 +1345,8 @@ function findImagesForSegment(
   }
 
   return candidates
-    .sort((left, right) => right.score - left.score || left.image.index - right.image.index)
-    .map((candidate) => toImageRef(candidate.image, candidate.role, candidate.alt))
-    .slice(0, 3);
+    .sort(compareImageCandidates)
+    .map((candidate) => toImageRef(candidate.image, candidate.role, candidate.alt));
 }
 
 function findNearbyCatalogImages(
@@ -1390,7 +1390,7 @@ function pushImageCandidate(
   role: CookbookEpubImageRole,
   alt?: string,
 ): void {
-  if (!isLikelyRecipeImage(image)) {
+  if (!isLikelyRecipeImageForRole(image, role)) {
     return;
   }
 
@@ -1403,6 +1403,7 @@ function pushImageCandidate(
   }
 
   const score = scoreImageCandidate(segment, image, role);
+  const pageDistance = getImagePageDistance(segment, image);
   const existing = candidates.find((candidate) => candidate.image.epubPath === image.epubPath);
 
   if (existing) {
@@ -1410,12 +1411,24 @@ function pushImageCandidate(
       existing.role = role;
       existing.alt = alt;
       existing.score = score;
+      existing.pageDistance = pageDistance;
     }
 
     return;
   }
 
-  candidates.push({ image, role, alt, score });
+  candidates.push({ image, role, alt, score, pageDistance });
+}
+
+function compareImageCandidates(
+  left: RankedImageCandidate,
+  right: RankedImageCandidate,
+): number {
+  if (left.role === "inline" && right.role === "inline" && left.pageDistance === right.pageDistance) {
+    return left.image.index - right.image.index;
+  }
+
+  return right.score - left.score || left.image.index - right.image.index;
 }
 
 function scoreImageCandidate(
@@ -1423,11 +1436,7 @@ function scoreImageCandidate(
   image: ImageCatalogEntry,
   role: CookbookEpubImageRole,
 ): number {
-  const pageNumber = segment.heading.pageNumber;
-  const pageDistance =
-    pageNumber !== undefined && image.pageNumber !== undefined
-      ? Math.abs(image.pageNumber - pageNumber)
-      : 8;
+  const pageDistance = getImagePageDistance(segment, image);
   const roleScore =
     role === "inline" ? 18 : role === "caption-linked" ? 14 : role === "nearby" ? 10 : 0;
   const pageScore = Math.max(0, 30 - pageDistance * 9);
@@ -1442,6 +1451,33 @@ function isLikelyRecipeImage(image: ImageCatalogEntry): boolean {
   }
 
   return image.byteLength >= 180_000;
+}
+
+function isLikelyRecipeImageForRole(
+  image: ImageCatalogEntry,
+  role: CookbookEpubImageRole,
+): boolean {
+  if (isLikelyRecipeImage(image)) {
+    return true;
+  }
+
+  if (role === "nearby") {
+    return false;
+  }
+
+  if (/reference[_-]page[_-](?:vi|iv|ix|x|v)\b/i.test(image.epubPath)) {
+    return false;
+  }
+
+  return image.byteLength >= 100_000;
+}
+
+function getImagePageDistance(segment: RecipeSegment, image: ImageCatalogEntry): number {
+  const pageNumber = segment.heading.pageNumber;
+
+  return pageNumber !== undefined && image.pageNumber !== undefined
+    ? Math.abs(image.pageNumber - pageNumber)
+    : 8;
 }
 
 function toImageRef(

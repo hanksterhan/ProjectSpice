@@ -2483,7 +2483,7 @@ p {
 .recipe-detail-image,
 .recipe-detail-hero .image-fallback {
   background: var(--surface-muted);
-  height: clamp(22rem, 36vw, 34rem);
+  height: 100%;
   min-height: 0;
   width: 100%;
 }
@@ -2495,16 +2495,92 @@ p {
 .recipe-detail-image {
   align-self: center;
   display: block;
-  height: auto;
+  height: 100%;
   justify-self: center;
-  max-height: clamp(22rem, 36vw, 34rem);
+  max-height: 100%;
   max-width: 100%;
   object-fit: contain;
-  width: auto;
+  width: 100%;
 }
 
 .recipe-detail-image[src*="/recipe-images/chilled-desserts/"] {
   max-width: 280px;
+}
+
+.recipe-image-gallery {
+  align-self: stretch;
+  background: var(--surface-muted);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  position: relative;
+}
+
+.recipe-image-gallery:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 70%, white);
+  outline-offset: -3px;
+}
+
+.recipe-image-stage {
+  align-items: center;
+  background: var(--surface-muted);
+  display: grid;
+  height: clamp(22rem, 36vw, 34rem);
+  justify-items: center;
+  min-height: clamp(22rem, 36vw, 34rem);
+  padding: 0.75rem;
+  position: relative;
+}
+
+.recipe-image-count {
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
+  border-radius: 999px;
+  bottom: 0.75rem;
+  color: white;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0.45rem 0.6rem;
+  position: absolute;
+  right: 0.75rem;
+}
+
+.recipe-image-thumbnails {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.55rem;
+}
+
+.recipe-image-thumbnails button {
+  background: var(--surface-raised);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
+  flex: 0 0 auto;
+  height: 3.5rem;
+  padding: 0;
+  width: 4.25rem;
+}
+
+.recipe-image-thumbnails button.active,
+.recipe-image-thumbnails button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.recipe-image-thumbnail,
+.recipe-image-thumbnails .image-fallback {
+  border-radius: 4px;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .recipe-detail-stats {
@@ -4862,9 +4938,14 @@ p {
     font-size: 0.98rem;
   }
 
-  .recipe-detail-image,
-  .recipe-detail-hero .image-fallback {
+  .recipe-image-stage {
     height: clamp(16rem, 72vw, 24rem);
+    min-height: clamp(16rem, 72vw, 24rem);
+  }
+
+  .recipe-image-thumbnail,
+  .recipe-image-thumbnails .image-fallback {
+    height: 100%;
   }
 
   .recipe-detail-stats div,

@@ -1,3 +1,4 @@
+import { useState, type KeyboardEvent } from "react";
 import { ExternalLink } from "lucide-react";
 import { Form, Link } from "react-router";
 
@@ -76,11 +77,7 @@ export function RecipeViewer({
           </div>
         </div>
 
-        <RecipeImage
-          className="recipe-detail-image"
-          src={displayRecipe.imageUrl}
-          title={displayRecipe.title}
-        />
+        <RecipeImageGallery recipe={displayRecipe} />
       </header>
 
       <dl className="recipe-detail-stats" aria-label="Recipe overview">
@@ -293,10 +290,95 @@ function getDisplayRecipe(recipe: Recipe, activeLens: RecipeLens | null): Recipe
   return {
     ...activeLens.recipeDraft,
     id: recipe.id,
+    imageUrl: activeLens.recipeDraft.imageUrl ?? recipe.imageUrl,
+    imageUrls: activeLens.recipeDraft.imageUrls ?? recipe.imageUrls,
     version: recipe.version,
     createdAt: recipe.createdAt,
     updatedAt: activeLens.updatedAt,
   };
+}
+
+function RecipeImageGallery({ recipe }: { recipe: Recipe }) {
+  const imageUrls = getRecipeImageUrls(recipe);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedImageUrl = imageUrls[selectedIndex] ?? recipe.imageUrl;
+  const hasGallery = imageUrls.length > 1;
+  const selectPreviousImage = () => {
+    setSelectedIndex((currentIndex) =>
+      currentIndex === 0 ? imageUrls.length - 1 : currentIndex - 1,
+    );
+  };
+  const selectNextImage = () => {
+    setSelectedIndex((currentIndex) =>
+      currentIndex >= imageUrls.length - 1 ? 0 : currentIndex + 1,
+    );
+  };
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!hasGallery) {
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectPreviousImage();
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectNextImage();
+    }
+  };
+
+  return (
+    <div
+      aria-label={hasGallery ? `${recipe.title} image gallery` : undefined}
+      className="recipe-image-gallery"
+      onKeyDown={handleKeyDown}
+      tabIndex={hasGallery ? 0 : undefined}
+    >
+      <div className="recipe-image-stage">
+        <RecipeImage
+          className="recipe-detail-image"
+          loading="eager"
+          src={selectedImageUrl}
+          title={recipe.title}
+        />
+        {hasGallery ? (
+          <span className="recipe-image-count" aria-label={`${selectedIndex + 1} of ${imageUrls.length} recipe images`}>
+            {selectedIndex + 1} / {imageUrls.length}
+          </span>
+        ) : null}
+      </div>
+      {hasGallery ? (
+        <div className="recipe-image-thumbnails" aria-label="Recipe images">
+          {imageUrls.map((imageUrl, imageIndex) => (
+            <button
+              aria-label={`Show recipe image ${imageIndex + 1} of ${imageUrls.length}`}
+              aria-pressed={imageIndex === selectedIndex}
+              className={imageIndex === selectedIndex ? "active" : undefined}
+              key={`${imageUrl}-${imageIndex}`}
+              onClick={() => setSelectedIndex(imageIndex)}
+              type="button"
+            >
+              <RecipeImage
+                className="recipe-image-thumbnail"
+                src={imageUrl}
+                title={`${recipe.title} image ${imageIndex + 1}`}
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function getRecipeImageUrls(recipe: Recipe): string[] {
+  return Array.from(
+    new Set([recipe.imageUrl, ...(recipe.imageUrls ?? [])].filter(isString)),
+  );
+}
+
+function isString(value: string | undefined): value is string {
+  return typeof value === "string" && value.length > 0;
 }
 
 type RecipeLensDrawerProps = {
