@@ -266,6 +266,91 @@ describe("extractCookbookContentFromDocuments", () => {
     expect(extraction.recipes[0].draftRecipe.ingredients[0].items).toHaveLength(3);
     expect(extraction.techniques[0].title).toBe("How to Whip Cream");
   });
+
+  it("extracts Morimoto-style split headings, boxed recipes, and figure page images", () => {
+    const extraction = extractCookbookContentFromDocuments({
+      metadata: { title: "Mastering the Art of Japanese Home Cooking" },
+      documents: [
+        {
+          path: "OEBPS/text/9780062344397_Chapter_2_sec3.xhtml",
+          spineIndex: 0,
+          html: `
+            <html><body>
+              <p class="h3a" id="sec3"><span epub:type="pagebreak" title="33"/>HAKUMAI</p>
+              <p class="h3b">PERFECT WHITE RICE</p>
+              <p class="image"><span epub:type="pagebreak" title="32"/><img src="../images/f0032-01.jpg" alt="image"/></p>
+              <p class="noindenth"><i>Short-grain rice becomes glossy and plump.</i></p>
+              <p class="hangm">MAKES 6 CUPS</p>
+              <p class="hang1">2 cups short-grain white rice</p>
+              <p class="noindenta1a">Rinse the rice until the water runs clear.</p>
+              <p class="noindenta1">Cook the rice with the same volume of water.</p>
+              <p class="noindenta1">Fluff the rice and serve.</p>
+              <div class="box">
+                <p class="h3"><span class="blue">FURIKAKE WITH SHRIMP SHELLS AND POTATO CHIPS</span></p>
+                <p class="noindentbt"><span class="blue">A crunchy seasoning for rice.</span></p>
+                <p class="hangm"><span class="blue">MAKES ABOUT 1 CUP</span></p>
+                <p class="hangb1"><span class="blue">2 cups shrimp shells</span></p>
+                <p class="hangb"><span class="blue">1 sheet nori</span></p>
+                <p class="noindentb1"><span class="blue">Toast the shells until dry.</span></p>
+                <p class="noindentb1"><span class="blue">Grind with nori and season to taste.</span></p>
+              </div>
+            </body></html>
+          `,
+        },
+        {
+          path: "OEBPS/text/9780062344397_Chapter_8_sec53.xhtml",
+          spineIndex: 1,
+          html: `
+            <html><body>
+              <p class="h3tb" id="sec53"><span epub:type="pagebreak" title="189"/>HOMEMADE UDON NOODLES</p>
+              <p class="image"><span epub:type="pagebreak" title="188"/><img src="../images/f0188-01.jpg" alt="image"/></p>
+              <p class="noindenta"><i>Homemade udon is chewy and springy.</i></p>
+              <p class="hangm">MAKES 2 POUNDS</p>
+              <p class="hang1">600 grams all-purpose flour</p>
+              <p class="hang">1 tablespoon kosher salt</p>
+              <p class="hang">1 1/4 cups water</p>
+              <p class="noindenta2">MAKE THE DOUGH</p>
+              <p class="noindenta1">Combine the flour and salt.</p>
+              <p class="noindenta1">Knead until smooth, about 5 minutes.</p>
+              <p class="noindenta1">Slice into noodles and cook right away.</p>
+            </body></html>
+          `,
+        },
+      ],
+      images: [
+        {
+          epubPath: "OEBPS/images/f0032-01.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 250_000,
+          pageNumber: 32,
+        },
+        {
+          epubPath: "OEBPS/images/f0188-01.jpg",
+          mediaType: "image/jpeg",
+          byteLength: 250_000,
+          pageNumber: 188,
+        },
+      ],
+    });
+
+    expect(extraction.recipes.map((recipe) => recipe.draftRecipe.title)).toEqual([
+      "HAKUMAI: PERFECT WHITE RICE",
+      "FURIKAKE WITH SHRIMP SHELLS AND POTATO CHIPS",
+      "HOMEMADE UDON NOODLES",
+    ]);
+    expect(findRecipe(extraction.recipes, "HAKUMAI: PERFECT WHITE RICE")).toMatchObject({
+      pageNumber: 33,
+      images: [expect.objectContaining({ epubPath: "OEBPS/images/f0032-01.jpg", pageNumber: 32 })],
+    });
+    expect(
+      findRecipe(extraction.recipes, "FURIKAKE WITH SHRIMP SHELLS AND POTATO CHIPS")
+        ?.draftRecipe.ingredients[0].items,
+    ).toHaveLength(2);
+    expect(
+      findRecipe(extraction.recipes, "HOMEMADE UDON NOODLES")?.draftRecipe.directions[0]
+        .steps,
+    ).toHaveLength(3);
+  });
 });
 
 function findRecipe(recipes: ExtractedCookbookRecipe[], title: string) {

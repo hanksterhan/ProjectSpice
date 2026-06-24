@@ -368,6 +368,12 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
 
     const text = normalizeHtmlText(innerHtml);
     const nestedImages = extractImageAttributes(innerHtml);
+    const inlinePageNumber = extractPageBreakPageNumber(innerHtml);
+    const blockPageNumber = inlinePageNumber ?? currentPage;
+
+    if (inlinePageNumber !== undefined) {
+      currentPage = inlinePageNumber;
+    }
 
     if (nestedImages.length > 0) {
       for (const imageAttributes of nestedImages) {
@@ -385,7 +391,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
           hrefs: [],
           imagePath: normalizeEpubPath(path.dirname(document.path), imageAttributes.src),
           imageAlt: normalizeText(imageAttributes.alt ?? "") || undefined,
-          pageNumber: currentPage,
+          pageNumber: blockPageNumber,
           blockIndex: blocks.length,
           documentPath: document.path,
           spineIndex: document.spineIndex,
@@ -398,7 +404,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
     }
 
     blocks.push({
-      type: tagName.startsWith("h") || looksLikeFormattedTitle(innerHtml)
+      type: tagName.startsWith("h") || looksLikeFormattedTitle(innerHtml) || looksLikeRecipeTitleClass(attributes.class)
         ? "heading"
         : tagName === "li"
           ? "listItem"
@@ -411,7 +417,7 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
       hrefs: extractHrefs(innerHtml, document.path),
       headingLevel: tagName.startsWith("h") ? Number(tagName.slice(1)) : undefined,
       listValue: tagName === "li" ? parseListValue(attributes.value) : undefined,
-      pageNumber: currentPage,
+      pageNumber: blockPageNumber,
       blockIndex,
       documentPath: document.path,
       spineIndex: document.spineIndex,
@@ -538,6 +544,10 @@ function looksLikeRecipeHeading(
 ): boolean {
   const className = heading.className ?? "";
 
+  if (/h3b|h3ca/i.test(className)) {
+    return false;
+  }
+
   if (/recipe[_-]?title|recipetitle|subrecipetitle/i.test(className)) {
     return true;
   }
@@ -560,9 +570,16 @@ function looksLikeRecipeHeading(
   const hasTwoListRecipeStructure =
     extendedFollowing.some((block) => isYieldBlock(block)) &&
     looksLikeTwoListRecipeStructure(extendedFollowing);
+  const hasMorimotoStructure =
+    looksLikeRecipeTitleClass(className) &&
+    extendedFollowing.some((block) => isYieldBlock(block)) &&
+    extendedFollowing.some((block) => isIngredientBlock(block)) &&
+    extendedFollowing.some((block) => isDirectionBlock(block));
 
   return (
     (hasYield && ingredientLines.length >= 2 && methodLines.length >= 1) ||
+    (hasYield && ingredientLines.length >= 1 && methodLines.length >= 2) ||
+    hasMorimotoStructure ||
     hasSaladLabStructure ||
     hasTwoListRecipeStructure
   );
@@ -635,7 +652,7 @@ function toExtractedRecipes(
     captionImageMap: Map<string, ImageCatalogEntry[]>;
   },
 ): ExtractedCookbookRecipe[] {
-  const title = cleanTitle(segment.heading.text);
+  const title = getRecipeTitle(segment);
   const ingredients = toIngredientSections(segment.blocks);
   const directions = toDirectionSections(segment.blocks);
 
@@ -764,6 +781,29 @@ function scoreAssignedImage(
   const positionScore = Math.max(0, 4 - imageIndex);
 
   return roleScore + pageScore + positionScore;
+}
+
+function getRecipeTitle(segment: RecipeSegment): string {
+  const subtitle = getMorimotoSubtitle(segment);
+
+  return cleanTitle([segment.heading.text, subtitle].filter(isText).join(": "));
+}
+
+function getMorimotoSubtitle(segment: RecipeSegment): string | undefined {
+  const headingPosition = segment.blocks.findIndex(
+    (block) => blockKey(block) === blockKey(segment.heading),
+  );
+  const nextBlock = segment.blocks[headingPosition + 1];
+
+  if (!nextBlock || nextBlock.type !== "paragraph") {
+    return undefined;
+  }
+
+  if (!/h3b|h3ca/i.test(nextBlock.className ?? "")) {
+    return undefined;
+  }
+
+  return nextBlock.text;
 }
 
 function toExtractedTechnique(
@@ -996,7 +1036,9 @@ function toIngredientSections(blocks: ContentBlock[]): IngredientSection[] {
     return firstListSections;
   }
 
-  const ingredientBlocks = blocks.filter(isIngredientBlock);
+  const ingredientBlocks = blocks.filter(
+    (block) => isIngredientBlock(block) && !isMorimotoSpecialEquipmentItem(block, blocks),
+  );
   const lines = ingredientBlocks
     .map((block) => block.text)
     .map(cleanIngredientLine)
@@ -1425,6 +1467,10 @@ function isIngredientBlock(block: ContentBlock): boolean {
     return true;
   }
 
+  if (looksLikeMorimotoIngredientClass(className)) {
+    return true;
+  }
+
   if (block.type !== "listItem") {
     return false;
   }
@@ -1435,11 +1481,59 @@ function isIngredientBlock(block: ContentBlock): boolean {
 function isDirectionBlock(block: ContentBlock): boolean {
   const className = block.className ?? "";
 
-  return /step|method|direction|instruction|procedure/i.test(className);
+  return /step|method|direction|instruction|procedure/i.test(className) ||
+    looksLikeMorimotoDirectionClass(className);
 }
 
 function isYieldBlock(block: ContentBlock): boolean {
-  return /yield|serves?|makes?/i.test(block.className ?? "") || /^(serves|makes|yields)\b/i.test(block.text);
+  const className = block.className ?? "";
+
+  return /yield|serves?|makes?/i.test(className) ||
+    looksLikeMorimotoYieldClass(className) ||
+    /^(serves|makes|yields)\b/i.test(block.text);
+}
+
+function looksLikeRecipeTitleClass(className: string | undefined): boolean {
+  return /^(?:h3a|h3c|h3|h3tb|h4|h4p)$/i.test(className ?? "");
+}
+
+function looksLikeMorimotoYieldClass(className: string): boolean {
+  return /^(?:hangm|hangmp5|hangmi|hangmip5)$/i.test(className);
+}
+
+function looksLikeMorimotoIngredientClass(className: string): boolean {
+  return /^(?:hang|hang1|hang1a|hangb|hangb1|hangi|hangi1)$/i.test(className);
+}
+
+function looksLikeMorimotoDirectionClass(className: string): boolean {
+  return /^(?:noindenta1|noindenta1a|noindenta3|noindenta3a|noindentb1|noindenti1)$/i.test(className);
+}
+
+function isMorimotoSpecialEquipmentItem(block: ContentBlock, blocks: ContentBlock[]): boolean {
+  if (!/^(?:hang|hangi|hangb)$/i.test(block.className ?? "")) {
+    return false;
+  }
+
+  const blockIndex = blocks.findIndex((candidate) => blockKey(candidate) === blockKey(block));
+
+  for (let index = blockIndex - 1; index >= 0; index -= 1) {
+    const previous = blocks[index];
+    const className = previous?.className ?? "";
+
+    if (!previous || previous.type === "heading" || isYieldBlock(previous) || isDirectionBlock(previous)) {
+      return false;
+    }
+
+    if (/^(?:hang1|hang1a|hangb1|hangi1)$/i.test(className)) {
+      return false;
+    }
+
+    if (/^hangst$/i.test(className)) {
+      return /special equipment/i.test(previous.text);
+    }
+  }
+
+  return false;
 }
 
 function isNavigationBlock(block: ContentBlock): boolean {
@@ -1710,9 +1804,37 @@ function parsePageNumber(value: string | undefined): number | undefined {
     return Number(referencePageMatch[1]);
   }
 
+  const figurePageMatch = /(?:^|[/_-])f(\d{4})(?:[-_.]|$)/i.exec(value);
+
+  if (figurePageMatch) {
+    return Number(figurePageMatch[1]);
+  }
+
+  if (/^\d{1,4}$/.test(value.trim())) {
+    return Number(value.trim());
+  }
+
   const match = /(?:page[_\s-]?|p)(\d{1,4})/i.exec(value);
 
   return match ? Number(match[1]) : undefined;
+}
+
+function extractPageBreakPageNumber(html: string): number | undefined {
+  for (const match of html.matchAll(/<span\b([^>]*)>/gi)) {
+    const attributes = parseAttributes(match[1]);
+
+    if (!attributes["epub:type"]?.includes("pagebreak")) {
+      continue;
+    }
+
+    const pageNumber = parsePageNumber(attributes.title ?? attributes.id);
+
+    if (pageNumber !== undefined) {
+      return pageNumber;
+    }
+  }
+
+  return undefined;
 }
 
 function mediaTypeFromPath(epubPath: string): string {

@@ -175,7 +175,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     setLoadedHasMore(recipePage.hasMore);
     setLoadedTotalCount(recipePage.totalCount);
     lastRequestedPageRef.current = initialPage;
-    lastRequestedQueryKeyRef.current = queryStateKey;
     loadedPageRef.current = initialPage;
   }, [initialPage, queryStateKey, recipePage.hasMore, recipePage.totalCount, recipes]);
 

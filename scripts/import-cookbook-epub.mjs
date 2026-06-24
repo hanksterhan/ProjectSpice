@@ -366,6 +366,54 @@ function getCookbookImportChapter(sourceName, documentPath) {
     }
   }
 
+  if (sourceName === "Masaharu Morimoto - Mastering the Art of Japanese Home Cooking") {
+    const chapterIndex = Number(/Chapter_(\d+)/i.exec(documentPath)?.[1]);
+
+    if (chapterIndex === 1) {
+      return "Dashi: The Easy, Essential Japanese Stock";
+    }
+
+    if (chapterIndex === 2) {
+      return "Gohan: Rice";
+    }
+
+    if (chapterIndex === 3) {
+      return "Supu: Soups";
+    }
+
+    if (chapterIndex === 4) {
+      return "Yaku: To Grill, Broil, and Sear";
+    }
+
+    if (chapterIndex === 5) {
+      return "Musu: To Steam";
+    }
+
+    if (chapterIndex === 6) {
+      return "Niru: To Simmer";
+    }
+
+    if (chapterIndex === 7) {
+      return "Itame Ru: To Stir-Fry";
+    }
+
+    if (chapterIndex === 8) {
+      return "Men: Noodles";
+    }
+
+    if (chapterIndex === 9) {
+      return "Ageru: To Fry";
+    }
+
+    if (chapterIndex === 10) {
+      return "Ae Ru: To Dress";
+    }
+
+    if (chapterIndex === 11) {
+      return "Tsukeru: To Pickle";
+    }
+  }
+
   return "";
 }
 
