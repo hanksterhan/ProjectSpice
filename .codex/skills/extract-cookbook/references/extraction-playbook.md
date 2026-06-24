@@ -17,6 +17,7 @@ Turn one or more cookbook EPUB files into high-confidence ProjectSpice recipe dr
 - Techniques are not expandable in the sidebar yet. They are a direct reference section until there is enough volume to justify grouping by type or topic.
 - `The Salad Lab` exposed a photo-order failure mode: Calibre split EPUBs can use standalone image-only documents immediately before recipe title pages, plus occasional decorative or second image pages between recipes. The first import assigned several photos to the previous recipe; `Panzanella` received the following potato salad photo until segment boundaries treated standalone lead-image pages as part of the next recipe.
 - `Mastering the Art of Japanese Home Cooking` exposed a multi-image failure mode: recipes can include ordered process-photo grids where several real inline images are smaller than a global "likely photo" byte threshold. `Vegetable Temaki` has five same-section step photos; `Spicy Tuna Temaki`, `Hakumai`, `Battera`, `Tamagoyaki`, `Gyoza`, and `Homemade Udon` are useful gallery-count audit cases. Strong inline/caption evidence may justify smaller images, while weak nearby fallback images should remain conservative.
+- `Half Baked Harvest Every Day` exposed a metadata enrichment gap: recipe pages had explicit `PREP`, `COOK`, `TOTAL`, and serving blocks, but the first import only populated servings. Future imports should inspect and preserve available prep/cook/total timing metadata, accepting that total time is sometimes omitted or unavailable for subrecipes and drinks.
 
 ## EPUB Inspection Checklist
 
@@ -24,7 +25,7 @@ Inspect the EPUB before changing code:
 
 - Locate `META-INF/container.xml`, the OPF package file, metadata title/creator/publisher, manifest, and spine.
 - Identify nav/TOC files and whether chapters are explicit chapter XHTML files, page-sliced XHTML files, or anchor ranges within shared files.
-- Inspect recipe page HTML for title classes, ingredient classes, yield text, method/direction classes, notes, sidebars, variants, captions, pagebreak spans, and image placement.
+- Inspect recipe page HTML for title classes, ingredient classes, prep/cook/total time blocks, yield text, method/direction classes, notes, sidebars, variants, captions, pagebreak spans, and image placement.
 - Inspect image manifest paths and sizes. Page-numbered filenames are useful but must be verified against content.
 - Compare TOC anchors and caption links. Many cookbook captions link from a figure/caption to a recipe heading anchor.
 - Sample each major chapter rather than only the first recipe.
@@ -39,6 +40,14 @@ Treat a segment as a recipe when it has:
 - A yield or serving/makes/yields line.
 - At least two ingredient-like lines.
 - At least one direction/method/procedure/instruction line.
+
+When present, extract timing metadata into `recipe.times`:
+
+- `PREP` -> `prepMinutes`
+- `COOK` -> `cookMinutes`
+- `TOTAL` -> `totalMinutes`
+
+Timing can appear as separate blocks near the yield, in classed labels, or as run-in uppercase labels. Parse minutes and hours into integer minutes; for ranges, prefer the upper bound. Do not invent total time when the book omits it.
 
 Avoid treating these as recipes:
 
@@ -162,6 +171,7 @@ After extraction, inspect:
 - Total technique count and whether technique titles are specific.
 - Warnings for no-image recipes.
 - Representative recipes from every chapter.
+- Timing coverage: counts for recipes with prep, cook, and total minutes; spot-check representative values against raw XHTML. Missing total time is acceptable when the source omits it.
 - Top `imageUrls.length` galleries, recipes with `imageUrls.length === 0`, and recipes whose raw XHTML shows more images than imported JSON.
 - At least three image matches from each image assignment mode: inline, caption-linked, nearby if used.
 - At least one known process-heavy recipe by opening raw XHTML and comparing its inline/caption-linked image count to imported `imageUrls.length`.

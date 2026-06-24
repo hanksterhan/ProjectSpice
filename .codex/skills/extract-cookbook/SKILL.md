@@ -11,7 +11,7 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 
 1. Read `references/extraction-playbook.md` before changing extractor logic or running an import.
 2. Read `references/projectspice-integration.md` before touching ProjectSpice schema, importer, image output, tags, cookbook chapters, techniques, sidebar behavior, or tests.
-3. Inspect the target EPUB structure before assuming it matches previous books. Check OPF metadata, spine order, nav/TOC, XHTML class names, pagebreak markers, image paths, captions, and representative recipe pages.
+3. Inspect the target EPUB structure before assuming it matches previous books. Check OPF metadata, spine order, nav/TOC, XHTML class names, pagebreak markers, image paths, captions, timing/yield blocks, and representative recipe pages.
 4. Work chapter by chapter. Confirm recipe counts, chapter labels, image coverage, and technique candidates for each chapter before applying data broadly.
 5. Treat the first import as a draft. Audit representative rows and images before applying to local D1 or committing generated assets.
 6. Always do a second image-assignment pass for new cookbook structures. Compare the raw spine order, standalone image-only documents, image-before-heading pages, image-after-recipe pages, generated SQL `imageUrl`/`imageUrls`, per-recipe image counts, and several opened bitmap assets against neighboring recipe titles.
@@ -21,6 +21,7 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 - Store cookbook identity in `source.name`, usually `Author - Cookbook Title`; do not encode cookbook identity as normal recipe tags.
 - Store cookbook chapter membership as internal `chapter:<label>` tags so the library can render chapter rows under the cookbook tree. Keep those markers out of visible tag facets.
 - Use ordinary tags only for culinary facets such as `Protein`, `Vegetarian`, `Beverage`, `Dessert`, `Sauce`, `Bread`, `Fermented`, `Fish`, `Salad`, `Curry`, and `Snacks`.
+- Preserve recipe timing metadata when available. Populate `times.prepMinutes`, `times.cookMinutes`, and `times.totalMinutes` from explicit prep/cook/total blocks; total time is not always present, but should be filled whenever the book provides it.
 - Prefer no image over a bad image. Do not attach title cards, chapter headers, captions, decorative art, indexes, or low-confidence placeholders.
 - Accept that some real recipes do not have a picture.
 - Use captions, image anchors, page numbers, inline image placement, and nearby context to assign images to the right recipe. Reuse an image for only one recipe unless there is strong book evidence that the image truly represents multiple entries.
@@ -49,11 +50,11 @@ Use this skill to turn a cookbook EPUB into ProjectSpice data that feels native 
 3. Sample several pages per chapter, including at least one recipe with image, one recipe without image if present, one variant block, and one non-recipe technique/sidebar.
 4. Update extractor heuristics only as needed for durable patterns, not one-off title hacks.
 5. Run focused extractor tests and add regression assertions for new structural discoveries.
-6. Dry-run the importer and inspect the JSON summary plus generated SQL for source names, chapter markers, tag shape, recipe count, technique count, warnings, and image file count.
+6. Dry-run the importer and inspect the JSON summary plus generated SQL for source names, chapter markers, tag shape, recipe count, timing coverage, technique count, warnings, and image file count.
 7. Run the image second pass: inspect neighboring recipe/image runs around suspicious areas, especially recipes with no image, multiple candidate images, unexpectedly low/high `imageUrls` counts, or a primary image that visually resembles a neighboring recipe.
 8. Audit generated images by opening representative assets and comparing them to recipe titles/captions/page numbers.
 9. Apply locally only after the dry run looks right.
-10. Verify local D1 rows for sources, chapters, hidden tags, representative recipes, variants, techniques, and image URLs.
+10. Verify local D1 rows for sources, chapters, hidden tags, representative recipes, timing columns/`recipe_json.times`, variants, techniques, and image URLs.
 11. Run `pnpm test`, `pnpm lint`, `pnpm typecheck`, and any targeted visual checks needed for sidebar/library behavior.
 
 ## Useful Commands

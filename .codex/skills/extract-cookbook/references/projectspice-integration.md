@@ -33,6 +33,7 @@ Imported cookbook recipes should include:
 - `source.name = Author - Cookbook Title`.
 - Optional `imageUrl` only when image audit passes.
 - Optional `imageUrls` containing the ordered gallery of all high-confidence recipe images. Include the primary image in this array; keep `imageUrl` as the first/gallery-card image for compatibility.
+- Optional `times` with `prepMinutes`, `cookMinutes`, and `totalMinutes` when the cookbook provides explicit timing metadata. Preserve total time when available, but do not synthesize it for recipes or subrecipes where the source omits it.
 - Culinary tags plus optional hidden `chapter:<label>` markers.
 - Folded `variations` for dependent variants.
 - Stable direction step IDs and order numbers.
@@ -160,6 +161,7 @@ Add regression coverage when:
 - A new EPUB class pattern is needed for recipe detection.
 - A specific image match was wrong or missing.
 - A recipe with multiple real images imported with too few `imageUrls`.
+- Explicit prep/cook/total timing blocks are missing from `recipe.times` or import columns.
 - Small inline/caption-linked process photos require lower thresholds than nearby fallback images.
 - A no-image recipe was incorrectly assigned a decorative/title image.
 - A split-file cookbook has standalone image-only documents before recipe title pages or multiple image-only pages between neighboring recipes.
@@ -175,7 +177,8 @@ After applying an import locally, query or inspect:
 - Counts by `source_name`.
 - Counts by hidden `chapter:<label>` markers.
 - Rows containing fake tags such as `cookbook`, `cookbook-recipe`, or `cookbook:<slug>`.
-- Representative recipe JSON for tags, variations, image URL, and source.
+- Representative recipe JSON for tags, variations, timing metadata, image URL, and source.
+- Timing coverage counts for `prep_minutes`, `cook_minutes`, `total_minutes`, plus spot checks that `recipe_json.times` matches the summary columns.
 - Representative recipe image URLs and `imageUrls.length` for known risky neighboring runs, especially where adjacent recipe photos could shift backward or forward or where process-photo grids should produce galleries.
 - Technique rows for `source_name`, `technique_type`, `blocks_json`, and `image_url`.
 
