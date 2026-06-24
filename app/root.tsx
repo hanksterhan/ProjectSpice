@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -33,6 +34,20 @@ import type { RuntimeLoadContext } from "./server/runtime-context";
 import "./app.css";
 
 const clerkAuthMiddleware = clerkMiddleware();
+const clerkLocalization = {
+  signIn: {
+    start: {
+      subtitle: "",
+      title: "Sign in to ProjectSpice",
+    },
+  },
+  signUp: {
+    start: {
+      subtitle: "",
+      title: "Create your ProjectSpice account",
+    },
+  },
+};
 
 export const middleware: Route.MiddlewareFunction[] = [
   (args, next) =>
@@ -49,6 +64,7 @@ type RootLibraryDrawerData = {
 
 type RootAppData = {
   authBypassed: boolean;
+  isPublicAuthRoute: boolean;
   libraryDrawer: RootLibraryDrawerData | null;
 };
 
@@ -71,6 +87,7 @@ export async function loader(args: Route.LoaderArgs) {
     if (isPublicAuthPath(request.url)) {
       return {
         authBypassed: false,
+        isPublicAuthRoute: true,
         libraryDrawer: null,
       };
     }
@@ -93,6 +110,7 @@ async function loadRootAppData(
   if (url.pathname === "/") {
     return {
       authBypassed,
+      isPublicAuthRoute: false,
       libraryDrawer: null,
     };
   }
@@ -102,6 +120,7 @@ async function loadRootAppData(
 
   return {
     authBypassed,
+    isPublicAuthRoute: false,
     libraryDrawer: {
       cookbookTree: getRecipeCookbookTree(recipes, query),
       facets: getRecipeLibraryFacets(recipes, query),
@@ -135,7 +154,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { authBypassed, libraryDrawer } = loaderData as RootAppData;
+  const { authBypassed, isPublicAuthRoute, libraryDrawer } = loaderData as RootAppData;
+
+  if (isPublicAuthRoute) {
+    const authPage = (
+      <PublicRouteFrame>
+        <Outlet />
+      </PublicRouteFrame>
+    );
+
+    return authBypassed ? (
+      authPage
+    ) : (
+      <ClerkProvider loaderData={loaderData} localization={clerkLocalization}>
+        {authPage}
+      </ClerkProvider>
+    );
+  }
+
   const shell = (
     <AppShell
       authEnabled={!authBypassed}
@@ -152,25 +188,55 @@ export default function App({ loaderData }: Route.ComponentProps) {
     </AppShell>
   );
 
-  return authBypassed ? shell : <ClerkProvider loaderData={loaderData}>{shell}</ClerkProvider>;
+  return authBypassed ? (
+    shell
+  ) : (
+    <ClerkProvider loaderData={loaderData} localization={clerkLocalization}>
+      {shell}
+    </ClerkProvider>
+  );
+}
+
+function PublicRouteFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="public-route-frame">
+      <div className="public-route-brand" aria-label="ProjectSpice">
+        <span className="brand-mark" aria-hidden="true">PS</span>
+        <strong>ProjectSpice</strong>
+      </div>
+      {children}
+    </main>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let title = "Something went wrong";
-  let message = "ProjectSpice could not render this page.";
+  let message = "Please try again or return to the home page.";
+  let actionLabel = "Go home";
+  const actionHref = "/sign-in";
 
   if (isRouteErrorResponse(error)) {
     title = error.status === 404 ? "Page not found" : `Error ${error.status}`;
-    message = error.statusText || message;
+    message =
+      error.status === 404
+        ? "The requested page could not be found."
+        : error.statusText || message;
   } else if (import.meta.env.DEV && error instanceof Error) {
     message = error.message;
+    actionLabel = "Go to sign in";
   }
 
   return (
-    <main className="app-frame">
-      <section className="empty-state" aria-labelledby="error-title">
+    <main className="plain-message-page">
+      <section className="plain-message" aria-labelledby="error-title">
+        {isRouteErrorResponse(error) && error.status === 404 ? (
+          <p className="plain-message-code">404</p>
+        ) : null}
         <h1 id="error-title">{title}</h1>
         <p>{message}</p>
+        <Link className="plain-message-link" to={actionHref}>
+          {actionLabel}
+        </Link>
       </section>
     </main>
   );

@@ -373,20 +373,150 @@ p {
   width: 100%;
 }
 
+.public-route-frame {
+  align-content: center;
+  display: grid;
+  gap: clamp(1rem, 3vw, 1.35rem);
+  justify-items: center;
+  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.public-route-brand {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
+.public-route-brand strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .auth-route {
   align-items: center;
   display: grid;
-  gap: 1rem;
   justify-items: center;
-  margin: 6vh auto 0;
-  width: min(100%, 32rem);
+  width: min(100%, 29rem);
 }
 
-.auth-route h1 {
+.clerk-root-box,
+.clerk-root-box > div {
+  width: 100%;
+}
+
+.clerk-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgb(32 29 25 / 9%);
   color: var(--ink);
-  font-size: 1.4rem;
-  line-height: 1.1;
+  width: 100%;
+}
+
+.clerk-header-title {
+  font-size: clamp(1.28rem, 4.5vw, 1.55rem);
+  line-height: 1.12;
+  white-space: nowrap;
+}
+
+.clerk-footer {
+  background: var(--surface-raised);
+  border-top-color: var(--line);
+}
+
+.clerk-primary-button {
+  background: var(--accent);
+  border-radius: 6px;
+  box-shadow: none;
+  color: var(--on-accent);
+  font-weight: 800;
+}
+
+.clerk-primary-button:hover {
+  background: var(--accent-strong);
+}
+
+.plain-message-page {
+  align-content: center;
+  display: grid;
+  justify-items: center;
+  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.plain-message {
+  align-content: center;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 34rem;
+  min-height: 18rem;
+  position: relative;
+}
+
+.plain-message h1 {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1;
   margin: 0;
+}
+
+.plain-message-code {
+  color: var(--accent);
+  font-size: clamp(5.5rem, 22vw, 10rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.82;
+  margin: 0 0 0.35rem;
+}
+
+.plain-message p {
+  margin-bottom: 0;
+}
+
+.plain-message-link {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 800;
+  justify-self: start;
+  margin-top: 0.55rem;
+  min-height: 2.5rem;
+  position: relative;
+  text-decoration: none;
+}
+
+.plain-message-link::after {
+  content: "";
+  background: currentColor;
+  bottom: 0.35rem;
+  height: 2px;
+  left: 0;
+  position: absolute;
+  transform-origin: left;
+  transition: transform 140ms ease;
+  width: 100%;
+}
+
+.plain-message-link:hover {
+  color: var(--accent);
+}
+
+.plain-message-link:hover::after {
+  transform: scaleX(0.76);
+}
+
+.not-found-route {
+  align-content: center;
+  display: grid;
+  justify-items: start;
+  margin-inline: auto;
+  min-height: min(42rem, calc(100vh - 7rem));
+  padding: clamp(2rem, 8vh, 6rem) 0;
+  width: min(100%, 64rem);
 }
 
 .shell-body.drawer-pinned .shell-main {

@@ -18,4 +18,5 @@ export default [
   route("techniques/:slug", "routes/techniques.$slug.tsx"),
   route("sign-in/*", "routes/sign-in.tsx"),
   route("sign-up/*", "routes/sign-up.tsx"),
+  route("*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;
