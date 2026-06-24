@@ -405,10 +405,13 @@ function parseContentBlocks(document: CookbookEpubContentDocument): ContentBlock
     }
 
     blocks.push({
-      type: tagName.startsWith("h") || looksLikeFormattedTitle(innerHtml) || looksLikeRecipeTitleClass(attributes.class)
-        ? "heading"
-        : tagName === "li"
-          ? "listItem"
+      type: tagName === "li"
+        ? "listItem"
+        : tagName.startsWith("h") ||
+            looksLikeRecipeTitleClass(attributes.class) ||
+            looksLikeHalfBakedHarvestTitleMarkup(tagName, attributes, innerHtml) ||
+            (tagName === "p" && looksLikeFormattedTitle(innerHtml))
+          ? "heading"
           : "paragraph",
       text,
       html: match[0],
@@ -490,8 +493,9 @@ function findNextSegmentBoundary(
   return blocks.find(
     (block) =>
       compareBlockPosition(block, heading) > 0 &&
-      block.type === "heading" &&
-      blockKey(block) !== blockKey(heading),
+      blockKey(block) !== blockKey(heading) &&
+      ((block.type === "heading" && looksLikeRecipeHeading(block, blocks)) ||
+        isBackmatterBoundaryBlock(block)),
   );
 }
 
@@ -557,11 +561,17 @@ function looksLikeRecipeHeading(
     return false;
   }
 
+  if (looksLikeHalfBakedHarvestSectionHeading(heading)) {
+    return false;
+  }
+
   const following = followingBlocks(blocks, heading, 18);
   const extendedFollowing = followingBlocks(blocks, heading, 120);
   const hasYield = following.some((block) => isYieldBlock(block));
   const ingredientLines = following.filter((block) => isIngredientBlock(block));
   const methodLines = following.filter((block) => isDirectionBlock(block));
+  const extendedIngredientLines = extendedFollowing.filter((block) => isIngredientBlock(block));
+  const extendedMethodLines = extendedFollowing.filter((block) => isDirectionBlock(block));
   const hasSaladLabStructure =
     extendedFollowing.some((block) => isYieldBlock(block)) &&
     extendedFollowing.some(isSaladLabIngredientSectionHeading) &&
@@ -580,6 +590,7 @@ function looksLikeRecipeHeading(
   return (
     (hasYield && ingredientLines.length >= 2 && methodLines.length >= 1) ||
     (hasYield && ingredientLines.length >= 1 && methodLines.length >= 2) ||
+    (hasYield && extendedIngredientLines.length >= 2 && extendedMethodLines.length >= 1) ||
     hasMorimotoStructure ||
     hasSaladLabStructure ||
     hasTwoListRecipeStructure
@@ -676,6 +687,7 @@ function toExtractedRecipes(
         title,
         description: extractDescription(segment.blocks),
         yieldText: segment.blocks.find(isYieldBlock)?.text,
+        times: extractRecipeTimes(segment.blocks),
         ingredients,
         directions,
         variations,
@@ -695,6 +707,7 @@ function createDraftInput({
   title,
   description,
   yieldText,
+  times,
   ingredients,
   directions,
   variations,
@@ -704,6 +717,7 @@ function createDraftInput({
   title: string;
   description?: string;
   yieldText?: string;
+  times?: { prepMinutes?: number; cookMinutes?: number; totalMinutes?: number };
   ingredients: IngredientSection[];
   directions: DirectionSection[];
   variations: RecipeVariation[];
@@ -714,6 +728,7 @@ function createDraftInput({
     title,
     description,
     yield: parseYield(yieldText),
+    times: times && Object.keys(times).length > 0 ? times : undefined,
     ingredients,
     directions,
     variations: variations.length > 0 ? variations : undefined,
@@ -1469,6 +1484,10 @@ function isLikelyRecipeImageForRole(
     return false;
   }
 
+  if (role === "inline") {
+    return image.byteLength >= 35_000;
+  }
+
   return image.byteLength >= 100_000;
 }
 
@@ -1507,6 +1526,10 @@ function isIngredientBlock(block: ContentBlock): boolean {
     return true;
   }
 
+  if (looksLikeHalfBakedHarvestIngredientBlock(block)) {
+    return true;
+  }
+
   if (block.type !== "listItem") {
     return false;
   }
@@ -1518,7 +1541,8 @@ function isDirectionBlock(block: ContentBlock): boolean {
   const className = block.className ?? "";
 
   return /step|method|direction|instruction|procedure/i.test(className) ||
-    looksLikeMorimotoDirectionClass(className);
+    looksLikeMorimotoDirectionClass(className) ||
+    looksLikeHalfBakedHarvestDirectionBlock(block);
 }
 
 function isYieldBlock(block: ContentBlock): boolean {
@@ -1543,6 +1567,25 @@ function looksLikeMorimotoIngredientClass(className: string): boolean {
 
 function looksLikeMorimotoDirectionClass(className: string): boolean {
   return /^(?:noindenta1|noindenta1a|noindenta3|noindenta3a|noindentb1|noindenti1)$/i.test(className);
+}
+
+function looksLikeHalfBakedHarvestIngredientBlock(block: ContentBlock): boolean {
+  return block.tagName === "blockquote" &&
+    /^calibre_11$/i.test(block.className ?? "") &&
+    looksLikeIngredientOrReferenceLine(block.text);
+}
+
+function looksLikeHalfBakedHarvestDirectionBlock(block: ContentBlock): boolean {
+  return block.type === "listItem" &&
+    /^calibre_(?:18|20)$/i.test(block.className ?? "") &&
+    looksLikeInstructionLine(block.text);
+}
+
+function looksLikeHalfBakedHarvestSectionHeading(block: ContentBlock): boolean {
+  return block.tagName === "p" &&
+    /^calibre_3$/i.test(block.className ?? "") &&
+    block.id === undefined &&
+    /\bclass=["'][^"']*\bcalibre2\b/i.test(block.html);
 }
 
 function isMorimotoSpecialEquipmentItem(block: ContentBlock, blocks: ContentBlock[]): boolean {
@@ -1574,6 +1617,12 @@ function isMorimotoSpecialEquipmentItem(block: ContentBlock, blocks: ContentBloc
 
 function isNavigationBlock(block: ContentBlock): boolean {
   return /mini_toc|toc|caption|figcaption/i.test(block.className ?? "");
+}
+
+function isBackmatterBoundaryBlock(block: ContentBlock): boolean {
+  return /^(?:acknowledgments?|index)$/i.test(block.text) ||
+    /^the page numbers in this index\b/i.test(block.text) ||
+    /^to my loving and kind hbh community\b/i.test(block.text);
 }
 
 function looksLikeIngredientLine(text: string): boolean {
@@ -1650,6 +1699,100 @@ function parseYield(text: string | undefined) {
     unit: unit || undefined,
     notes: text,
   });
+}
+
+function extractRecipeTimes(
+  blocks: ContentBlock[],
+): { prepMinutes?: number; cookMinutes?: number; totalMinutes?: number } | undefined {
+  const times: { prepMinutes?: number; cookMinutes?: number; totalMinutes?: number } = {};
+
+  for (const block of blocks) {
+    const time = parseRecipeTimeBlock(block.text);
+
+    if (!time) {
+      continue;
+    }
+
+    times[time.key] ??= time.minutes;
+  }
+
+  return Object.keys(times).length > 0 ? times : undefined;
+}
+
+function parseRecipeTimeBlock(
+  text: string,
+): { key: "prepMinutes" | "cookMinutes" | "totalMinutes"; minutes: number } | undefined {
+  const match = /^(prep|cook|total)\s+(.+)$/i.exec(text.trim());
+
+  if (!match) {
+    return undefined;
+  }
+
+  const minutes = parseDurationMinutes(match[2]);
+
+  if (minutes === undefined) {
+    return undefined;
+  }
+
+  const key =
+    match[1].toLowerCase() === "prep"
+      ? "prepMinutes"
+      : match[1].toLowerCase() === "cook"
+        ? "cookMinutes"
+        : "totalMinutes";
+
+  return { key, minutes };
+}
+
+function parseDurationMinutes(text: string): number | undefined {
+  const primaryDuration = text
+    .replace(/\bplus\b.*$/i, "")
+    .replace(/,\s*.*$/i, "")
+    .split(/\s+to\s+/i)
+    .at(-1)
+    ?.trim();
+
+  if (!primaryDuration) {
+    return undefined;
+  }
+
+  let minutes = 0;
+  const hoursMatch = new RegExp(`(${durationNumberPattern})\\s*hours?\\b`, "i").exec(
+    primaryDuration,
+  );
+  const minutesMatch = new RegExp(`(${durationNumberPattern})\\s*minutes?\\b`, "i").exec(
+    primaryDuration,
+  );
+
+  if (hoursMatch?.[1]) {
+    minutes += parseDurationNumber(hoursMatch[1]) * 60;
+  }
+
+  if (minutesMatch?.[1]) {
+    minutes += parseDurationNumber(minutesMatch[1]);
+  }
+
+  return minutes > 0 ? Math.round(minutes) : undefined;
+}
+
+const durationNumberPattern = String.raw`\d+(?:\.\d+)?[¼½¾⅓⅔⅛⅜⅝⅞]?|[¼½¾⅓⅔⅛⅜⅝⅞]`;
+
+function parseDurationNumber(value: string): number {
+  const fractionValues: Record<string, number> = {
+    "¼": 0.25,
+    "½": 0.5,
+    "¾": 0.75,
+    "⅓": 1 / 3,
+    "⅔": 2 / 3,
+    "⅛": 0.125,
+    "⅜": 0.375,
+    "⅝": 0.625,
+    "⅞": 0.875,
+  };
+  const fraction = value.match(/[¼½¾⅓⅔⅛⅜⅝⅞]$/)?.[0];
+  const whole = fraction ? value.slice(0, -fraction.length) : value;
+
+  return (whole ? Number(whole) : 0) + (fraction ? fractionValues[fraction] : 0);
 }
 
 function parseIngredientItemName(line: string): string {
@@ -1807,6 +1950,17 @@ function extractImageAttributes(html: string): Array<Record<string, string>> {
 
 function looksLikeFormattedTitle(html: string): boolean {
   return /\bclass=["'][^"']*\bcalibre[23]\b/i.test(html);
+}
+
+function looksLikeHalfBakedHarvestTitleMarkup(
+  tagName: string,
+  attributes: Record<string, string>,
+  html: string,
+): boolean {
+  return tagName === "p" &&
+    /^calibre_3$/i.test(attributes.class ?? "") &&
+    attributes.id !== undefined &&
+    /\bclass=["'][^"']*\bcalibre[45]\b/i.test(html);
 }
 
 function parseListValue(value: string | undefined): number | undefined {

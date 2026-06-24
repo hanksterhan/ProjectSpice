@@ -371,6 +371,46 @@ function getCookbookImportChapter(sourceName, documentPath) {
     }
   }
 
+  if (sourceName === "Tieghan Gerard - Half Baked Harvest Every Day: Recipes for Balanced, Flexible, Feel-Good Meals") {
+    const splitIndex = Number(/index_split_(\d+)\.html/i.exec(documentPath)?.[1]);
+
+    if (splitIndex >= 8 && splitIndex <= 34) {
+      return "Breakfast";
+    }
+
+    if (splitIndex >= 35 && splitIndex <= 67) {
+      return "Appetizers & Sides";
+    }
+
+    if (splitIndex >= 68 && splitIndex <= 92) {
+      return "Soup & Salad";
+    }
+
+    if (splitIndex >= 93 && splitIndex <= 125) {
+      return "Pasta & Pizza";
+    }
+
+    if (splitIndex >= 126 && splitIndex <= 154) {
+      return "Vegetarian";
+    }
+
+    if (splitIndex >= 155 && splitIndex <= 179) {
+      return "Chicken";
+    }
+
+    if (splitIndex >= 180 && splitIndex <= 204) {
+      return "Beef";
+    }
+
+    if (splitIndex >= 205 && splitIndex <= 231) {
+      return "Fish & Seafood";
+    }
+
+    if (splitIndex >= 232 && splitIndex <= 263) {
+      return "Dessert";
+    }
+  }
+
   if (sourceName === "Masaharu Morimoto - Mastering the Art of Japanese Home Cooking") {
     const chapterIndex = Number(/Chapter_(\d+)/i.exec(documentPath)?.[1]);
 

@@ -19,6 +19,9 @@ const healthyDrinksPath = resolve(
 const saladLabPath = resolve(
   "zips/The Salad Lab_ Whisk, Toss, Enjoy! _ Recipes for Making -- Darlene Schrijver.epub",
 );
+const halfBakedHarvestEveryDayPath = resolve(
+  "zips/Half Baked Harvest Every Day_ Recipes for Balanced, -- Gerard, Tieghan.epub",
+);
 
 describe("extractCookbookEpub", () => {
   it("extracts Babish recipes with caption-linked and inline images", () => {
@@ -222,6 +225,66 @@ describe("extractCookbookEpub", () => {
         step.text.includes("Lemon Basil Pasta Salad"),
       ),
     ).toBe(false);
+  });
+
+  it("extracts Half Baked Harvest Every Day split title pages and small inline photos", () => {
+    const epub = readFileSync(halfBakedHarvestEveryDayPath);
+    const extraction = extractCookbookEpub(epub);
+
+    expect(extraction.metadata.title).toBe(
+      "Half Baked Harvest Every Day: Recipes for Balanced, Flexible, Feel-Good Meals",
+    );
+    expect(extraction.metadata.creator).toBe("Tieghan Gerard");
+    expect(extraction.recipes).toHaveLength(123);
+
+    const frenchToast = findRecipe(
+      extraction.recipes,
+      "sheet pan french toast with whipped lemon ricotta and juicy berries",
+    );
+    expect(frenchToast?.draftRecipe.ingredients[0].items).toHaveLength(15);
+    expect(frenchToast?.draftRecipe.directions[0].steps).toHaveLength(5);
+    expect(frenchToast?.draftRecipe.times).toEqual({
+      prepMinutes: 10,
+      cookMinutes: 20,
+      totalMinutes: 30,
+    });
+    expect(frenchToast?.images[0]).toMatchObject({
+      epubPath: "images/00018.jpg",
+      role: "inline",
+    });
+
+    const sweetPotatoes = findRecipe(
+      extraction.recipes,
+      "maple-sesame smashed sweet potatoes",
+    );
+    expect(sweetPotatoes?.images[0]).toMatchObject({
+      epubPath: "images/00141.jpg",
+      role: "inline",
+    });
+
+    const salmon = findRecipe(
+      extraction.recipes,
+      "sesame soy miso-glazed salmon with seasoned coconut rice",
+    );
+    expect(salmon?.images[0]).toMatchObject({
+      epubPath: "images/00091.jpg",
+      role: "inline",
+    });
+
+    const pizzaDough = findRecipe(extraction.recipes, "pizza dough");
+    expect(pizzaDough?.images).toHaveLength(0);
+
+    const chocolateCake = findRecipe(extraction.recipes, "chocolate olive oil cake");
+    expect(chocolateCake?.draftRecipe.directions[0].steps).toHaveLength(6);
+    expect(chocolateCake?.draftRecipe.times).toEqual({
+      prepMinutes: 15,
+      cookMinutes: 40,
+      totalMinutes: 55,
+    });
+    expect(chocolateCake?.images[0]).toMatchObject({
+      epubPath: "images/00145.jpg",
+      role: "inline",
+    });
   });
 
   it("can extract image bytes by EPUB path", () => {
