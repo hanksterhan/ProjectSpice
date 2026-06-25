@@ -53,6 +53,29 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("Viewing lens");
   });
 
+  it("promotes cookbook source and chapter metadata in the title panel", () => {
+    const markup = renderToStaticMarkup(
+      <MemoryRouter>
+        <RecipeViewer
+          recipe={{
+            ...validRecipeFixture,
+            source: {
+              type: "imported",
+              name: "Joshua Weissman - An Unapologetic Cookbook",
+            },
+            tags: ["chapter:Staples From Scratch", "Joshua Weissman", "weeknight"],
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(markup).toContain("An Unapologetic Cookbook");
+    expect(markup).toContain("Staples From Scratch");
+    expect(markup).toContain("weeknight");
+    expect(markup).not.toContain("chapter:Staples");
+    expect(markup).not.toContain('class="tag">Joshua Weissman');
+  });
+
   it("shows lens navigation and notes in the drawer", () => {
     const markup = renderToStaticMarkup(
       <MemoryRouter>

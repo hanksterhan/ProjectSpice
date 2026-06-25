@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ExternalLink } from "lucide-react";
+import { Bookmark, ExternalLink } from "lucide-react";
 import { Form, Link } from "react-router";
 
 import {
@@ -49,6 +49,9 @@ export function RecipeViewer({
   const directionIngredientIndex = buildDirectionIngredientIndex(displayRecipe.ingredients);
   const cookCount = getCookCount(recipe);
   const lastCookedDate = getLastCookedDate(recipe);
+  const cookbookTitle = getCookbookTitle(displayRecipe);
+  const chapterTitle = getCookbookChapterTitle(displayRecipe);
+  const titlePanelTags = getTitlePanelTags(displayRecipe).slice(0, 5);
 
   return (
     <article className="recipe-detail-page">
@@ -57,6 +60,7 @@ export function RecipeViewer({
           {recipe.favorite ? (
             <FavoriteStar favorite className="recipe-detail-favorite-marker" />
           ) : null}
+          {cookbookTitle ? <p className="recipe-cookbook-source">{cookbookTitle}</p> : null}
           <h1>{displayRecipe.title}</h1>
           {displayRecipe.description ? <p>{displayRecipe.description}</p> : null}
           {activeLensKey !== "original" && activeLensDefinition ? (
@@ -69,7 +73,13 @@ export function RecipeViewer({
             {displayRecipe.rating !== undefined ? (
               <RatingStars rating={displayRecipe.rating} />
             ) : null}
-            {displayRecipe.tags.slice(0, 5).map((tag) => (
+            {chapterTitle ? (
+              <span className="recipe-chapter-chip">
+                <Bookmark aria-hidden="true" size={13} strokeWidth={2.5} />
+                {chapterTitle}
+              </span>
+            ) : null}
+            {titlePanelTags.map((tag) => (
               <span className="tag" key={tag}>
                 {tag}
               </span>
@@ -644,4 +654,60 @@ function shouldShowSectionTitle(
   genericTitle: string,
 ): title is string {
   return Boolean(title && title.trim().toLowerCase() !== genericTitle);
+}
+
+function getCookbookTitle(recipe: Recipe): string {
+  if (
+    recipe.source?.type !== "imported" ||
+    !recipe.source.name ||
+    isDomainLikeSource(recipe.source.name)
+  ) {
+    return "";
+  }
+
+  return getCookbookTitleFromSourceName(recipe.source.name);
+}
+
+function getCookbookTitleFromSourceName(sourceName: string): string {
+  const title = sourceName.split(" - ").slice(1).join(" - ").trim();
+
+  return title || sourceName;
+}
+
+function getCookbookChapterTitle(recipe: Recipe): string {
+  const chapterTag = recipe.tags.find((tag) => /^chapter:\s*\S/i.test(tag));
+
+  return normalizeDisplayTag(chapterTag?.replace(/^chapter:\s*/i, "") ?? "");
+}
+
+function getTitlePanelTags(recipe: Recipe): string[] {
+  const cookbookTitle = getCookbookTitle(recipe);
+  const hiddenTags = new Set(
+    [
+      cookbookTitle,
+      recipe.source?.name,
+      recipe.source?.name?.split(" - ")[0],
+      "Easy",
+      "Medium",
+      "Hard",
+      "seed",
+      "chilled dessert",
+    ]
+      .map((tag) => normalizeDisplayTag(tag ?? ""))
+      .filter(Boolean),
+  );
+
+  return recipe.tags
+    .map(normalizeDisplayTag)
+    .filter((tag) => tag && !hiddenTags.has(tag) && !/^chapter:\s*\S/i.test(tag));
+}
+
+function normalizeDisplayTag(tag: string): string {
+  return tag.trim().replace(/\s+/g, " ");
+}
+
+function isDomainLikeSource(value: string): boolean {
+  const hostname = value.trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0] ?? "";
+
+  return /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(hostname.replace(/^www\./, ""));
 }
