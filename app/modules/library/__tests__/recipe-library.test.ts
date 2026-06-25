@@ -5,6 +5,7 @@ import {
   addRecipeTags,
   getActiveLibraryFilters,
   getCookbookVisibilityHref,
+  getRecipeCookbooks,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeLibraryPage,
@@ -224,6 +225,34 @@ describe("recipe library query helpers", () => {
     ).toBe(true);
     expect(hiddenNode?.defaultVisible).toBe(false);
     expect(hiddenNode?.visibilityHref).toBe("/preferences/cookbooks?redirectTo=%2F");
+  });
+
+  it("builds title-first cookbook shelf items with author metadata and reader links", () => {
+    const hiddenCookbook = "Joshua Weissman - Texture Over Taste";
+    const cookbooks = getRecipeCookbooks(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+      { hiddenCookbooks: [hiddenCookbook] },
+    );
+    const cookbookTitles = cookbooks.map((cookbook) => cookbook.title);
+    const textureOverTaste = cookbooks.find(
+      (cookbook) => cookbook.value === hiddenCookbook,
+    );
+
+    expect(cookbookTitles).toEqual([...cookbookTitles].sort((left, right) => left.localeCompare(right)));
+    expect(textureOverTaste).toMatchObject({
+      author: "Joshua Weissman",
+      defaultVisible: false,
+      libraryHref: "/?cookbook=Joshua+Weissman+-+Texture+Over+Taste",
+      title: "Texture Over Taste",
+    });
+    expect(textureOverTaste?.readerHref).toMatch(
+      /^\/cookbooks\/joshua-weissman-texture-over-taste-[a-z0-9]+$/,
+    );
+    expect(textureOverTaste?.coverImageUrl).toBe(
+      "/recipe-images/cookbook-covers/joshua-weissman-texture-over-taste.jpg",
+    );
+    expect(textureOverTaste?.chapters.length).toBeGreaterThan(0);
   });
 
   it("sorts matching recipes by title and total time", () => {

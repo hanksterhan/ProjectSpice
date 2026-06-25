@@ -9,7 +9,7 @@ import {
   addRecipeTags,
   getCookbookVisibilityHref,
   getLibraryQueryHref,
-  getRecipeCookbookTree,
+  getRecipeCookbooks,
   getRecipeLibraryFacets,
   getRecipeSourceFilterLink,
   maxRecipeTags,
@@ -52,7 +52,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   return {
     drawerData: {
-      cookbookTree: getRecipeCookbookTree(allRecipes, query, libraryPreferences),
+      cookbooks: getRecipeCookbooks(allRecipes, query, libraryPreferences),
       facets: getRecipeLibraryFacets(allRecipes, query),
       query,
     },
@@ -159,22 +159,22 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const isLoadingMore = loadMoreFetcher.state !== "idle";
   const resultLabel =
     loadedTotalCount === 1 ? "1 recipe" : `${loadedTotalCount} recipes`;
-  const cookbookTree = useMemo(
-    () => drawerData?.cookbookTree ?? getRecipeCookbookTree(recipes, query),
-    [drawerData?.cookbookTree, query, recipes],
+  const cookbooks = useMemo(
+    () => drawerData?.cookbooks ?? getRecipeCookbooks(recipes, query),
+    [drawerData?.cookbooks, query, recipes],
   );
   const drawer = useMemo(
     () => ({
       title: "Organize Library",
       content: (
         <LibraryOrganizerDrawer
-          cookbookTree={cookbookTree}
+          cookbooks={cookbooks}
           facets={drawerData?.facets ?? getRecipeLibraryFacets(recipes, query)}
           query={query}
         />
       ),
     }),
-    [cookbookTree, drawerData, query, recipes],
+    [cookbooks, drawerData, query, recipes],
   );
 
   useShellDrawer(drawer);
@@ -249,7 +249,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <h2 id="results-heading">{resultLabel}</h2>
           </div>
           <div className="results-header-actions">
-            {cookbookTree.length > 0 ? <CookbookVisibilitySwitch query={query} /> : null}
+            {cookbooks.length > 0 ? <CookbookVisibilitySwitch query={query} /> : null}
             <Button
               aria-pressed={showBulkTools}
               onClick={() => setIsBulkMode((value) => !value)}

@@ -11,6 +11,98 @@ const internalFixtureTags = new Set(["seed", "chilled dessert"]);
 const knownCookbookSourceNames = new Set([
   "Julie Taboulie's Lebanese Kitchen",
 ]);
+const cookbookCoverImageUrls = new Map<string, string>(
+  [
+    [
+      "America's Test Kitchen - The Complete Guide to Healthy Drinks",
+      "/recipe-images/cookbook-covers/america-s-test-kitchen-the-complete-guide-to-healthy-drinks.jpg",
+    ],
+    [
+      "Andrew Rea - Binging with Babish",
+      "/recipe-images/cookbook-covers/andrew-rea-binging-with-babish.jpg",
+    ],
+    [
+      "Binging with Babish",
+      "/recipe-images/cookbook-covers/andrew-rea-binging-with-babish.jpg",
+    ],
+    [
+      "Claire Saffitz - Dessert Person",
+      "/recipe-images/cookbook-covers/claire-saffitz-dessert-person.jpg",
+    ],
+    [
+      "Claire Saffitz - Whats for Dessert",
+      "/recipe-images/cookbook-covers/claire-saffitz-whats-for-dessert.jpg",
+    ],
+    [
+      "Dessert Person",
+      "/recipe-images/cookbook-covers/claire-saffitz-dessert-person.jpg",
+    ],
+    [
+      "Darlene Schrijver - The Salad Lab: Whisk, Toss, Enjoy! Recipes for Making Fabulous Salads Every Day",
+      "/recipe-images/cookbook-covers/darlene-schrijver-the-salad-lab.jpg",
+    ],
+    [
+      "Half Baked Harvest Every Day: Recipes for Balanced, Flexible, Feel-Good Meals",
+      "/recipe-images/cookbook-covers/tieghan-gerard-half-baked-harvest-every-day.jpg",
+    ],
+    [
+      "Half Baked Harvest Super Simple",
+      "/recipe-images/cookbook-covers/tieghan-gerard-half-baked-harvest-super-simple.jpg",
+    ],
+    [
+      "Jet Tila - 101 Thai Dishes You Need to Cook Before you Die",
+      "/recipe-images/cookbook-covers/jet-tila-101-thai-dishes-you-need-to-cook-before-you-die.jpg",
+    ],
+    [
+      "Joshua Weissman - An Unapologetic Cookbook",
+      "/recipe-images/cookbook-covers/joshua-weissman-an-unapologetic-cookbook.jpg",
+    ],
+    [
+      "Joshua Weissman - Texture Over Taste",
+      "/recipe-images/cookbook-covers/joshua-weissman-texture-over-taste.jpg",
+    ],
+    [
+      "Julie Taboulie's Lebanese Kitchen",
+      "/recipe-images/cookbook-covers/julie-taboulie-s-lebanese-kitchen.jpg",
+    ],
+    [
+      "Masaharu Morimoto - Mastering the Art of Japanese Home Cooking",
+      "/recipe-images/cookbook-covers/masaharu-morimoto-mastering-the-art-of-japanese-home-cooking.jpg",
+    ],
+    [
+      "Molly Moon's Homemade Ice Cream",
+      "/recipe-images/cookbook-covers/molly-moon-neitzel-molly-moon-s-homemade-ice-cream.jpg",
+    ],
+    [
+      "Molly Moon Neitzel - Molly Moon's Homemade Ice Cream",
+      "/recipe-images/cookbook-covers/molly-moon-neitzel-molly-moon-s-homemade-ice-cream.jpg",
+    ],
+    [
+      "The Complete Guide to Healthy Drinks",
+      "/recipe-images/cookbook-covers/america-s-test-kitchen-the-complete-guide-to-healthy-drinks.jpg",
+    ],
+    [
+      "The Salad Lab",
+      "/recipe-images/cookbook-covers/darlene-schrijver-the-salad-lab.jpg",
+    ],
+    [
+      "The Salad Lab: Whisk, Toss, Enjoy! Recipes for Making Fabulous Salads Every Day",
+      "/recipe-images/cookbook-covers/darlene-schrijver-the-salad-lab.jpg",
+    ],
+    [
+      "Tieghan Gerard - Half Baked Harvest Every Day: Recipes for Balanced, Flexible, Feel-Good Meals",
+      "/recipe-images/cookbook-covers/tieghan-gerard-half-baked-harvest-every-day.jpg",
+    ],
+    [
+      "Tieghan Gerard - Half Baked Harvest Super Simple",
+      "/recipe-images/cookbook-covers/tieghan-gerard-half-baked-harvest-super-simple.jpg",
+    ],
+    [
+      "Whats for Dessert",
+      "/recipe-images/cookbook-covers/claire-saffitz-whats-for-dessert.jpg",
+    ],
+  ].map(([label, imageUrl]) => [normalizeCookbookCoverKey(label), imageUrl]),
+);
 
 export type RecipeLibrarySort = (typeof recipeLibrarySortOptions)[number];
 export type RecipeLibrarySortDirection =
@@ -43,6 +135,18 @@ export type RecipeLibraryCookbookNode = RecipeLibraryFacetOption & {
 
 export type RecipeLibraryAuthorNode = RecipeLibraryFacetOption & {
   cookbooks: RecipeLibraryCookbookNode[];
+};
+
+export type RecipeLibraryCookbook = RecipeLibraryFacetOption & {
+  author?: string;
+  chapters: RecipeLibraryChapterNode[];
+  coverImageUrl?: string;
+  defaultVisible: boolean;
+  libraryHref: string;
+  readerHref: string;
+  slug: string;
+  title: string;
+  visibilityHref: string;
 };
 
 export type RecipeLibraryActiveFilter = {
@@ -344,6 +448,142 @@ export function getRecipeCookbookTree(
       };
     })
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+}
+
+export function getRecipeCookbooks(
+  recipes: readonly RecipeLibraryItem[],
+  query: RecipeLibraryQuery,
+  options: RecipeLibraryPreferenceOptions = {},
+): RecipeLibraryCookbook[] {
+  const hiddenCookbooks = new Set(options.hiddenCookbooks ?? []);
+  const cookbooks = new Map<
+    string,
+    {
+      chapters: Map<string, number>;
+      count: number;
+      coverImageUrl?: string;
+    }
+  >();
+
+  for (const recipe of recipes) {
+    const cookbook = getCookbookLabel(recipe);
+
+    if (!cookbook) {
+      continue;
+    }
+
+    const cookbookGroup = cookbooks.get(cookbook) ?? {
+      chapters: new Map<string, number>(),
+      count: 0,
+      coverImageUrl: recipe.imageUrl,
+    };
+    const author = getCookbookAuthorLabel(cookbook);
+    const chapterLabels = getCookbookChapterLabels(recipe, author, cookbook);
+
+    cookbookGroup.count += 1;
+    cookbookGroup.coverImageUrl ||= recipe.imageUrl;
+
+    for (const chapter of chapterLabels) {
+      cookbookGroup.chapters.set(chapter, (cookbookGroup.chapters.get(chapter) ?? 0) + 1);
+    }
+
+    cookbooks.set(cookbook, cookbookGroup);
+  }
+
+  return [...cookbooks.entries()]
+    .map(([cookbook, cookbookGroup]) => {
+      const title = getCookbookTitleLabel(cookbook);
+      const author = getCookbookAuthorLabel(cookbook);
+      const hasDistinctAuthor = author !== cookbook && author !== title;
+      const libraryHref = getLibraryQueryHref({
+        ...query,
+        cookbooks: [cookbook],
+        chapters: [],
+        hideCookbooks: false,
+        page: 1,
+        tags: [],
+      });
+
+      return {
+        count: cookbookGroup.count,
+        author: hasDistinctAuthor ? author : undefined,
+        chapters: [...cookbookGroup.chapters.entries()]
+          .map(([chapter, count]) => ({
+            count,
+            href: getLibraryQueryHref({
+              ...query,
+              chapters: [chapter],
+              cookbooks: [cookbook],
+              hideCookbooks: false,
+              page: 1,
+              tags: [],
+            }),
+            id: `chapter:${cookbook}:${chapter}`,
+            label: chapter,
+            selected: query.cookbooks.includes(cookbook) && query.chapters.includes(chapter),
+            value: chapter,
+          }))
+          .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label)),
+        coverImageUrl:
+          getCookbookCoverImageUrl(cookbook, title) ?? cookbookGroup.coverImageUrl,
+        defaultVisible: !hiddenCookbooks.has(cookbook),
+        href: libraryHref,
+        id: `cookbook:${cookbook}`,
+        label: title,
+        libraryHref,
+        readerHref: getCookbookReaderHref(cookbook),
+        selected:
+          query.cookbooks.includes(cookbook) &&
+          query.tags.length === 0 &&
+          query.chapters.length === 0,
+        slug: getCookbookSlug(cookbook),
+        title,
+        value: cookbook,
+        visibilityHref: getCookbookDefaultVisibilityActionHref(query),
+      };
+    })
+    .sort((left, right) => left.title.localeCompare(right.title) || left.value.localeCompare(right.value));
+}
+
+export function getCookbookReaderHref(cookbook: string): string {
+  return `/cookbooks/${getCookbookSlug(cookbook)}`;
+}
+
+export function getCookbookSlug(cookbook: string): string {
+  const slug = cookbook
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return `${slug || "cookbook"}-${getStableSlugSuffix(cookbook)}`;
+}
+
+function getCookbookCoverImageUrl(cookbook: string, title: string): string | undefined {
+  return (
+    cookbookCoverImageUrls.get(normalizeCookbookCoverKey(cookbook)) ??
+    cookbookCoverImageUrls.get(normalizeCookbookCoverKey(title))
+  );
+}
+
+function normalizeCookbookCoverKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getStableSlugSuffix(value: string): string {
+  let hash = 0;
+
+  for (const character of value) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+
+  return hash.toString(36).slice(0, 6);
 }
 
 export function isDefaultLibraryBrowse(query: RecipeLibraryQuery): boolean {

@@ -5,7 +5,6 @@ import {
   Clock,
   Eye,
   EyeOff,
-  Folder,
   Globe2,
   Heart,
   History,
@@ -23,20 +22,21 @@ import {
   getDefaultSortDirection,
   getCookbookDefaultVisibilityActionHref,
   getLibraryQueryHref,
-  getRecipeCookbookTree,
+  getRecipeCookbooks,
   getRecipeLibraryFacets,
   type RecipeLibraryFacet,
   type RecipeLibraryQuery,
 } from "~/modules/library/recipe-library";
+import { RecipeImage } from "~/modules/ui-shell/primitives";
 
 type LibraryOrganizerDrawerProps = {
-  cookbookTree: ReturnType<typeof getRecipeCookbookTree>;
+  cookbooks: ReturnType<typeof getRecipeCookbooks>;
   facets: ReturnType<typeof getRecipeLibraryFacets>;
   query: RecipeLibraryQuery;
 };
 
 export function LibraryOrganizerDrawer({
-  cookbookTree,
+  cookbooks,
   facets,
   query,
 }: LibraryOrganizerDrawerProps) {
@@ -105,7 +105,7 @@ export function LibraryOrganizerDrawer({
       <LibraryModePicker query={query} />
 
       <div className="drawer-facet-list">
-        <CookbookTree query={query} tree={cookbookTree} />
+        <CookbookList cookbooks={cookbooks} query={query} />
 
         {facets.map((group) => (
           <CollapsibleFacetGroup group={group} key={group.id} />
@@ -192,31 +192,22 @@ function CollapsibleFacetGroup({
   );
 }
 
-function CookbookTree({
+function CookbookList({
+  cookbooks,
   query,
-  tree,
 }: {
+  cookbooks: ReturnType<typeof getRecipeCookbooks>;
   query: RecipeLibraryQuery;
-  tree: ReturnType<typeof getRecipeCookbookTree>;
 }) {
-  const hiddenCookbookCount = tree.reduce(
-    (count, author) =>
-      count + author.cookbooks.filter((cookbook) => !cookbook.defaultVisible).length,
-    0,
-  );
-  const hasSelectedCookbook = tree.some(
-    (author) =>
-      author.selected ||
-      author.cookbooks.some(
-        (cookbook) =>
-          cookbook.selected ||
-          cookbook.chapters.some((chapter) => chapter.selected),
-      ),
+  const hiddenCookbookCount = cookbooks.filter((cookbook) => !cookbook.defaultVisible).length;
+  const hasSelectedCookbook = cookbooks.some(
+    (cookbook) =>
+      cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected),
   );
   const [isSectionOpen, setIsSectionOpen] = useState(
-    hasSelectedCookbook || tree.length <= 6,
+    hasSelectedCookbook || cookbooks.length <= 12,
   );
-  const [openNodeIds, setOpenNodeIds] = useState(() => getSelectedCookbookNodeIds(tree));
+  const [openNodeIds, setOpenNodeIds] = useState(() => getSelectedFlatCookbookNodeIds(cookbooks));
 
   useEffect(() => {
     if (hasSelectedCookbook) {
@@ -225,7 +216,7 @@ function CookbookTree({
   }, [hasSelectedCookbook]);
 
   useEffect(() => {
-    const selectedNodeIds = getSelectedCookbookNodeIds(tree);
+    const selectedNodeIds = getSelectedFlatCookbookNodeIds(cookbooks);
 
     if (selectedNodeIds.size === 0) {
       return;
@@ -240,7 +231,7 @@ function CookbookTree({
 
       return nextNodeIds;
     });
-  }, [tree]);
+  }, [cookbooks]);
 
   function toggleNode(nodeId: string) {
     setOpenNodeIds((currentNodeIds) => {
@@ -256,7 +247,7 @@ function CookbookTree({
     });
   }
 
-  if (tree.length === 0) {
+  if (cookbooks.length === 0) {
     return null;
   }
 
@@ -272,8 +263,19 @@ function CookbookTree({
           <BookOpen className="drawer-icon" />
           <h3>Cookbooks</h3>
         </div>
-        <span>{tree.length}</span>
+        <span>{cookbooks.length}</span>
       </summary>
+      <NavLink
+        className={({ isActive }) =>
+          isActive
+            ? "cookbook-shelf-link selected"
+            : "cookbook-shelf-link"
+        }
+        to="/cookbooks"
+      >
+        <LayoutGrid className="drawer-icon" />
+        <span>Browse covers</span>
+      </NavLink>
       {hiddenCookbookCount > 0 ? (
         <Form
           action={getCookbookDefaultVisibilityActionHref(query)}
@@ -290,141 +292,122 @@ function CookbookTree({
           <button type="submit">Show all</button>
         </Form>
       ) : null}
-      <div className="cookbook-tree-list">
-        {tree.map((author) => {
-          const authorNodeId = getCookbookNodeId("author", author.id);
-          const isAuthorOpen = openNodeIds.has(authorNodeId);
+      <div className="cookbook-tree-list title-first">
+        {cookbooks.map((cookbook) => {
+          const cookbookNodeId = getCookbookNodeId("cookbook", cookbook.id);
+          const isCookbookOpen = openNodeIds.has(cookbookNodeId);
 
           return (
             <div
-              className={isAuthorOpen ? "cookbook-tree-node author open" : "cookbook-tree-node author"}
-              key={author.id}
+              className={
+                isCookbookOpen
+                  ? "cookbook-tree-node cookbook open"
+                  : "cookbook-tree-node cookbook"
+              }
+              key={cookbook.id}
             >
-              <div className={author.selected ? "cookbook-tree-row selected" : "cookbook-tree-row"}>
+              <div
+                className={
+                  cookbook.selected
+                    ? "cookbook-tree-row cookbook-title-row selected"
+                    : "cookbook-tree-row cookbook-title-row"
+                }
+              >
                 <button
-                  aria-expanded={isAuthorOpen}
-                  aria-label={`${isAuthorOpen ? "Collapse" : "Expand"} ${author.label}`}
+                  aria-expanded={isCookbookOpen}
+                  aria-label={`${isCookbookOpen ? "Collapse" : "Expand"} ${cookbook.title}`}
                   className="cookbook-tree-toggle"
-                  onClick={() => toggleNode(authorNodeId)}
+                  onClick={() => toggleNode(cookbookNodeId)}
                   type="button"
                 >
                   <ChevronRight className="drawer-icon tree-chevron" />
                 </button>
-                <Link className="cookbook-tree-filter" title={author.label} to={author.href}>
-                  <span className="cookbook-tree-label">
-                    <Folder className="drawer-icon tree-folder" />
-                    <span>{author.label}</span>
+                <Link
+                  className="cookbook-tree-filter"
+                  title={cookbook.author ? `${cookbook.title} by ${cookbook.author}` : cookbook.title}
+                  to={cookbook.libraryHref}
+                >
+                  <span className="cookbook-tree-label cookbook-title-label">
+                    <RecipeImage
+                      className="cookbook-drawer-cover"
+                      src={cookbook.coverImageUrl}
+                      title={cookbook.title}
+                    />
+                    <span>
+                      <span>{cookbook.title}</span>
+                      {cookbook.author ? <small>{cookbook.author}</small> : null}
+                    </span>
                   </span>
-                  <strong>{author.count}</strong>
+                  <span className="cookbook-tree-count">{cookbook.count}</span>
                 </Link>
+                <Form
+                  action={cookbook.visibilityHref}
+                  className="cookbook-default-visibility-form"
+                  method="post"
+                >
+                  <input type="hidden" name="cookbook" value={cookbook.value} />
+                  <input
+                    type="hidden"
+                    name="visible"
+                    value={cookbook.defaultVisible ? "0" : "1"}
+                  />
+                  <input
+                    type="hidden"
+                    name="redirectTo"
+                    value={getLibraryQueryHref(query)}
+                  />
+                  <button
+                    aria-label={
+                      cookbook.defaultVisible
+                        ? `Hide ${cookbook.title} from default library`
+                        : `Show ${cookbook.title} in default library`
+                    }
+                    className={
+                      cookbook.defaultVisible
+                        ? "cookbook-default-visibility-toggle visible"
+                        : "cookbook-default-visibility-toggle hidden"
+                    }
+                    title={
+                      cookbook.defaultVisible
+                        ? "Included in default library"
+                        : "Hidden from default library"
+                    }
+                    type="submit"
+                  >
+                    {cookbook.defaultVisible ? (
+                      <Eye aria-hidden="true" className="drawer-icon" />
+                    ) : (
+                      <EyeOff aria-hidden="true" className="drawer-icon" />
+                    )}
+                  </button>
+                </Form>
               </div>
-              {isAuthorOpen ? (
+              {isCookbookOpen ? (
                 <div className="cookbook-tree-children">
-                  {author.cookbooks.map((cookbook) => {
-                    const cookbookNodeId = getCookbookNodeId("cookbook", cookbook.id);
-                    const isCookbookOpen = openNodeIds.has(cookbookNodeId);
-
-                    return (
-                      <div
-                        className={
-                          isCookbookOpen
-                            ? "cookbook-tree-node cookbook open"
-                            : "cookbook-tree-node cookbook"
-                        }
-                        key={cookbook.id}
-                      >
-                        <div
-                          className={
-                            cookbook.selected
-                              ? "cookbook-tree-row selected"
-                              : "cookbook-tree-row"
-                          }
-                        >
-                          <button
-                            aria-expanded={isCookbookOpen}
-                            aria-label={`${isCookbookOpen ? "Collapse" : "Expand"} ${cookbook.label}`}
-                            className="cookbook-tree-toggle"
-                            onClick={() => toggleNode(cookbookNodeId)}
-                            type="button"
-                          >
-                            <ChevronRight className="drawer-icon tree-chevron" />
-                          </button>
-                          <Link
-                            className="cookbook-tree-filter"
-                            title={cookbook.label}
-                            to={cookbook.href}
-                          >
-                            <span className="cookbook-tree-label">
-                              <Folder className="drawer-icon tree-folder" />
-                              <span>{cookbook.label}</span>
-                            </span>
-                            <span className="cookbook-tree-count">{cookbook.count}</span>
-                          </Link>
-                          <Form
-                            action={cookbook.visibilityHref}
-                            className="cookbook-default-visibility-form"
-                            method="post"
-                          >
-                            <input type="hidden" name="cookbook" value={cookbook.value} />
-                            <input
-                              type="hidden"
-                              name="visible"
-                              value={cookbook.defaultVisible ? "0" : "1"}
-                            />
-                            <input
-                              type="hidden"
-                              name="redirectTo"
-                              value={getLibraryQueryHref(query)}
-                            />
-                            <button
-                              aria-label={
-                                cookbook.defaultVisible
-                                  ? `Hide ${cookbook.label} from default library`
-                                  : `Show ${cookbook.label} in default library`
-                              }
-                              className={
-                                cookbook.defaultVisible
-                                  ? "cookbook-default-visibility-toggle visible"
-                                  : "cookbook-default-visibility-toggle hidden"
-                              }
-                              title={
-                                cookbook.defaultVisible
-                                  ? "Included in default library"
-                                  : "Hidden from default library"
-                              }
-                              type="submit"
-                            >
-                              {cookbook.defaultVisible ? (
-                                <Eye aria-hidden="true" className="drawer-icon" />
-                              ) : (
-                                <EyeOff aria-hidden="true" className="drawer-icon" />
-                              )}
-                            </button>
-                          </Form>
-                        </div>
-                        {isCookbookOpen ? (
-                          <div className="cookbook-tree-children">
-                            {cookbook.chapters.map((chapter) => (
-                              <Link
-                                className={
-                                  chapter.selected ? "facet-option selected" : "facet-option"
-                                }
-                                key={chapter.id}
-                                title={chapter.label}
-                                to={chapter.href}
-                              >
-                                <span className="facet-option-label">
-                                  <span aria-hidden="true" className="facet-option-indent" />
-                                  <span>{chapter.label}</span>
-                                </span>
-                                <strong>{chapter.count}</strong>
-                              </Link>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                  <Link
+                    className="facet-option cookbook-reader-option"
+                    to={cookbook.readerHref}
+                  >
+                    <span className="facet-option-label">
+                      <span aria-hidden="true" className="facet-option-indent" />
+                      <BookOpen className="drawer-icon" />
+                      <span>Open cookbook</span>
+                    </span>
+                  </Link>
+                  {cookbook.chapters.map((chapter) => (
+                    <Link
+                      className={chapter.selected ? "facet-option selected" : "facet-option"}
+                      key={chapter.id}
+                      title={chapter.label}
+                      to={chapter.href}
+                    >
+                      <span className="facet-option-label">
+                        <span aria-hidden="true" className="facet-option-indent" />
+                        <span>{chapter.label}</span>
+                      </span>
+                      <strong>{chapter.count}</strong>
+                    </Link>
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -435,32 +418,21 @@ function CookbookTree({
   );
 }
 
-function getSelectedCookbookNodeIds(
-  tree: ReturnType<typeof getRecipeCookbookTree>,
+function getSelectedFlatCookbookNodeIds(
+  cookbooks: ReturnType<typeof getRecipeCookbooks>,
 ): Set<string> {
   const nodeIds = new Set<string>();
 
-  for (const author of tree) {
-    const hasSelectedCookbook = author.cookbooks.some(
-      (cookbook) =>
-        cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected),
-    );
-
-    if (author.selected || hasSelectedCookbook) {
-      nodeIds.add(getCookbookNodeId("author", author.id));
-    }
-
-    for (const cookbook of author.cookbooks) {
-      if (cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)) {
-        nodeIds.add(getCookbookNodeId("cookbook", cookbook.id));
-      }
+  for (const cookbook of cookbooks) {
+    if (cookbook.selected || cookbook.chapters.some((chapter) => chapter.selected)) {
+      nodeIds.add(getCookbookNodeId("cookbook", cookbook.id));
     }
   }
 
   return nodeIds;
 }
 
-function getCookbookNodeId(type: "author" | "cookbook", id: string): string {
+function getCookbookNodeId(type: "cookbook", id: string): string {
   return `${type}:${id}`;
 }
 
