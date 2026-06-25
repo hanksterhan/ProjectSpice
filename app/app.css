@@ -1562,48 +1562,6 @@ p {
   padding: 0.05rem 0 0 0.85rem;
 }
 
-.cookbook-hide-toggle {
-  align-items: center;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  color: var(--steel);
-  display: grid;
-  font-size: 0.84rem;
-  font-weight: 650;
-  gap: 0.6rem;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 2rem;
-  padding: 0.18rem 0.42rem;
-}
-
-.cookbook-hide-toggle::after {
-  background: var(--surface-muted);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 2px var(--surface-muted);
-  content: "";
-  height: 0.95rem;
-  width: 1.72rem;
-}
-
-.cookbook-hide-toggle:hover,
-.cookbook-hide-toggle.active {
-  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
-  color: var(--ink);
-}
-
-.cookbook-hide-toggle.active {
-  border-color: var(--accent-border);
-}
-
-.cookbook-hide-toggle.active::after {
-  background:
-    radial-gradient(circle at calc(100% - 0.44rem) center, var(--on-accent) 0 0.3rem, transparent 0.32rem),
-    var(--accent);
-  border-color: var(--accent);
-  box-shadow: none;
-}
-
 .cookbook-tree-node {
   min-width: 0;
 }
@@ -1976,6 +1934,73 @@ p {
   flex-wrap: nowrap;
   gap: 0.55rem;
   justify-content: flex-end;
+}
+
+.cookbook-visibility-switch {
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--steel);
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.32rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.46rem;
+  text-decoration: none;
+}
+
+.cookbook-visibility-switch:hover {
+  border-color: var(--soft-border);
+  color: var(--ink);
+}
+
+.cookbook-visibility-switch.active {
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.cookbook-visibility-switch svg {
+  color: color-mix(in srgb, var(--leaf) 78%, var(--steel));
+  flex: 0 0 auto;
+}
+
+.cookbook-visibility-track {
+  background: var(--surface-raised);
+  border: 1px solid var(--soft-border);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px var(--surface-raised);
+  display: inline-block;
+  height: 1rem;
+  position: relative;
+  width: 1.85rem;
+}
+
+.cookbook-visibility-track::after {
+  background: var(--muted);
+  border-radius: 999px;
+  content: "";
+  height: 0.52rem;
+  left: 0.23rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition:
+    background 140ms ease,
+    left 140ms ease;
+  width: 0.52rem;
+}
+
+.cookbook-visibility-switch.active .cookbook-visibility-track {
+  background: color-mix(in srgb, var(--leaf) 18%, var(--surface-muted));
+  border-color: color-mix(in srgb, var(--leaf) 38%, var(--soft-border));
+}
+
+.cookbook-visibility-switch.active .cookbook-visibility-track::after {
+  background: var(--leaf);
+  left: calc(100% - 0.75rem);
 }
 
 .recipe-card-grid {

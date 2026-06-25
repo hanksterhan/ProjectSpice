@@ -4,6 +4,7 @@ import { seedRecipes } from "~/modules/recipe-domain/seed-recipes.fixtures";
 import {
   addRecipeTags,
   getActiveLibraryFilters,
+  getCookbookVisibilityHref,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
   getRecipeLibraryPage,
@@ -169,6 +170,14 @@ describe("recipe library query helpers", () => {
       id: "hideCookbooks",
       label: "Cookbooks hidden",
     });
+    expect(getCookbookVisibilityHref(query)).toBe("/");
+    expect(
+      getCookbookVisibilityHref(
+        parseRecipeLibraryQuery(
+          "https://spice.test/?chapter=Smoothies&cookbook=Drinks",
+        ),
+      ),
+    ).toBe("/?hideCookbooks=1");
     expect(
       getRecipeCookbookTree(seedRecipes, query)[0]?.href.includes("hideCookbooks=1"),
     ).toBe(false);

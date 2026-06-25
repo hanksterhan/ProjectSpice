@@ -102,7 +102,7 @@ export function LibraryOrganizerDrawer({
       <LibraryModePicker query={query} />
 
       <div className="drawer-facet-list">
-        <CookbookTree query={query} tree={cookbookTree} />
+        <CookbookTree tree={cookbookTree} />
 
         {facets.map((group) => (
           <CollapsibleFacetGroup group={group} key={group.id} />
@@ -189,13 +189,7 @@ function CollapsibleFacetGroup({
   );
 }
 
-function CookbookTree({
-  query,
-  tree,
-}: {
-  query: RecipeLibraryQuery;
-  tree: ReturnType<typeof getRecipeCookbookTree>;
-}) {
+function CookbookTree({ tree }: { tree: ReturnType<typeof getRecipeCookbookTree> }) {
   const hasSelectedCookbook = tree.some(
     (author) =>
       author.selected ||
@@ -267,18 +261,6 @@ function CookbookTree({
         <span>{tree.length}</span>
       </summary>
       <div className="cookbook-tree-list">
-        <Link
-          aria-pressed={query.hideCookbooks ? "true" : "false"}
-          className={
-            query.hideCookbooks
-              ? "cookbook-hide-toggle active"
-              : "cookbook-hide-toggle"
-          }
-          role="button"
-          to={getHideCookbooksHref(query)}
-        >
-          <span>Hide cookbook recipes</span>
-        </Link>
         {tree.map((author) => {
           const authorNodeId = getCookbookNodeId("author", author.id);
           const isAuthorOpen = openNodeIds.has(authorNodeId);
@@ -409,16 +391,6 @@ function getSelectedCookbookNodeIds(
 
 function getCookbookNodeId(type: "author" | "cookbook", id: string): string {
   return `${type}:${id}`;
-}
-
-function getHideCookbooksHref(query: RecipeLibraryQuery) {
-  return getLibraryQueryHref({
-    ...query,
-    chapters: [],
-    cookbooks: [],
-    hideCookbooks: !query.hideCookbooks,
-    page: 1,
-  });
 }
 
 function LibraryModePicker({ query }: { query: RecipeLibraryQuery }) {

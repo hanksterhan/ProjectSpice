@@ -378,6 +378,16 @@ export function getActiveLibraryFilters(
   ];
 }
 
+export function getCookbookVisibilityHref(query: RecipeLibraryQuery): string {
+  return getLibraryQueryHref({
+    ...query,
+    chapters: [],
+    cookbooks: [],
+    hideCookbooks: !query.hideCookbooks,
+    page: 1,
+  });
+}
+
 export function getRecipeSourceFilterLink(
   recipe: RecipeLibraryItem,
   query: RecipeLibraryQuery,
