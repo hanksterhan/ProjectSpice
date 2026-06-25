@@ -37,6 +37,8 @@ export type RecipeLibraryChapterNode = RecipeLibraryFacetOption;
 
 export type RecipeLibraryCookbookNode = RecipeLibraryFacetOption & {
   chapters: RecipeLibraryChapterNode[];
+  defaultVisible: boolean;
+  visibilityHref: string;
 };
 
 export type RecipeLibraryAuthorNode = RecipeLibraryFacetOption & {
@@ -83,6 +85,10 @@ export type RecipeLibraryPage = {
 
 export type RecipeLibrarySlice = RecipeLibraryPage & {
   page: number;
+};
+
+export type RecipeLibraryPreferenceOptions = {
+  hiddenCookbooks?: readonly string[];
 };
 
 export function parseRecipeLibraryQuery(url: string): RecipeLibraryQuery {
@@ -148,8 +154,12 @@ export function getRecipeLibrarySlice(
 export function getRecipeLibraryResults(
   recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
+  options: RecipeLibraryPreferenceOptions = {},
 ): RecipeLibraryItem[] {
   const websiteCounts = getWebsiteCounts(recipes);
+  const hiddenCookbooks = new Set(options.hiddenCookbooks ?? []);
+  const shouldApplyDefaultCookbookVisibility =
+    hiddenCookbooks.size > 0 && isDefaultLibraryBrowse(query);
   const terms = query.q
     .toLowerCase()
     .split(/\s+/)
@@ -162,6 +172,7 @@ export function getRecipeLibraryResults(
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
     query.websites.length === 0 &&
+    !shouldApplyDefaultCookbookVisibility &&
     !query.hideCookbooks &&
     !query.favorite &&
     !query.topRated
@@ -183,6 +194,8 @@ export function getRecipeLibraryResults(
             (!query.favorite || recipe.favorite === true) &&
             (!query.topRated || (recipe.rating ?? -1) >= 8) &&
             (!query.hideCookbooks || !getCookbookLabel(recipe)) &&
+            (!shouldApplyDefaultCookbookVisibility ||
+              !hiddenCookbooks.has(getCookbookLabel(recipe))) &&
             matchesSelectedValues(recipe.tags, query.tags) &&
             matchesSelectedValues(getCookbookChapterLabelsForRecipe(recipe), query.chapters) &&
             matchesSelectedValues([getSourceTypeLabel(recipe)], query.sources) &&
@@ -219,7 +232,9 @@ export function getRecipeLibraryFacets(
 export function getRecipeCookbookTree(
   recipes: readonly RecipeLibraryItem[],
   query: RecipeLibraryQuery,
+  options: RecipeLibraryPreferenceOptions = {},
 ): RecipeLibraryAuthorNode[] {
+  const hiddenCookbooks = new Set(options.hiddenCookbooks ?? []);
   const authors = new Map<
     string,
     {
@@ -277,6 +292,7 @@ export function getRecipeCookbookTree(
       const cookbooks = [...authorGroup.cookbooks.entries()]
         .map(([cookbook, cookbookGroup]) => ({
           count: cookbookGroup.count,
+          defaultVisible: !hiddenCookbooks.has(cookbook),
           href: getLibraryQueryHref({
             ...query,
             cookbooks: [cookbook],
@@ -292,6 +308,7 @@ export function getRecipeCookbookTree(
             query.tags.length === 0 &&
             query.chapters.length === 0,
           value: cookbook,
+          visibilityHref: getCookbookDefaultVisibilityActionHref(query),
           chapters: [...cookbookGroup.chapters.entries()]
             .map(([chapter, count]) => ({
               count,
@@ -327,6 +344,20 @@ export function getRecipeCookbookTree(
       };
     })
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+}
+
+export function isDefaultLibraryBrowse(query: RecipeLibraryQuery): boolean {
+  return (
+    query.q.length === 0 &&
+    query.tags.length === 0 &&
+    query.chapters.length === 0 &&
+    query.sources.length === 0 &&
+    query.cookbooks.length === 0 &&
+    query.websites.length === 0 &&
+    !query.hideCookbooks &&
+    !query.favorite &&
+    !query.topRated
+  );
 }
 
 export function getActiveLibraryFilters(
@@ -386,6 +417,14 @@ export function getCookbookVisibilityHref(query: RecipeLibraryQuery): string {
     hideCookbooks: !query.hideCookbooks,
     page: 1,
   });
+}
+
+export function getCookbookDefaultVisibilityActionHref(query: RecipeLibraryQuery): string {
+  const libraryHref = getLibraryQueryHref(query);
+  const redirectTo = libraryHref === "/" ? "/" : libraryHref;
+  const params = new URLSearchParams({ redirectTo });
+
+  return `/preferences/cookbooks?${params.toString()}`;
 }
 
 export function getRecipeSourceFilterLink(

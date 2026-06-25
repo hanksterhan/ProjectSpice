@@ -7,6 +7,7 @@ export default [
   route("api/ai/transform", "routes/api.ai.transform.ts"),
   route("api/library/recipes", "routes/api.library.recipes.ts"),
   route("cook", "routes/cook.tsx"),
+  route("preferences/cookbooks", "routes/preferences.cookbooks.tsx"),
   route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:recipeId", "routes/recipes.$recipeId.tsx"),
   route("recipes/:recipeId/edit", "routes/recipes.$recipeId.edit.tsx"),

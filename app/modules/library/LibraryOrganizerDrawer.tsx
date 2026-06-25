@@ -3,6 +3,8 @@ import {
   BookOpen,
   ChevronRight,
   Clock,
+  Eye,
+  EyeOff,
   Folder,
   Globe2,
   Heart,
@@ -19,6 +21,7 @@ import { Form, Link, NavLink, useNavigate } from "react-router";
 
 import {
   getDefaultSortDirection,
+  getCookbookDefaultVisibilityActionHref,
   getLibraryQueryHref,
   getRecipeCookbookTree,
   getRecipeLibraryFacets,
@@ -102,7 +105,7 @@ export function LibraryOrganizerDrawer({
       <LibraryModePicker query={query} />
 
       <div className="drawer-facet-list">
-        <CookbookTree tree={cookbookTree} />
+        <CookbookTree query={query} tree={cookbookTree} />
 
         {facets.map((group) => (
           <CollapsibleFacetGroup group={group} key={group.id} />
@@ -189,7 +192,18 @@ function CollapsibleFacetGroup({
   );
 }
 
-function CookbookTree({ tree }: { tree: ReturnType<typeof getRecipeCookbookTree> }) {
+function CookbookTree({
+  query,
+  tree,
+}: {
+  query: RecipeLibraryQuery;
+  tree: ReturnType<typeof getRecipeCookbookTree>;
+}) {
+  const hiddenCookbookCount = tree.reduce(
+    (count, author) =>
+      count + author.cookbooks.filter((cookbook) => !cookbook.defaultVisible).length,
+    0,
+  );
   const hasSelectedCookbook = tree.some(
     (author) =>
       author.selected ||
@@ -260,6 +274,22 @@ function CookbookTree({ tree }: { tree: ReturnType<typeof getRecipeCookbookTree>
         </div>
         <span>{tree.length}</span>
       </summary>
+      {hiddenCookbookCount > 0 ? (
+        <Form
+          action={getCookbookDefaultVisibilityActionHref(query)}
+          className="cookbook-default-reset-form"
+          method="post"
+        >
+          <span>
+            {hiddenCookbookCount === 1
+              ? "1 cookbook hidden"
+              : `${hiddenCookbookCount} cookbooks hidden`}
+          </span>
+          <input type="hidden" name="intent" value="reset-library" />
+          <input type="hidden" name="redirectTo" value={getLibraryQueryHref(query)} />
+          <button type="submit">Show all</button>
+        </Form>
+      ) : null}
       <div className="cookbook-tree-list">
         {tree.map((author) => {
           const authorNodeId = getCookbookNodeId("author", author.id);
@@ -328,8 +358,49 @@ function CookbookTree({ tree }: { tree: ReturnType<typeof getRecipeCookbookTree>
                               <Folder className="drawer-icon tree-folder" />
                               <span>{cookbook.label}</span>
                             </span>
-                            <strong>{cookbook.count}</strong>
+                            <span className="cookbook-tree-count">{cookbook.count}</span>
                           </Link>
+                          <Form
+                            action={cookbook.visibilityHref}
+                            className="cookbook-default-visibility-form"
+                            method="post"
+                          >
+                            <input type="hidden" name="cookbook" value={cookbook.value} />
+                            <input
+                              type="hidden"
+                              name="visible"
+                              value={cookbook.defaultVisible ? "0" : "1"}
+                            />
+                            <input
+                              type="hidden"
+                              name="redirectTo"
+                              value={getLibraryQueryHref(query)}
+                            />
+                            <button
+                              aria-label={
+                                cookbook.defaultVisible
+                                  ? `Hide ${cookbook.label} from default library`
+                                  : `Show ${cookbook.label} in default library`
+                              }
+                              className={
+                                cookbook.defaultVisible
+                                  ? "cookbook-default-visibility-toggle visible"
+                                  : "cookbook-default-visibility-toggle hidden"
+                              }
+                              title={
+                                cookbook.defaultVisible
+                                  ? "Included in default library"
+                                  : "Hidden from default library"
+                              }
+                              type="submit"
+                            >
+                              {cookbook.defaultVisible ? (
+                                <Eye aria-hidden="true" className="drawer-icon" />
+                              ) : (
+                                <EyeOff aria-hidden="true" className="drawer-icon" />
+                              )}
+                            </button>
+                          </Form>
                         </div>
                         {isCookbookOpen ? (
                           <div className="cookbook-tree-children">

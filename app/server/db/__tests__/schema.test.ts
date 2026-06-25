@@ -8,6 +8,7 @@ import {
   recipeLenses,
   recipes,
   recipeVersions,
+  userPreferences,
 } from "../schema";
 
 describe("db schema", () => {
@@ -16,6 +17,7 @@ describe("db schema", () => {
     expect(getTableName(recipeVersions)).toBe("recipe_versions");
     expect(getTableName(recipeLenses)).toBe("recipe_lenses");
     expect(getTableName(aiRuns)).toBe("ai_runs");
+    expect(getTableName(userPreferences)).toBe("user_preferences");
   });
 
   it("stores canonical recipe JSON with searchable recipe summary columns", () => {
@@ -88,5 +90,16 @@ describe("db schema", () => {
   it("narrows AI audit operations and statuses", () => {
     expect(aiRunOperations).toEqual(["generate", "transform"]);
     expect(aiRunStatuses).toEqual(["succeeded", "failed"]);
+  });
+
+  it("stores user-scoped preferences as JSON", () => {
+    expect(Object.keys(getTableColumns(userPreferences))).toEqual(
+      expect.arrayContaining([
+        "userId",
+        "preferenceKey",
+        "valueJson",
+        "updatedAt",
+      ]),
+    );
   });
 });

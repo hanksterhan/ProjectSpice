@@ -33,25 +33,30 @@ import {
 } from "~/modules/ui-shell/primitives";
 import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
+import { getUserPreferenceService } from "~/server/user-preferences";
 
 export function meta(_args: Route.MetaArgs) {
   return [{ title: "Recipe Library | ProjectSpice" }];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  await requireAuthenticatedUser({ request, context, params: {} });
+  const user = await requireAuthenticatedUser({ request, context, params: {} });
 
   const query = parseRecipeLibraryQuery(request.url);
   const service = getRecipeService(context);
+  const libraryPreferences = await getUserPreferenceService(context).getLibraryPreferences(
+    user.userId,
+  );
   const allRecipes = await service.listSummaries();
-  const recipePage = await service.getLibraryPage(query);
+  const recipePage = await service.getLibraryPage(query, libraryPreferences);
 
   return {
     drawerData: {
-      cookbookTree: getRecipeCookbookTree(allRecipes, query),
+      cookbookTree: getRecipeCookbookTree(allRecipes, query, libraryPreferences),
       facets: getRecipeLibraryFacets(allRecipes, query),
       query,
     },
+    libraryPreferences,
     query,
     recipePage,
     recipes: recipePage.recipes,

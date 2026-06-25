@@ -183,6 +183,49 @@ describe("recipe library query helpers", () => {
     ).toBe(false);
   });
 
+  it("applies per-cookbook default visibility without removing search or explicit cookbook access", () => {
+    const hiddenCookbook = "Joshua Weissman - Texture Over Taste";
+    const defaultResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+      { hiddenCookbooks: [hiddenCookbook] },
+    );
+    const searchResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/?q=cookie"),
+      { hiddenCookbooks: [hiddenCookbook] },
+    );
+    const cookbookResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery(
+        `https://spice.test/?cookbook=${encodeURIComponent(hiddenCookbook)}`,
+      ),
+      { hiddenCookbooks: [hiddenCookbook] },
+    );
+    const tree = getRecipeCookbookTree(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+      { hiddenCookbooks: [hiddenCookbook] },
+    );
+    const joshua = tree.find((author) => author.label === "Joshua Weissman");
+    const hiddenNode = joshua?.cookbooks.find(
+      (cookbook) => cookbook.value === hiddenCookbook,
+    );
+
+    expect(
+      defaultResults.some((recipe) => recipe.source?.name === hiddenCookbook),
+    ).toBe(false);
+    expect(
+      searchResults.some((recipe) => recipe.source?.name === hiddenCookbook),
+    ).toBe(true);
+    expect(cookbookResults.length).toBeGreaterThan(0);
+    expect(
+      cookbookResults.every((recipe) => recipe.source?.name === hiddenCookbook),
+    ).toBe(true);
+    expect(hiddenNode?.defaultVisible).toBe(false);
+    expect(hiddenNode?.visibilityHref).toBe("/preferences/cookbooks?redirectTo=%2F");
+  });
+
   it("sorts matching recipes by title and total time", () => {
     const titleResults = getRecipeLibraryResults(seedRecipes, {
       chapters: [],

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -173,6 +174,22 @@ export const cookbookTechniques = sqliteTable(
     index("cookbook_techniques_source_name_idx").on(table.sourceName),
     index("cookbook_techniques_technique_type_idx").on(table.techniqueType),
     index("cookbook_techniques_deleted_at_idx").on(table.deletedAt),
+  ],
+);
+
+export const userPreferences = sqliteTable(
+  "user_preferences",
+  {
+    userId: text("user_id").notNull(),
+    preferenceKey: text("preference_key").notNull(),
+    valueJson: text("value_json", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.preferenceKey] }),
+    index("user_preferences_user_id_idx").on(table.userId),
   ],
 );
 

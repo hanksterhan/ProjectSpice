@@ -9,7 +9,9 @@ import {
   getRecipeLibraryPage,
   getRecipeLibraryResults,
   getRecipeLibrarySlice,
+  isDefaultLibraryBrowse,
   recipeLibraryPageSize,
+  type RecipeLibraryPreferenceOptions,
   type RecipeLibraryPage,
   type RecipeLibraryQuery,
   type RecipeLibrarySlice,
@@ -56,8 +58,11 @@ export class RecipeService {
     return recipes.map((recipe) => recipeSummarySchema.parse(recipe));
   }
 
-  async getLibraryPage(query: RecipeLibraryQuery): Promise<RecipeLibraryPage> {
-    if (canUseSummaryPageQuery(query)) {
+  async getLibraryPage(
+    query: RecipeLibraryQuery,
+    options: RecipeLibraryPreferenceOptions = {},
+  ): Promise<RecipeLibraryPage> {
+    if (canUseSummaryPageQuery(query, options)) {
       const totalCount = await this.repository.countSummaries();
       const visibleCount = Math.min(totalCount, (query.page ?? 1) * recipeLibraryPageSize);
       const recipes = await this.repository.listSummaryPage({
@@ -75,15 +80,18 @@ export class RecipeService {
       };
     }
 
-    const recipes = getRecipeLibraryResults(await this.listSummaries(), query);
+    const recipes = getRecipeLibraryResults(await this.listSummaries(), query, options);
 
     return getRecipeLibraryPage(recipes, query);
   }
 
-  async getLibrarySlice(query: RecipeLibraryQuery): Promise<RecipeLibrarySlice> {
+  async getLibrarySlice(
+    query: RecipeLibraryQuery,
+    options: RecipeLibraryPreferenceOptions = {},
+  ): Promise<RecipeLibrarySlice> {
     const page = query.page ?? 1;
 
-    if (canUseSummaryPageQuery(query)) {
+    if (canUseSummaryPageQuery(query, options)) {
       const totalCount = await this.repository.countSummaries();
       const visibleCount = Math.min(totalCount, page * recipeLibraryPageSize);
       const recipes = await this.repository.listSummaryPage({
@@ -102,7 +110,7 @@ export class RecipeService {
       };
     }
 
-    const recipes = getRecipeLibraryResults(await this.listSummaries(), query);
+    const recipes = getRecipeLibraryResults(await this.listSummaries(), query, options);
 
     return getRecipeLibrarySlice(recipes, query);
   }
@@ -141,16 +149,12 @@ export class RecipeService {
 
 export { RecipeVersionConflictError };
 
-function canUseSummaryPageQuery(query: RecipeLibraryQuery): boolean {
+function canUseSummaryPageQuery(
+  query: RecipeLibraryQuery,
+  options: RecipeLibraryPreferenceOptions,
+): boolean {
   return (
-    query.q === "" &&
-    query.tags.length === 0 &&
-    query.chapters.length === 0 &&
-    query.cookbooks.length === 0 &&
-    query.sources.length === 0 &&
-    query.websites.length === 0 &&
-    !query.hideCookbooks &&
-    !query.favorite &&
-    !query.topRated
+    isDefaultLibraryBrowse(query) &&
+    (options.hiddenCookbooks?.length ?? 0) === 0
   );
 }

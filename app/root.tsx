@@ -27,9 +27,11 @@ import {
 import {
   isAuthBypassEnabled,
   isPublicAuthPath,
+  getBypassAuthenticatedUser,
   redirectToSignIn,
 } from "./server/auth";
 import { getRecipeService } from "./server/recipes/recipe.runtime";
+import { getUserPreferenceService } from "./server/user-preferences";
 import type { RuntimeLoadContext } from "./server/runtime-context";
 import "./app.css";
 
@@ -80,7 +82,12 @@ export function meta(_args: Route.MetaArgs) {
 
 export async function loader(args: Route.LoaderArgs) {
   if (isAuthBypassEnabled(args.context, args.request)) {
-    return loadRootAppData(args.request, args.context, true);
+    return loadRootAppData(
+      args.request,
+      args.context,
+      true,
+      getBypassAuthenticatedUser().userId,
+    );
   }
 
   return rootAuthLoader(args, async ({ request, context }) => {
@@ -96,7 +103,7 @@ export async function loader(args: Route.LoaderArgs) {
       throw redirectToSignIn(request);
     }
 
-    return loadRootAppData(request, context, false);
+    return loadRootAppData(request, context, false, request.auth.userId ?? "");
   });
 }
 
@@ -104,6 +111,7 @@ async function loadRootAppData(
   request: Request,
   context: RuntimeLoadContext,
   authBypassed: boolean,
+  userId: string,
 ): Promise<RootAppData> {
   const url = new URL(request.url);
 
@@ -116,13 +124,16 @@ async function loadRootAppData(
   }
 
   const query = parseRecipeLibraryQuery(request.url);
+  const libraryPreferences = await getUserPreferenceService(context).getLibraryPreferences(
+    userId,
+  );
   const recipes = await getRecipeService(context).listSummaries();
 
   return {
     authBypassed,
     isPublicAuthRoute: false,
     libraryDrawer: {
-      cookbookTree: getRecipeCookbookTree(recipes, query),
+      cookbookTree: getRecipeCookbookTree(recipes, query, libraryPreferences),
       facets: getRecipeLibraryFacets(recipes, query),
       query,
     },
