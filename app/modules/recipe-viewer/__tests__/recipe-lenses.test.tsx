@@ -63,6 +63,9 @@ describe("RecipeViewer recipe lenses", () => {
               type: "imported",
               name: "Joshua Weissman - An Unapologetic Cookbook",
             },
+            yield: {
+              notes: "Yield: 4 servings",
+            },
             tags: ["chapter:Staples From Scratch", "Joshua Weissman", "weeknight"],
           }}
         />
@@ -72,6 +75,18 @@ describe("RecipeViewer recipe lenses", () => {
     expect(markup).toContain("An Unapologetic Cookbook");
     expect(markup).toContain("Staples From Scratch");
     expect(markup).toContain("weeknight");
+    expect(markup).toContain('aria-label="Recipe rating and tags"');
+    expect(markup).toContain('aria-label="Recipe yield and cook history"');
+    expect(markup).toContain('aria-label="Recipe times"');
+    expect(markup).toContain('class="recipe-time-chip"');
+    expect(markup).toContain("<span>Prep:</span>");
+    expect(markup).toContain("<span>Cook:</span>");
+    expect(markup).toContain("<span>Total:</span>");
+    expect(markup).toContain("<span>Yield:</span>");
+    expect(markup).toContain("4 servings");
+    expect(markup).not.toContain("Yield: 4 servings");
+    expect(markup).toContain("<span>Cooked:</span>");
+    expect(markup).toContain("not yet");
     expect(markup).not.toContain("chapter:Staples");
     expect(markup).not.toContain('class="tag">Joshua Weissman');
   });

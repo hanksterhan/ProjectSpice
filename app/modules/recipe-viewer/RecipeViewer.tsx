@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { Bookmark, ExternalLink } from "lucide-react";
+import { Bookmark, Clock3, ExternalLink } from "lucide-react";
 import { Form, Link } from "react-router";
 
 import {
@@ -52,6 +52,14 @@ export function RecipeViewer({
   const cookbookTitle = getCookbookTitle(displayRecipe);
   const chapterTitle = getCookbookChapterTitle(displayRecipe);
   const titlePanelTags = getTitlePanelTags(displayRecipe).slice(0, 5);
+  const yieldLabel = formatYield(displayRecipe);
+  const hasRatingAndTags =
+    displayRecipe.rating !== undefined || Boolean(chapterTitle) || titlePanelTags.length > 0;
+  const titlePanelTimes = [
+    { label: "Prep", value: prepTime },
+    { label: "Cook", value: cookTime },
+    { label: "Total", value: totalTime },
+  ].filter((time) => time.value);
 
   return (
     <article className="recipe-detail-page">
@@ -69,54 +77,61 @@ export function RecipeViewer({
               <strong>{activeLensDefinition.label}</strong>
             </div>
           ) : null}
-          <div className="recipe-meta large" aria-label="Recipe highlights and tags">
-            {displayRecipe.rating !== undefined ? (
-              <RatingStars rating={displayRecipe.rating} />
+          <div className="recipe-title-metadata" aria-label="Recipe metadata">
+            {hasRatingAndTags ? (
+              <div className="recipe-meta recipe-meta-row" aria-label="Recipe rating and tags">
+                {displayRecipe.rating !== undefined ? (
+                  <RatingStars rating={displayRecipe.rating} />
+                ) : null}
+                {chapterTitle ? (
+                  <span className="recipe-chapter-chip">
+                    <Bookmark aria-hidden="true" size={13} strokeWidth={2.5} />
+                    {chapterTitle}
+                  </span>
+                ) : null}
+                {titlePanelTags.map((tag) => (
+                  <span className="tag" key={tag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
             ) : null}
-            {chapterTitle ? (
-              <span className="recipe-chapter-chip">
-                <Bookmark aria-hidden="true" size={13} strokeWidth={2.5} />
-                {chapterTitle}
+
+            <div className="recipe-meta recipe-meta-row" aria-label="Recipe yield and cook history">
+              {yieldLabel ? (
+                <span className="recipe-detail-chip">
+                  <span>Yield:</span>
+                  <strong>{yieldLabel}</strong>
+                </span>
+              ) : null}
+              <span className="recipe-detail-chip">
+                <span>Cooked:</span>
+                <strong>{cookCount > 0 ? `${cookCount}x` : "not yet"}</strong>
               </span>
+              {lastCookedDate ? (
+                <span className="recipe-detail-chip">
+                  <span>Last:</span>
+                  <strong>{formatCookedDate(lastCookedDate)}</strong>
+                </span>
+              ) : null}
+            </div>
+
+            {titlePanelTimes.length > 0 ? (
+              <div className="recipe-meta recipe-meta-row" aria-label="Recipe times">
+                {titlePanelTimes.map((time) => (
+                  <span className="recipe-time-chip" key={time.label}>
+                    <Clock3 aria-hidden="true" size={13} strokeWidth={2} />
+                    <span>{time.label}:</span>
+                    <strong>{time.value}</strong>
+                  </span>
+                ))}
+              </div>
             ) : null}
-            {titlePanelTags.map((tag) => (
-              <span className="tag" key={tag}>
-                {tag}
-              </span>
-            ))}
           </div>
         </div>
 
         <RecipeImageGallery recipe={displayRecipe} />
       </header>
-
-      <dl className="recipe-detail-stats" aria-label="Recipe overview">
-        <div>
-          <dt>Yield</dt>
-          <dd>{displayRecipe.yield?.notes ?? "Not specified"}</dd>
-        </div>
-        <div>
-          <dt>Prep</dt>
-          <dd>{prepTime || "Not specified"}</dd>
-        </div>
-        <div>
-          <dt>Cook</dt>
-          <dd>{cookTime || "Not specified"}</dd>
-        </div>
-        <div>
-          <dt>Total</dt>
-          <dd>{totalTime || "Not specified"}</dd>
-        </div>
-        <div>
-          <dt>Cooked</dt>
-          <dd>
-            {cookCount > 0 ? `${cookCount}x` : "Not yet"}
-            {lastCookedDate ? (
-              <span className="recipe-stat-note">Last {formatCookedDate(lastCookedDate)}</span>
-            ) : null}
-          </dd>
-        </div>
-      </dl>
 
       <nav className="recipe-mobile-tabs" aria-label="Recipe sections">
         <a href="#ingredients-heading">Ingredients</a>
@@ -647,6 +662,20 @@ function formatCookedDate(date: string): string {
     day: "numeric",
     year: "numeric",
   }).format(new Date(year, month - 1, day));
+}
+
+function formatYield(recipe: Recipe): string {
+  const yieldInfo = recipe.yield;
+
+  if (!yieldInfo) {
+    return "";
+  }
+
+  if (yieldInfo.notes) {
+    return yieldInfo.notes.replace(/^yields?\s*:?\s*/i, "");
+  }
+
+  return [yieldInfo.quantity, yieldInfo.unit].filter(Boolean).join(" ");
 }
 
 function shouldShowSectionTitle(

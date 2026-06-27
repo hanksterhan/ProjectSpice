@@ -189,6 +189,7 @@ p {
   gap: 0.05rem;
   justify-items: center;
   min-width: 0;
+  overflow: hidden;
   text-align: center;
 }
 
@@ -209,6 +210,7 @@ p {
   display: block;
   font-size: clamp(0.98rem, 1.6vw, 1.1rem);
   line-height: 1.05;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3030,6 +3032,40 @@ p {
   max-width: 52rem;
 }
 
+.recipe-detail-hero h1 + p {
+  margin-bottom: 1.1rem;
+}
+
+.recipe-title-metadata {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.recipe-meta-row {
+  gap: 0.45rem;
+}
+
+.recipe-detail-chip,
+.recipe-time-chip {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.24rem;
+}
+
+.recipe-time-chip svg {
+  color: var(--steel);
+  flex: 0 0 auto;
+  height: 0.78rem;
+  width: 0.78rem;
+}
+
+.recipe-detail-chip strong,
+.recipe-time-chip strong {
+  color: var(--ink);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .recipe-lens-current {
   align-items: center;
   background: var(--surface-muted);
@@ -3171,46 +3207,6 @@ p {
   height: 100%;
   object-fit: cover;
   width: 100%;
-}
-
-.recipe-detail-stats {
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 1px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin: 0;
-  overflow: hidden;
-}
-
-.recipe-detail-stats div {
-  background: var(--surface-raised);
-  min-width: 0;
-  padding: 1rem;
-}
-
-.recipe-detail-stats dt {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 800;
-  margin-bottom: 0.3rem;
-  text-transform: uppercase;
-}
-
-.recipe-detail-stats dd {
-  color: var(--ink);
-  display: grid;
-  gap: 0.25rem;
-  font-weight: 900;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.recipe-stat-note {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
 }
 
 .recipe-lens-editor-panel {
@@ -5344,10 +5340,6 @@ p {
     text-align: center;
   }
 
-  .recipe-detail-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .cook-step-panel h2 {
     max-width: none;
   }
@@ -5417,10 +5409,6 @@ p {
   }
 
   .recipe-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .recipe-detail-stats {
     grid-template-columns: 1fr;
   }
 
@@ -5560,7 +5548,6 @@ p {
     height: 100%;
   }
 
-  .recipe-detail-stats div,
   .ingredient-rail,
   .direction-pane,
   .cook-step-panel,
