@@ -1671,6 +1671,24 @@ p {
   text-transform: uppercase;
 }
 
+.drawer-section-title-link {
+  border-radius: 4px;
+  color: inherit;
+  display: inline-flex;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.drawer-section-title-link:hover,
+.drawer-section-title-link:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.drawer-section-title-link:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
 .drawer-icon {
   color: var(--muted);
   flex: 0 0 auto;
@@ -1705,33 +1723,6 @@ p {
 
 .cookbook-tree-list.title-first {
   padding-left: 0;
-}
-
-.cookbook-shelf-link {
-  align-items: center;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  color: var(--steel);
-  display: grid;
-  font-size: 0.88rem;
-  font-weight: 650;
-  gap: 0.48rem;
-  grid-template-columns: 1rem minmax(0, 1fr);
-  margin: 0.05rem 0 0.28rem 0.85rem;
-  min-height: 2rem;
-  padding: 0.32rem 0.42rem 0.32rem 0.5rem;
-  text-decoration: none;
-}
-
-.cookbook-shelf-link:hover,
-.cookbook-shelf-link.selected {
-  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
-  color: var(--ink);
-}
-
-.cookbook-shelf-link.selected {
-  border-color: var(--soft-border);
-  box-shadow: 0 1px 0 var(--soft-border);
 }
 
 .cookbook-default-reset-form {

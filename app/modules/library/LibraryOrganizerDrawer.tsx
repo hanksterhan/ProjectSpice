@@ -261,21 +261,18 @@ function CookbookList({
         <div className="drawer-section-title">
           <ChevronRight className="drawer-icon tree-chevron" />
           <BookOpen className="drawer-icon" />
-          <h3>Cookbooks</h3>
+          <h3>
+            <NavLink
+              className="drawer-section-title-link"
+              onClick={(event) => event.stopPropagation()}
+              to="/cookbooks"
+            >
+              Cookbooks
+            </NavLink>
+          </h3>
         </div>
         <span>{cookbooks.length}</span>
       </summary>
-      <NavLink
-        className={({ isActive }) =>
-          isActive
-            ? "cookbook-shelf-link selected"
-            : "cookbook-shelf-link"
-        }
-        to="/cookbooks"
-      >
-        <LayoutGrid className="drawer-icon" />
-        <span>Browse covers</span>
-      </NavLink>
       {hiddenCookbookCount > 0 ? (
         <Form
           action={getCookbookDefaultVisibilityActionHref(query)}
