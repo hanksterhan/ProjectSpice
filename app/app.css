@@ -2746,7 +2746,103 @@ p {
   gap: 1rem;
   margin-inline: auto;
   padding-right: 3.1rem;
+  touch-action: pan-y;
   width: min(100%, 1560px);
+}
+
+.recipe-browse-nav {
+  align-items: center;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-areas: "previous position next";
+  grid-template-columns: minmax(8rem, 1fr) auto minmax(8rem, 1fr);
+  justify-self: center;
+  width: min(100%, 56rem);
+}
+
+.recipe-browse-link,
+.recipe-browse-position {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  display: flex;
+  min-height: 2.55rem;
+}
+
+.recipe-browse-link {
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0 0.65rem;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.recipe-browse-link:hover,
+.recipe-browse-link:focus-visible {
+  border-color: var(--soft-border-strong);
+  color: var(--accent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.recipe-browse-link.previous {
+  grid-area: previous;
+}
+
+.recipe-browse-link.next {
+  grid-area: next;
+  justify-content: end;
+  text-align: right;
+}
+
+.recipe-browse-link svg {
+  color: var(--steel);
+  flex: 0 0 auto;
+}
+
+.recipe-browse-title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-browse-position span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.recipe-browse-position {
+  gap: 0.28rem;
+  grid-area: position;
+  justify-content: center;
+  min-width: 8.4rem;
+  padding: 0 0.8rem;
+  text-align: center;
+}
+
+.recipe-browse-position strong {
+  color: var(--steel);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.recipe-browse-position:hover,
+.recipe-browse-position:focus-visible {
+  color: var(--accent);
+  outline: none;
 }
 
 .recipe-action-rail {
@@ -5389,6 +5485,12 @@ p {
     z-index: 5;
   }
 
+  .recipe-browse-nav {
+    gap: 0.55rem;
+    grid-template-columns: minmax(6rem, 1fr) auto minmax(6rem, 1fr);
+    width: 100%;
+  }
+
   .recipe-mobile-tabs a {
     align-items: center;
     background: var(--surface-muted);
@@ -5479,6 +5581,37 @@ p {
     gap: 0.75rem;
     padding-bottom: 4.4rem;
     padding-right: 0;
+  }
+
+  .recipe-browse-nav {
+    gap: 0.4rem;
+    grid-template-areas: "previous position next";
+    grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  }
+
+  .recipe-browse-link,
+  .recipe-browse-position {
+    min-height: 2.65rem;
+  }
+
+  .recipe-browse-link {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .recipe-browse-link.next {
+    justify-content: center;
+  }
+
+  .recipe-browse-title {
+    display: none;
+  }
+
+  .recipe-browse-position {
+    flex-direction: column;
+    gap: 0.18rem;
+    min-width: 0;
+    padding: 0.4rem 0.55rem;
   }
 
   .recipe-action-rail {

@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Aperture, ChefHat } from "lucide-react";
-import { Form, Link, redirect } from "react-router";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { Aperture, ChefHat, ChevronLeft, ChevronRight } from "lucide-react";
+import { Form, Link, redirect, useNavigate } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/recipes.$recipeId";
-import { addCookHistoryEntry } from "~/modules/recipe-domain";
+import { addCookHistoryEntry, type RecipeSummary } from "~/modules/recipe-domain";
 import {
   appendAiChatTurn,
   buildRecipeFromAiDraft,
@@ -14,6 +14,12 @@ import {
   type RecipeAiPanelActionData,
 } from "~/modules/ai-workbench";
 import { getCookSessionHref } from "~/modules/cooking";
+import {
+  getLibraryQueryHref,
+  getRecipeLibraryResults,
+  parseRecipeLibraryQuery,
+  type RecipeLibraryQuery,
+} from "~/modules/library/recipe-library";
 import {
   recipeLensKeySchema,
   getRecipeLensDefinition,
@@ -26,6 +32,7 @@ import {
   RecipeViewer,
 } from "~/modules/recipe-viewer/RecipeViewer";
 import {
+  getRecipeBrowseDetailPath,
   getRecipeDetailPath,
   getRecipeEditPath,
 } from "~/modules/recipe-viewer/recipe-detail";
@@ -40,6 +47,7 @@ import { requireAuthenticatedUser } from "~/server/auth";
 import { getRecipeLensService } from "~/server/recipe-lenses";
 import { RecipeVersionConflictError } from "~/server/recipes/recipe.repo";
 import { getRecipeService } from "~/server/recipes/recipe.runtime";
+import { getUserPreferenceService } from "~/server/user-preferences";
 
 const transformFormSchema = z.object({
   prompt: z.string().trim().min(1, "Add a transform request before generating."),
@@ -58,19 +66,41 @@ const cookedFormSchema = z.object({
   cookNote: z.string().trim().max(1200, "Keep cook notes under 1200 characters.").optional(),
 });
 
+type RecipeBrowseItem = Pick<RecipeSummary, "id" | "imageUrl" | "source" | "title">;
+
+type RecipeBrowseContext = {
+  backHref: string;
+  currentPosition: number;
+  nextHref?: string;
+  nextRecipe?: RecipeBrowseItem;
+  previousHref?: string;
+  previousRecipe?: RecipeBrowseItem;
+  totalCount: number;
+};
+
 export function meta({ data }: Route.MetaArgs) {
   return [{ title: `${data?.recipe.title ?? "Recipe"} | ProjectSpice` }];
 }
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
-  await requireAuthenticatedUser({ request, context, params });
+  const user = await requireAuthenticatedUser({ request, context, params });
 
-  const recipe = await getRecipeService(context).getById(params.recipeId);
+  const service = getRecipeService(context);
+  const recipe = await service.getById(params.recipeId);
 
   if (!recipe) {
     throw new Response("Recipe not found", { status: 404 });
   }
 
+  const libraryQuery = parseRecipeLibraryQuery(request.url);
+  const libraryPreferences = await getUserPreferenceService(context).getLibraryPreferences(
+    user.userId,
+  );
+  const libraryRecipes = getRecipeLibraryResults(
+    await service.listSummaries(),
+    libraryQuery,
+    libraryPreferences,
+  );
   const lensService = getRecipeLensService(context);
   const lensSummaries = await lensService.listSummariesByRecipeId(recipe.id);
   const activeLensKey = parseActiveLensKey(request.url);
@@ -78,8 +108,14 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     activeLensKey === "original"
       ? null
       : await lensService.getByRecipeIdAndKey(recipe.id, activeLensKey);
+  const browseContext = getRecipeBrowseContext(
+    recipe.id,
+    libraryRecipes,
+    libraryQuery,
+    activeLensKey,
+  );
 
-  return { recipe, lensSummaries, activeLensKey, activeLens };
+  return { recipe, lensSummaries, activeLensKey, activeLens, browseContext };
 }
 
 export async function action({
@@ -249,23 +285,64 @@ export async function action({
   };
 }
 
+function getRecipeBrowseContext(
+  recipeId: string,
+  recipes: RecipeSummary[],
+  query: RecipeLibraryQuery,
+  activeLensKey: RecipeLensKey | "original",
+): RecipeBrowseContext {
+  const currentIndex = recipes.findIndex((recipe) => recipe.id === recipeId);
+  const previousRecipe = currentIndex > 0 ? recipes[currentIndex - 1] : undefined;
+  const nextRecipe =
+    currentIndex >= 0 && currentIndex < recipes.length - 1
+      ? recipes[currentIndex + 1]
+      : undefined;
+
+  return {
+    backHref: getLibraryQueryHref(query),
+    currentPosition: currentIndex >= 0 ? currentIndex + 1 : 0,
+    nextRecipe: nextRecipe ? toBrowseItem(nextRecipe) : undefined,
+    nextHref: nextRecipe
+      ? getRecipeBrowseDetailPath(nextRecipe, query, activeLensKey)
+      : undefined,
+    previousRecipe: previousRecipe ? toBrowseItem(previousRecipe) : undefined,
+    previousHref: previousRecipe
+      ? getRecipeBrowseDetailPath(previousRecipe, query, activeLensKey)
+      : undefined,
+    totalCount: recipes.length,
+  };
+}
+
+function toBrowseItem(recipe: RecipeSummary): RecipeBrowseItem {
+  return {
+    id: recipe.id,
+    imageUrl: recipe.imageUrl,
+    source: recipe.source,
+    title: recipe.title,
+  };
+}
+
 export default function RecipeDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [isCookHistoryOpen, setIsCookHistoryOpen] = useState(false);
   const [isLensDrawerOpen, setIsLensDrawerOpen] = useState(false);
   const recipe = loaderData.recipe;
+  const browseContext = loaderData.browseContext;
   const recipeId = recipe.id;
   const recipeTitle = recipe.title;
+  const swipeHandlers = useRecipeBrowseSwipe(browseContext);
 
   useShellCommand({
-    backHref: "/",
+    backHref: browseContext.backHref,
     backLabel: "Back to library",
     title: recipeTitle,
   });
+  useRecipeBrowseKeyboard(browseContext);
 
   return (
-    <div className="recipe-detail-route">
+    <div className="recipe-detail-route" {...swipeHandlers}>
+      <RecipeBrowseNav browseContext={browseContext} />
       <RecipeViewer
         recipe={recipe}
         activeLens={loaderData.activeLens}
@@ -304,6 +381,198 @@ export default function RecipeDetail({
       ) : null}
     </div>
   );
+}
+
+function RecipeBrowseNav({
+  browseContext,
+}: {
+  browseContext: RecipeBrowseContext;
+}) {
+  if (browseContext.totalCount <= 1 || browseContext.currentPosition === 0) {
+    return null;
+  }
+
+  return (
+    <nav className="recipe-browse-nav" aria-label="Browse recipes">
+      <RecipeBrowseLink
+        direction="previous"
+        href={browseContext.previousHref}
+        recipe={browseContext.previousRecipe}
+      />
+      <Link className="recipe-browse-position" to={browseContext.backHref}>
+        <span>
+          {browseContext.currentPosition} of {browseContext.totalCount}
+        </span>
+        <strong>Library</strong>
+      </Link>
+      <RecipeBrowseLink
+        direction="next"
+        href={browseContext.nextHref}
+        recipe={browseContext.nextRecipe}
+      />
+    </nav>
+  );
+}
+
+function RecipeBrowseLink({
+  direction,
+  href,
+  recipe,
+}: {
+  direction: "next" | "previous";
+  href?: string;
+  recipe?: RecipeBrowseItem;
+}) {
+  if (!href || !recipe) {
+    return null;
+  }
+
+  const isNext = direction === "next";
+  const label = isNext ? "Next recipe" : "Previous recipe";
+  const content = (
+    <>
+      {!isNext ? (
+        <ChevronLeft aria-hidden="true" size={19} strokeWidth={2.6} />
+      ) : null}
+      <span className="recipe-browse-title">{recipe.title}</span>
+      {isNext ? (
+        <ChevronRight aria-hidden="true" size={19} strokeWidth={2.6} />
+      ) : null}
+    </>
+  );
+
+  return (
+    <Link
+      className={`recipe-browse-link ${direction}`}
+      to={href}
+      aria-label={`${label}: ${recipe.title}`}
+      title={`${label}: ${recipe.title}`}
+    >
+      {content}
+    </Link>
+  );
+}
+
+function useRecipeBrowseKeyboard(browseContext: RecipeBrowseContext) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isBrowseShortcutTargetBlocked(event.target, true)
+      ) {
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && browseContext.previousHref) {
+        event.preventDefault();
+        navigate(browseContext.previousHref);
+      } else if (event.key === "ArrowRight" && browseContext.nextHref) {
+        event.preventDefault();
+        navigate(browseContext.nextHref);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [browseContext.nextHref, browseContext.previousHref, navigate]);
+}
+
+function useRecipeBrowseSwipe(browseContext: RecipeBrowseContext) {
+  const navigate = useNavigate();
+  const touchStartRef = useRef<{
+    identifier: number;
+    startedAt: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  return {
+    onTouchStart(event: TouchEvent<HTMLDivElement>) {
+      if (
+        event.touches.length !== 1 ||
+        isBrowseShortcutTargetBlocked(event.target, false)
+      ) {
+        touchStartRef.current = null;
+        return;
+      }
+
+      const touch = event.touches[0];
+
+      touchStartRef.current = {
+        identifier: touch.identifier,
+        startedAt: window.performance.now(),
+        x: touch.clientX,
+        y: touch.clientY,
+      };
+    },
+    onTouchEnd(event: TouchEvent<HTMLDivElement>) {
+      const start = touchStartRef.current;
+
+      touchStartRef.current = null;
+
+      if (!start) {
+        return;
+      }
+
+      const touch = Array.from(event.changedTouches).find(
+        (changedTouch) => changedTouch.identifier === start.identifier,
+      );
+
+      if (!touch) {
+        return;
+      }
+
+      const deltaX = touch.clientX - start.x;
+      const deltaY = touch.clientY - start.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const elapsedMs = window.performance.now() - start.startedAt;
+
+      if (elapsedMs > 900 || absX < 76 || absX < absY * 1.45) {
+        return;
+      }
+
+      const href = deltaX < 0 ? browseContext.nextHref : browseContext.previousHref;
+
+      if (href) {
+        navigate(href);
+      }
+    },
+  };
+}
+
+function isBrowseShortcutTargetBlocked(
+  target: EventTarget | null,
+  includeImageGallery: boolean,
+): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  const blockedSelector = [
+    "a",
+    "button",
+    "input",
+    "select",
+    "textarea",
+    "summary",
+    "[contenteditable='true']",
+    "[role='button']",
+    "[role='link']",
+    includeImageGallery ? ".recipe-image-gallery" : "",
+  ]
+    .filter(Boolean)
+    .join(",");
+
+  return Boolean(target.closest(blockedSelector));
 }
 
 function parseActiveLensKey(url: string): RecipeLensKey | "original" {

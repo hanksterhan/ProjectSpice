@@ -20,7 +20,7 @@ import {
   type RecipeLibrarySlice,
 } from "~/modules/library/recipe-library";
 import { LibraryOrganizerDrawer } from "~/modules/library/LibraryOrganizerDrawer";
-import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
+import { getRecipeBrowseDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import { useShellDrawer } from "~/modules/ui-shell/AppShell";
 import {
   Button,
@@ -323,7 +323,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       </div>
                       <div>
                         <h3>
-                          <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                          <Link to={getRecipeBrowseDetailPath(recipe, query)}>{recipe.title}</Link>
                         </h3>
                         <RecipeSignals recipe={recipe} />
                         <RecipeMeta query={query} recipe={recipe} />
@@ -332,7 +332,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   ) : isGridView ? (
                     <article className="recipe-grid-tile selectable-recipe" key={recipe.id}>
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <Link className="recipe-grid-image-link" to={getRecipeDetailPath(recipe)}>
+                      <Link className="recipe-grid-image-link" to={getRecipeBrowseDetailPath(recipe, query)}>
                         <RecipeImage
                           className="recipe-grid-image"
                           src={recipe.imageUrl}
@@ -341,7 +341,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                         <RecipeFavoriteMarker recipe={recipe} />
                       </Link>
                       <h3>
-                        <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                        <Link to={getRecipeBrowseDetailPath(recipe, query)}>{recipe.title}</Link>
                       </h3>
                       <RecipeSignals recipe={recipe} />
                     </article>
@@ -350,7 +350,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
                       <Link
                         className="recipe-card-image-link"
-                        to={getRecipeDetailPath(recipe)}
+                        to={getRecipeBrowseDetailPath(recipe, query)}
                         aria-label={recipe.title}
                       >
                         <RecipeImage
@@ -366,7 +366,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                             {recipe.source?.name ?? recipe.yield?.notes ?? "Recipe"}
                           </p>
                           <h3>
-                            <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                            <Link to={getRecipeBrowseDetailPath(recipe, query)}>{recipe.title}</Link>
                           </h3>
                           <RecipeSignals recipe={recipe} />
                         </div>

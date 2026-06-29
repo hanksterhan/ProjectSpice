@@ -7,7 +7,7 @@ import {
   getRecipeLibraryResults,
   parseRecipeLibraryQuery,
 } from "~/modules/library/recipe-library";
-import { getRecipeDetailPath } from "~/modules/recipe-viewer/recipe-detail";
+import { getRecipeBrowseDetailPath } from "~/modules/recipe-viewer/recipe-detail";
 import { RecipeImage } from "~/modules/ui-shell/primitives";
 import { useShellCommand } from "~/modules/ui-shell/AppShell";
 import { requireAuthenticatedUser } from "~/server/auth";
@@ -50,11 +50,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   };
   const recipes = getRecipeLibraryResults(allRecipes, cookbookQuery, libraryPreferences);
 
-  return { cookbook, recipes };
+  return { cookbook, cookbookQuery, recipes };
 }
 
 export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
-  const { cookbook, recipes } = loaderData;
+  const { cookbook, cookbookQuery, recipes } = loaderData;
   const cookbookLibraryHref = getLibraryQueryHref({
     ...parseRecipeLibraryQuery("https://spice.local/"),
     cookbooks: [cookbook.value],
@@ -122,7 +122,7 @@ export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
         <div className="recipe-dense-grid cookbook-recipe-grid">
           {recipes.map((recipe) => (
             <article className="recipe-grid-tile" key={recipe.id}>
-              <Link className="recipe-grid-image-link" to={getRecipeDetailPath(recipe)}>
+              <Link className="recipe-grid-image-link" to={getRecipeBrowseDetailPath(recipe, cookbookQuery)}>
                 <RecipeImage
                   className="recipe-grid-image"
                   src={recipe.imageUrl}
@@ -130,7 +130,7 @@ export default function CookbookDetail({ loaderData }: Route.ComponentProps) {
                 />
               </Link>
               <h3>
-                <Link to={getRecipeDetailPath(recipe)}>{recipe.title}</Link>
+                <Link to={getRecipeBrowseDetailPath(recipe, cookbookQuery)}>{recipe.title}</Link>
               </h3>
             </article>
           ))}
