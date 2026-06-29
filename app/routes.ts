@@ -10,6 +10,7 @@ export default [
   route("cookbooks", "routes/cookbooks.tsx"),
   route("cookbooks/:cookbookSlug", "routes/cookbooks.$cookbookSlug.tsx"),
   route("preferences/cookbooks", "routes/preferences.cookbooks.tsx"),
+  route("preferences/settings", "routes/preferences.settings.ts"),
   route("recipes/new", "routes/recipes.new.tsx"),
   route("recipes/:recipeId", "routes/recipes.$recipeId.tsx"),
   route("recipes/:recipeId/edit", "routes/recipes.$recipeId.edit.tsx"),

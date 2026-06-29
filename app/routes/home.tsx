@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, ChefHat, Tag } from "lucide-react";
+import { ChefHat, Tag } from "lucide-react";
 import { Form, Link, redirect, useFetcher } from "react-router";
 
 import type { Route } from "./+types/home";
@@ -7,7 +7,6 @@ import { getCookSessionHref } from "~/modules/cooking";
 import { formatDisplayTime } from "~/modules/recipe-domain";
 import {
   addRecipeTags,
-  getCookbookVisibilityHref,
   getLibraryQueryHref,
   getRecipeCookbooks,
   getRecipeLibraryFacets,
@@ -249,7 +248,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <h2 id="results-heading">{resultLabel}</h2>
           </div>
           <div className="results-header-actions">
-            {cookbooks.length > 0 ? <CookbookVisibilitySwitch query={query} /> : null}
             <Button
               aria-pressed={showBulkTools}
               onClick={() => setIsBulkMode((value) => !value)}
@@ -418,29 +416,6 @@ type RecipeMetaProps = {
   query: RecipeLibraryQuery;
   recipe: RecipeLibraryItem;
 };
-
-function CookbookVisibilitySwitch({ query }: { query: RecipeLibraryQuery }) {
-  const isShowingCookbooks = !query.hideCookbooks;
-  const label = isShowingCookbooks ? "Hide cookbook recipes" : "Show cookbook recipes";
-
-  return (
-    <Link
-      aria-checked={isShowingCookbooks ? "true" : "false"}
-      aria-label={label}
-      className={
-        isShowingCookbooks
-          ? "cookbook-visibility-switch active"
-          : "cookbook-visibility-switch"
-      }
-      role="switch"
-      title={label}
-      to={getCookbookVisibilityHref(query)}
-    >
-      <BookOpen aria-hidden="true" size={16} strokeWidth={2.4} />
-      <span className="cookbook-visibility-track" aria-hidden="true" />
-    </Link>
-  );
-}
 
 function RecipeSignals({ recipe }: { recipe: RecipeLibraryItem }) {
   return (

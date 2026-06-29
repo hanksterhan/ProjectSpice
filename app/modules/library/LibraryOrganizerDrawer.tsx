@@ -325,7 +325,7 @@ function CookbookList({
                 <Link
                   className="cookbook-tree-filter"
                   title={cookbook.author ? `${cookbook.title} by ${cookbook.author}` : cookbook.title}
-                  to={cookbook.libraryHref}
+                  to={cookbook.readerHref}
                 >
                   <span className="cookbook-tree-label cookbook-title-label">
                     <RecipeImage
@@ -384,16 +384,6 @@ function CookbookList({
               </div>
               {isCookbookOpen ? (
                 <div className="cookbook-tree-children">
-                  <Link
-                    className="facet-option cookbook-reader-option"
-                    to={cookbook.readerHref}
-                  >
-                    <span className="facet-option-label">
-                      <span aria-hidden="true" className="facet-option-indent" />
-                      <BookOpen className="drawer-icon" />
-                      <span>Open cookbook</span>
-                    </span>
-                  </Link>
                   {cookbook.chapters.map((chapter) => (
                     <Link
                       className={chapter.selected ? "facet-option selected" : "facet-option"}

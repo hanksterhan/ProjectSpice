@@ -155,6 +155,7 @@ function canUseSummaryPageQuery(
 ): boolean {
   return (
     isDefaultLibraryBrowse(query) &&
+    options.hideCookbooksByDefault !== true &&
     (options.hiddenCookbooks?.length ?? 0) === 0
   );
 }

@@ -192,6 +192,7 @@ export type RecipeLibrarySlice = RecipeLibraryPage & {
 };
 
 export type RecipeLibraryPreferenceOptions = {
+  hideCookbooksByDefault?: boolean;
   hiddenCookbooks?: readonly string[];
 };
 
@@ -262,8 +263,11 @@ export function getRecipeLibraryResults(
 ): RecipeLibraryItem[] {
   const websiteCounts = getWebsiteCounts(recipes);
   const hiddenCookbooks = new Set(options.hiddenCookbooks ?? []);
+  const isDefaultBrowse = isDefaultLibraryBrowse(query);
+  const shouldHideCookbooksByDefault =
+    options.hideCookbooksByDefault === true && isDefaultBrowse;
   const shouldApplyDefaultCookbookVisibility =
-    hiddenCookbooks.size > 0 && isDefaultLibraryBrowse(query);
+    hiddenCookbooks.size > 0 && isDefaultBrowse;
   const terms = query.q
     .toLowerCase()
     .split(/\s+/)
@@ -276,6 +280,7 @@ export function getRecipeLibraryResults(
     query.sources.length === 0 &&
     query.cookbooks.length === 0 &&
     query.websites.length === 0 &&
+    !shouldHideCookbooksByDefault &&
     !shouldApplyDefaultCookbookVisibility &&
     !query.hideCookbooks &&
     !query.favorite &&
@@ -298,6 +303,7 @@ export function getRecipeLibraryResults(
             (!query.favorite || recipe.favorite === true) &&
             (!query.topRated || (recipe.rating ?? -1) >= 8) &&
             (!query.hideCookbooks || !getCookbookLabel(recipe)) &&
+            (!shouldHideCookbooksByDefault || !getCookbookLabel(recipe)) &&
             (!shouldApplyDefaultCookbookVisibility ||
               !hiddenCookbooks.has(getCookbookLabel(recipe))) &&
             matchesSelectedValues(recipe.tags, query.tags) &&

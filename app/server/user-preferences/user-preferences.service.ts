@@ -1,6 +1,7 @@
 import {
   defaultLibraryPreferences,
   type LibraryPreferences,
+  type ThemePreference,
 } from "./user-preferences.types";
 
 import { UserPreferenceRepository } from "./user-preferences.repo";
@@ -42,13 +43,53 @@ export class UserPreferenceService {
     );
   }
 
+  async setHideCookbooksByDefault(
+    userId: string,
+    hideCookbooksByDefault: boolean,
+    updatedAt: string,
+  ): Promise<LibraryPreferences> {
+    const preferences = await this.getLibraryPreferences(userId);
+
+    return this.repository.setLibraryPreferences(
+      userId,
+      {
+        ...preferences,
+        hideCookbooksByDefault,
+      },
+      updatedAt,
+    );
+  }
+
+  async setThemePreference(
+    userId: string,
+    themeMode: ThemePreference,
+    updatedAt: string,
+  ): Promise<LibraryPreferences> {
+    const preferences = await this.getLibraryPreferences(userId);
+
+    return this.repository.setLibraryPreferences(
+      userId,
+      {
+        ...preferences,
+        themeMode,
+      },
+      updatedAt,
+    );
+  }
+
   async resetLibraryPreferences(
     userId: string,
     updatedAt: string,
   ): Promise<LibraryPreferences> {
+    const preferences = await this.getLibraryPreferences(userId);
+
     return this.repository.setLibraryPreferences(
       userId,
-      defaultLibraryPreferences,
+      {
+        ...preferences,
+        hideCookbooksByDefault: defaultLibraryPreferences.hideCookbooksByDefault,
+        hiddenCookbooks: defaultLibraryPreferences.hiddenCookbooks,
+      },
       updatedAt,
     );
   }

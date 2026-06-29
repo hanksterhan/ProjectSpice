@@ -227,6 +227,36 @@ describe("recipe library query helpers", () => {
     expect(hiddenNode?.visibilityHref).toBe("/preferences/cookbooks?redirectTo=%2F");
   });
 
+  it("hides cookbook recipes from default browsing when the global preference is active", () => {
+    const hiddenCookbook = "Joshua Weissman - Texture Over Taste";
+    const defaultResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/"),
+      { hideCookbooksByDefault: true },
+    );
+    const searchResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery("https://spice.test/?q=cookie"),
+      { hideCookbooksByDefault: true },
+    );
+    const cookbookResults = getRecipeLibraryResults(
+      seedRecipes,
+      parseRecipeLibraryQuery(
+        `https://spice.test/?cookbook=${encodeURIComponent(hiddenCookbook)}`,
+      ),
+      { hideCookbooksByDefault: true },
+    );
+
+    expect(
+      defaultResults.some((recipe) => recipe.source?.name === hiddenCookbook),
+    ).toBe(false);
+    expect(searchResults.some((recipe) => recipe.source?.type === "imported")).toBe(true);
+    expect(cookbookResults.length).toBeGreaterThan(0);
+    expect(
+      cookbookResults.every((recipe) => recipe.source?.name === hiddenCookbook),
+    ).toBe(true);
+  });
+
   it("builds title-first cookbook shelf items with author metadata and reader links", () => {
     const hiddenCookbook = "Joshua Weissman - Texture Over Taste";
     const cookbooks = getRecipeCookbooks(

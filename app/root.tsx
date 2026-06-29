@@ -31,7 +31,11 @@ import {
   redirectToSignIn,
 } from "./server/auth";
 import { getRecipeService } from "./server/recipes/recipe.runtime";
-import { getUserPreferenceService } from "./server/user-preferences";
+import {
+  defaultLibraryPreferences,
+  getUserPreferenceService,
+  type LibraryPreferences,
+} from "./server/user-preferences";
 import type { RuntimeLoadContext } from "./server/runtime-context";
 import "./app.css";
 
@@ -67,6 +71,7 @@ type RootLibraryDrawerData = {
 type RootAppData = {
   authBypassed: boolean;
   isPublicAuthRoute: boolean;
+  libraryPreferences: LibraryPreferences;
   libraryDrawer: RootLibraryDrawerData | null;
 };
 
@@ -95,6 +100,7 @@ export async function loader(args: Route.LoaderArgs) {
       return {
         authBypassed: false,
         isPublicAuthRoute: true,
+        libraryPreferences: defaultLibraryPreferences,
         libraryDrawer: null,
       };
     }
@@ -114,24 +120,26 @@ async function loadRootAppData(
   userId: string,
 ): Promise<RootAppData> {
   const url = new URL(request.url);
+  const libraryPreferences = await getUserPreferenceService(context).getLibraryPreferences(
+    userId,
+  );
 
   if (url.pathname === "/") {
     return {
       authBypassed,
       isPublicAuthRoute: false,
+      libraryPreferences,
       libraryDrawer: null,
     };
   }
 
   const query = parseRecipeLibraryQuery(request.url);
-  const libraryPreferences = await getUserPreferenceService(context).getLibraryPreferences(
-    userId,
-  );
   const recipes = await getRecipeService(context).listSummaries();
 
   return {
     authBypassed,
     isPublicAuthRoute: false,
+    libraryPreferences,
     libraryDrawer: {
       cookbooks: getRecipeCookbooks(recipes, query, libraryPreferences),
       facets: getRecipeLibraryFacets(recipes, query),
@@ -165,7 +173,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { authBypassed, isPublicAuthRoute, libraryDrawer } = loaderData as RootAppData;
+  const {
+    authBypassed,
+    isPublicAuthRoute,
+    libraryDrawer,
+    libraryPreferences,
+  } = loaderData as RootAppData;
 
   if (isPublicAuthRoute) {
     const authPage = (
@@ -194,6 +207,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
             }
           : null
       }
+      initialPreferences={libraryPreferences}
     >
       <Outlet />
     </AppShell>

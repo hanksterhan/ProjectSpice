@@ -17,12 +17,27 @@ import {
   useClerk,
   useUser,
 } from "@clerk/react-router";
-import { NavLink } from "react-router";
+import {
+  BookOpen,
+  LogOut,
+  Monitor,
+  Moon,
+  Settings,
+  Sun,
+  UserRound,
+} from "lucide-react";
+import { NavLink, useFetcher } from "react-router";
+
+import type {
+  LibraryPreferences,
+  ThemePreference,
+} from "~/server/user-preferences/user-preferences.types";
 
 type AppShellProps = {
   authEnabled?: boolean;
   children: ReactNode;
   defaultDrawer?: ShellDrawer | null;
+  initialPreferences?: LibraryPreferences;
 };
 
 export type ShellCommand = {
@@ -62,6 +77,9 @@ type DrawerBounds = {
   min: number;
   max: number;
 };
+type SettingsUpdateResult = {
+  preferences?: LibraryPreferences;
+};
 
 const defaultDrawerWidth = 360;
 
@@ -69,11 +87,20 @@ export function AppShell({
   authEnabled = true,
   children,
   defaultDrawer = null,
+  initialPreferences,
 }: AppShellProps) {
   const [command, setCommand] = useState<ShellCommand | null>(defaultCommand);
   const [drawer, setDrawer] = useState<ShellDrawer | null>(null);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("closed");
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [themePreference, setThemePreference] = useState<ThemePreference>(
+    initialPreferences?.themeMode ?? "system",
+  );
+  const [theme, setTheme] = useState<ThemeMode>(
+    initialPreferences?.themeMode === "dark" ? "dark" : "light",
+  );
+  const [hideCookbooksByDefault, setHideCookbooksByDefault] = useState(
+    initialPreferences?.hideCookbooksByDefault ?? false,
+  );
   const [drawerBounds, setDrawerBounds] = useState<DrawerBounds>({
     min: 288,
     max: 520,
@@ -86,6 +113,13 @@ export function AppShell({
   const shellStyle = {
     "--shell-drawer-width": `${drawerWidth}px`,
   } as CSSProperties;
+  const settingsFetcher = useFetcher<SettingsUpdateResult>();
+  const submitSettingsUpdate = (settings: Record<string, string>) => {
+    settingsFetcher.submit(settings, {
+      action: "/preferences/settings",
+      method: "post",
+    });
+  };
 
   useEffect(() => {
     function updateDrawerBounds() {
@@ -102,17 +136,41 @@ export function AppShell({
   }, []);
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem("projectspice-theme");
+    setThemePreference(initialPreferences?.themeMode ?? "system");
+    setHideCookbooksByDefault(
+      initialPreferences?.hideCookbooksByDefault ?? false,
+    );
+  }, [initialPreferences]);
 
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setTheme(storedTheme);
+  useEffect(() => {
+    if (themePreference === "light" || themePreference === "dark") {
+      setTheme(themePreference);
       return;
     }
 
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const updateSystemTheme = () => {
+      setTheme(mediaQuery.matches ? "dark" : "light");
+    };
+
+    updateSystemTheme();
+    mediaQuery.addEventListener("change", updateSystemTheme);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateSystemTheme);
+    };
+  }, [themePreference]);
+
+  useEffect(() => {
+    const savedPreferences = settingsFetcher.data?.preferences;
+
+    if (!savedPreferences) {
+      return;
     }
-  }, []);
+
+    setThemePreference(savedPreferences.themeMode);
+    setHideCookbooksByDefault(savedPreferences.hideCookbooksByDefault);
+  }, [settingsFetcher.data]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -211,8 +269,22 @@ export function AppShell({
               {authEnabled ? <AuthControls /> : null}
               <SettingsMenu
                 authEnabled={authEnabled}
-                theme={theme}
-                onToggle={() => setTheme((mode) => (mode === "dark" ? "light" : "dark"))}
+                hideCookbooksByDefault={hideCookbooksByDefault}
+                onCookbookDefaultChange={(hideCookbooks) => {
+                  setHideCookbooksByDefault(hideCookbooks);
+                  submitSettingsUpdate({
+                    hideCookbooksByDefault: hideCookbooks ? "1" : "0",
+                    intent: "set-hide-cookbooks-by-default",
+                  });
+                }}
+                onThemePreferenceChange={(nextThemePreference) => {
+                  setThemePreference(nextThemePreference);
+                  submitSettingsUpdate({
+                    intent: "set-theme",
+                    themeMode: nextThemePreference,
+                  });
+                }}
+                themePreference={themePreference}
               />
 
               {activeCommand.actions ? (
@@ -363,19 +435,21 @@ function ShellNav({
 
 function SettingsMenu({
   authEnabled,
-  onToggle,
-  theme,
+  hideCookbooksByDefault,
+  onCookbookDefaultChange,
+  onThemePreferenceChange,
+  themePreference,
 }: {
   authEnabled: boolean;
-  onToggle: () => void;
-  theme: ThemeMode;
+  hideCookbooksByDefault: boolean;
+  onCookbookDefaultChange: (hideCookbooks: boolean) => void;
+  onThemePreferenceChange: (themePreference: ThemePreference) => void;
+  themePreference: ThemePreference;
 }) {
-  const isDark = theme === "dark";
-
   return (
     <details className="shell-settings-menu">
       <summary className="icon-button" title="Settings" aria-label="Settings">
-        <SettingsIcon />
+        <Settings aria-hidden="true" size={18} strokeWidth={2.35} />
         <span className="sr-only">Settings</span>
       </summary>
       <div className="shell-settings-menu-popover">
@@ -385,20 +459,70 @@ function SettingsMenu({
             <div className="shell-settings-menu-separator" />
           </Show>
         ) : null}
-        <button
-          aria-pressed={isDark}
-          className="menu-action theme-menu-action"
-          type="button"
-          onClick={(event) => {
-            onToggle();
-            event.currentTarget.closest("details")?.removeAttribute("open");
-          }}
-        >
-          {isDark ? <MoonIcon /> : <SunIcon />}
-          {isDark ? "Dark mode" : "Light mode"}
-        </button>
+        <fieldset className="settings-fieldset">
+          <legend>Theme</legend>
+          <div className="settings-theme-switch">
+            <ThemePreferenceButton
+              active={themePreference === "system"}
+              icon={<Monitor aria-hidden="true" size={15} strokeWidth={2.4} />}
+              label="System"
+              onClick={() => onThemePreferenceChange("system")}
+            />
+            <ThemePreferenceButton
+              active={themePreference === "light"}
+              icon={<Sun aria-hidden="true" size={15} strokeWidth={2.4} />}
+              label="Light"
+              onClick={() => onThemePreferenceChange("light")}
+            />
+            <ThemePreferenceButton
+              active={themePreference === "dark"}
+              icon={<Moon aria-hidden="true" size={15} strokeWidth={2.4} />}
+              label="Dark"
+              onClick={() => onThemePreferenceChange("dark")}
+            />
+          </div>
+        </fieldset>
+        <div className="shell-settings-menu-separator" />
+        <label className="settings-switch">
+          <input
+            checked={!hideCookbooksByDefault}
+            onChange={(event) =>
+              onCookbookDefaultChange(!event.currentTarget.checked)
+            }
+            type="checkbox"
+          />
+          <span className="settings-switch-visual" aria-hidden="true" />
+          <span className="settings-switch-label">
+            <BookOpen aria-hidden="true" size={15} strokeWidth={2.4} />
+            Show cookbooks
+          </span>
+        </label>
       </div>
     </details>
+  );
+}
+
+function ThemePreferenceButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className="settings-theme-option"
+      onClick={onClick}
+      type="button"
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -425,7 +549,7 @@ function AccountSettingsControls() {
           event.currentTarget.closest("details")?.removeAttribute("open");
         }}
       >
-        <AccountIcon />
+        <UserRound aria-hidden="true" size={15} strokeWidth={2.4} />
         Manage account
       </button>
       <button
@@ -433,31 +557,10 @@ function AccountSettingsControls() {
         type="button"
         onClick={() => void clerk.signOut()}
       >
-        <SignOutIcon />
+        <LogOut aria-hidden="true" size={15} strokeWidth={2.4} />
         Sign out
       </button>
     </div>
-  );
-}
-
-function AccountIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M20 21a8 8 0 0 0-16 0" />
-      <circle cx="12" cy="7" r="4" />
-      <path d="M18.5 8.5v3" />
-      <path d="M20 10h-3" />
-    </svg>
-  );
-}
-
-function SignOutIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M10 17l5-5-5-5" />
-      <path d="M15 12H3" />
-      <path d="M21 3v18" />
-    </svg>
   );
 }
 
@@ -467,39 +570,6 @@ function MenuIcon() {
       <path d="M4 6h16" />
       <path d="M4 12h16" />
       <path d="M4 18h16" />
-    </svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-.4-1.1 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.1-.4 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 .4 1.1 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.37.32.71.6 1 .3.25.68.4 1.1.4h.09a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.1.4c-.28.29-.5.63-.6 1Z" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M20.8 14.6A8.2 8.2 0 0 1 9.4 3.2a7.9 7.9 0 1 0 11.4 11.4Z" />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="m4.93 4.93 1.41 1.41" />
-      <path d="m17.66 17.66 1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="m6.34 17.66-1.41 1.41" />
-      <path d="m19.07 4.93-1.41 1.41" />
     </svg>
   );
 }

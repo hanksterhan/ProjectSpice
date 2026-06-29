@@ -1,6 +1,8 @@
 import {
   defaultLibraryPreferences,
   type LibraryPreferences,
+  type ThemePreference,
+  themePreferenceOptions,
 } from "./user-preferences.types";
 
 export type UserPreferenceRepositoryStatement = {
@@ -70,8 +72,25 @@ function parseLibraryPreferences(value: string | LibraryPreferences): LibraryPre
     typeof value === "string" ? (JSON.parse(value) as Partial<LibraryPreferences>) : value;
 
   return {
+    hideCookbooksByDefault:
+      typeof rawValue.hideCookbooksByDefault === "boolean"
+        ? rawValue.hideCookbooksByDefault
+        : defaultLibraryPreferences.hideCookbooksByDefault,
     hiddenCookbooks: Array.isArray(rawValue.hiddenCookbooks)
-      ? [...new Set(rawValue.hiddenCookbooks.filter((item): item is string => typeof item === "string"))]
+      ? [
+          ...new Set(
+            rawValue.hiddenCookbooks.filter(
+              (item): item is string => typeof item === "string",
+            ),
+          ),
+        ]
       : [],
+    themeMode: isThemePreference(rawValue.themeMode)
+      ? rawValue.themeMode
+      : defaultLibraryPreferences.themeMode,
   };
+}
+
+function isThemePreference(value: unknown): value is ThemePreference {
+  return themePreferenceOptions.includes(value as ThemePreference);
 }

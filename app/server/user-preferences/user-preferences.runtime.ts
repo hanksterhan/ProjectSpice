@@ -83,6 +83,8 @@ class MemoryUserPreferenceRepository implements UserPreferenceServiceRepository 
 
 function clonePreferences(preferences: LibraryPreferences): LibraryPreferences {
   return {
+    hideCookbooksByDefault: preferences.hideCookbooksByDefault,
     hiddenCookbooks: [...preferences.hiddenCookbooks],
+    themeMode: preferences.themeMode,
   };
 }

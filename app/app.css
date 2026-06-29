@@ -330,10 +330,149 @@ p {
   margin: 0.35rem 0;
 }
 
-.theme-menu-action[aria-pressed="true"] {
-  background: var(--selected-surface);
-  color: var(--plum);
+.settings-fieldset {
+  border: 0;
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-fieldset legend {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  padding: 0.25rem 0.65rem 0.35rem;
+  text-transform: uppercase;
+}
+
+.settings-theme-switch {
+  background: color-mix(in srgb, var(--surface-muted) 74%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 0.15rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0.35rem 0.15rem;
+  padding: 0.15rem;
+}
+
+.settings-theme-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--steel);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  font-weight: 760;
+  gap: 0.18rem;
+  justify-content: center;
+  line-height: 1.05;
+  min-height: 2.5rem;
+  min-width: 0;
+  padding: 0.3rem 0.2rem;
+}
+
+.settings-theme-option:hover,
+.settings-theme-option:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.settings-theme-option:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.settings-theme-option[aria-pressed="true"] {
+  background: var(--surface-raised);
+  box-shadow: 0 1px 0 var(--soft-border);
+  color: var(--ink);
   font-weight: 900;
+}
+
+.settings-theme-option svg {
+  flex: 0 0 auto;
+}
+
+.settings-switch {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--steel);
+  cursor: pointer;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 2.35rem;
+  padding: 0 0.65rem;
+  position: relative;
+}
+
+.settings-switch:hover,
+.settings-switch:focus-within {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.settings-switch input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.settings-switch-visual {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 1.05rem;
+  padding: 0.1rem;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+  width: 1.85rem;
+}
+
+.settings-switch-visual::before {
+  background: var(--muted);
+  border-radius: 999px;
+  content: "";
+  display: block;
+  height: 0.73rem;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+  width: 0.73rem;
+}
+
+.settings-switch input:checked + .settings-switch-visual {
+  background: var(--accent-wash);
+  border-color: var(--accent-border);
+}
+
+.settings-switch input:checked + .settings-switch-visual::before {
+  background: var(--accent);
+  transform: translateX(0.77rem);
+}
+
+.settings-switch input:focus-visible + .settings-switch-visual {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.settings-switch-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.settings-switch-label svg {
+  flex: 0 0 auto;
 }
 
 .shell-menu-nav {
@@ -2099,73 +2238,6 @@ p {
   flex-wrap: nowrap;
   gap: 0.55rem;
   justify-content: flex-end;
-}
-
-.cookbook-visibility-switch {
-  align-items: center;
-  background: var(--surface-muted);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--steel);
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 0.32rem;
-  font-size: 0.82rem;
-  font-weight: 850;
-  min-height: 2.5rem;
-  padding: 0.35rem 0.46rem;
-  text-decoration: none;
-}
-
-.cookbook-visibility-switch:hover {
-  border-color: var(--soft-border);
-  color: var(--ink);
-}
-
-.cookbook-visibility-switch.active {
-  background: var(--surface-raised);
-  color: var(--ink);
-}
-
-.cookbook-visibility-switch svg {
-  color: color-mix(in srgb, var(--leaf) 78%, var(--steel));
-  flex: 0 0 auto;
-}
-
-.cookbook-visibility-track {
-  background: var(--surface-raised);
-  border: 1px solid var(--soft-border);
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 2px var(--surface-raised);
-  display: inline-block;
-  height: 1rem;
-  position: relative;
-  width: 1.85rem;
-}
-
-.cookbook-visibility-track::after {
-  background: var(--muted);
-  border-radius: 999px;
-  content: "";
-  height: 0.52rem;
-  left: 0.23rem;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  transition:
-    background 140ms ease,
-    left 140ms ease;
-  width: 0.52rem;
-}
-
-.cookbook-visibility-switch.active .cookbook-visibility-track {
-  background: color-mix(in srgb, var(--leaf) 18%, var(--surface-muted));
-  border-color: color-mix(in srgb, var(--leaf) 38%, var(--soft-border));
-}
-
-.cookbook-visibility-switch.active .cookbook-visibility-track::after {
-  background: var(--leaf);
-  left: calc(100% - 0.75rem);
 }
 
 .recipe-card-grid {
