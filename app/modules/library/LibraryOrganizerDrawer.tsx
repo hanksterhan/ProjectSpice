@@ -10,13 +10,12 @@ import {
   History,
   House,
   LayoutGrid,
-  Search,
   Star,
   Tags,
   Type,
   Wrench,
 } from "lucide-react";
-import { Form, Link, NavLink, useNavigate } from "react-router";
+import { Form, Link, NavLink } from "react-router";
 
 import {
   getDefaultSortDirection,
@@ -40,68 +39,8 @@ export function LibraryOrganizerDrawer({
   facets,
   query,
 }: LibraryOrganizerDrawerProps) {
-  const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState(query.q);
-
-  useEffect(() => {
-    setSearchValue(query.q);
-  }, [query.q]);
-
-  useEffect(() => {
-    if (searchValue === query.q) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      navigate(getLibraryQueryHref({ ...query, page: 1, q: searchValue }), { replace: true });
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [navigate, query, searchValue]);
-
   return (
     <div className="library-drawer-organizer">
-      <Form className="drawer-filter-form" action="/" method="get" role="search">
-        <label className="drawer-search-field">
-          <span className="sr-only">Search</span>
-          <Search className="drawer-search-icon" aria-hidden="true" />
-          <input
-            type="search"
-            name="q"
-            placeholder="Search recipes"
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
-          />
-        </label>
-        <input type="hidden" name="view" value={query.view} />
-        {query.favorite ? <input type="hidden" name="favorite" value="1" /> : null}
-        {query.hideCookbooks ? (
-          <input type="hidden" name="hideCookbooks" value="1" />
-        ) : null}
-        {query.topRated ? <input type="hidden" name="topRated" value="1" /> : null}
-        {query.sort !== "recent" ? (
-          <input type="hidden" name="sort" value={query.sort} />
-        ) : null}
-        {query.direction !== getDefaultSortDirection(query.sort) ? (
-          <input type="hidden" name="dir" value={query.direction} />
-        ) : null}
-        {query.tags.map((tag) => (
-          <input key={`tag:${tag}`} type="hidden" name="tag" value={tag} />
-        ))}
-        {query.chapters.map((chapter) => (
-          <input key={`chapter:${chapter}`} type="hidden" name="chapter" value={chapter} />
-        ))}
-        {query.sources.map((source) => (
-          <input key={`source:${source}`} type="hidden" name="source" value={source} />
-        ))}
-        {query.websites.map((website) => (
-          <input key={`website:${website}`} type="hidden" name="website" value={website} />
-        ))}
-        {query.cookbooks.map((cookbook) => (
-          <input key={`cookbook:${cookbook}`} type="hidden" name="cookbook" value={cookbook} />
-        ))}
-      </Form>
-
       <LibraryModePicker query={query} />
 
       <div className="drawer-facet-list">

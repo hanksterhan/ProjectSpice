@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -54,7 +55,6 @@ export type ShellDrawer = {
 };
 
 const navItems = [
-  { label: "Library", to: "/" },
   { label: "New", to: "/recipes/new" },
 ];
 
@@ -262,10 +262,7 @@ export function AppShell({
             )}
 
             <div className="shell-command-cluster">
-              <ShellNav
-                className="shell-nav"
-                omitLibrary={activeCommand.backHref === "/"}
-              />
+              <ShellNav className="shell-nav" />
               {authEnabled ? <AuthControls /> : null}
               <SettingsMenu
                 authEnabled={authEnabled}
@@ -405,20 +402,10 @@ export function useShellDrawer(drawer: ShellDrawer | null) {
   }, [drawer, setDrawer]);
 }
 
-function ShellNav({
-  className,
-  omitLibrary = false,
-}: {
-  className: string;
-  omitLibrary?: boolean;
-}) {
-  const visibleNavItems = omitLibrary
-    ? navItems.filter((item) => item.to !== "/")
-    : navItems;
-
+function ShellNav({ className }: { className: string }) {
   return (
     <nav className={className} aria-label="Primary navigation">
-      {visibleNavItems.map((item) => (
+      {navItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -446,8 +433,45 @@ function SettingsMenu({
   onThemePreferenceChange: (themePreference: ThemePreference) => void;
   themePreference: ThemePreference;
 }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    function closeOnPointerDown(event: PointerEvent) {
+      const detailsElement = detailsRef.current;
+
+      if (!detailsElement?.open) {
+        return;
+      }
+
+      if (event.target instanceof Node && detailsElement.contains(event.target)) {
+        return;
+      }
+
+      detailsElement.open = false;
+    }
+
+    function closeOnEscape(event: globalThis.KeyboardEvent) {
+      const detailsElement = detailsRef.current;
+
+      if (event.key !== "Escape" || !detailsElement?.open) {
+        return;
+      }
+
+      detailsElement.open = false;
+      detailsElement.querySelector<HTMLElement>("summary")?.focus();
+    }
+
+    document.addEventListener("pointerdown", closeOnPointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnPointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
   return (
-    <details className="shell-settings-menu">
+    <details className="shell-settings-menu" ref={detailsRef}>
       <summary className="icon-button" title="Settings" aria-label="Settings">
         <Settings aria-hidden="true" size={18} strokeWidth={2.35} />
         <span className="sr-only">Settings</span>

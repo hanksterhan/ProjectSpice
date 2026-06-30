@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChefHat, Tag } from "lucide-react";
-import { Form, Link, redirect, useFetcher } from "react-router";
+import { ChefHat, CheckSquare2, Search, Tag } from "lucide-react";
+import { Form, Link, redirect, useFetcher, useNavigate } from "react-router";
 
 import type { Route } from "./+types/home";
 import { getCookSessionHref } from "~/modules/cooking";
@@ -11,6 +11,7 @@ import {
   getRecipeCookbooks,
   getRecipeLibraryFacets,
   getRecipeSourceFilterLink,
+  getRecipeVisibleTagLabels,
   maxRecipeTags,
   parseBulkTagText,
   parseRecipeLibraryQuery,
@@ -136,9 +137,12 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     totalCount: recipes.length,
     visibleCount: recipes.length,
   };
-  const isGridView = query.view === "grid";
   const isListView = query.view === "list";
+  const navigate = useNavigate();
   const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const initialPage = query.page ?? 1;
   const queryStateKey = useMemo(() => getLibraryStateKey(query), [query]);
@@ -150,7 +154,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const [loadedPage, setLoadedPage] = useState(initialPage);
   const [loadedHasMore, setLoadedHasMore] = useState(recipePage.hasMore);
   const [loadedTotalCount, setLoadedTotalCount] = useState(recipePage.totalCount);
-  const showBulkTools = isBulkMode || Boolean(actionData?.errors?.length);
+  const showBulkTools = isBulkMode;
+  const selectedRecipeCount = selectedRecipeIds.size;
   const nextPage = loadedPage + 1;
   const nextPageHref = loadedHasMore
     ? getLibraryRecipesApiHref(query, nextPage)
@@ -186,6 +191,31 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     lastRequestedPageRef.current = initialPage;
     loadedPageRef.current = initialPage;
   }, [initialPage, queryStateKey, recipePage.hasMore, recipePage.totalCount, recipes]);
+
+  useEffect(() => {
+    setSelectedRecipeIds((currentRecipeIds) => {
+      const loadedRecipeIds = new Set(loadedRecipes.map((recipe) => recipe.id));
+      const nextRecipeIds = new Set(
+        [...currentRecipeIds].filter((recipeId) => loadedRecipeIds.has(recipeId)),
+      );
+
+      return nextRecipeIds.size === currentRecipeIds.size ? currentRecipeIds : nextRecipeIds;
+    });
+  }, [loadedRecipes]);
+
+  useEffect(() => {
+    if (showBulkTools) {
+      return;
+    }
+
+    setSelectedRecipeIds(new Set());
+  }, [showBulkTools]);
+
+  useEffect(() => {
+    if (actionData?.errors?.length) {
+      setIsBulkMode(true);
+    }
+  }, [actionData?.errors?.length]);
 
   useEffect(() => {
     const loadedRecipePage = loadMoreFetcher.data;
@@ -240,21 +270,50 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
     return () => observer.disconnect();
   }, [isLoadingMore, loadMoreFetcher, nextPage, nextPageHref, queryStateKey]);
 
+  const closeBulkMode = () => {
+    setIsBulkMode(false);
+    setSelectedRecipeIds(new Set());
+  };
+  const toggleBulkMode = () => {
+    if (showBulkTools) {
+      closeBulkMode();
+      return;
+    }
+
+    setIsBulkMode(true);
+  };
+  const toggleRecipeSelection = (recipeId: string, selected: boolean) => {
+    setSelectedRecipeIds((currentRecipeIds) => {
+      const nextRecipeIds = new Set(currentRecipeIds);
+
+      if (selected) {
+        nextRecipeIds.add(recipeId);
+      } else {
+        nextRecipeIds.delete(recipeId);
+      }
+
+      return nextRecipeIds;
+    });
+  };
+
   return (
     <div className="library-page">
       <section className="library-results" aria-labelledby="results-heading">
         <div className="results-header">
-          <div>
+          <div className="results-header-main">
+            <LibrarySearch query={query} navigate={navigate} />
             <h2 id="results-heading">{resultLabel}</h2>
           </div>
           <div className="results-header-actions">
             <Button
+              className="library-manage-button"
               aria-pressed={showBulkTools}
-              onClick={() => setIsBulkMode((value) => !value)}
+              onClick={toggleBulkMode}
               type="button"
               variant={showBulkTools ? "primary" : "secondary"}
             >
-              {showBulkTools ? "Selecting" : "Select"}
+              <CheckSquare2 aria-hidden="true" size={16} strokeWidth={2.4} />
+              {showBulkTools ? "Done" : "Manage"}
             </Button>
             <Tabs tabs={getViewTabs(query)} />
           </div>
@@ -270,8 +329,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <Form className="library-organizer-form" method="post">
               {showBulkTools ? (
                 <div className="bulk-tag-toolbar">
-                  <div>
-                    <strong>Bulk tags</strong>
+                  <div className="bulk-toolbar-status">
+                    <strong>{selectedRecipeCount} selected</strong>
+                    <span>Choose recipes, then cook or edit tags.</span>
                   </div>
                   <label className="bulk-tag-field">
                     <span className="sr-only">Tags to add or remove</span>
@@ -280,21 +340,34 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                   </label>
                   <div className="editor-actions compact">
                     <Button
-                      onClick={() => startCookingSelected()}
+                      disabled={selectedRecipeCount === 0}
+                      onClick={() => startCookingSelected([...selectedRecipeIds])}
                       type="button"
                       variant="primary"
                     >
                       <ChefHat aria-hidden="true" size={16} strokeWidth={2.4} />
                       Cook Selected
                     </Button>
-                    <Button name="intent" type="submit" value="add-tags" variant="secondary">
+                    <Button
+                      disabled={selectedRecipeCount === 0}
+                      name="intent"
+                      type="submit"
+                      value="add-tags"
+                      variant="secondary"
+                    >
                       Add Tags
                     </Button>
-                    <Button name="intent" type="submit" value="remove-tags" variant="secondary">
+                    <Button
+                      disabled={selectedRecipeCount === 0}
+                      name="intent"
+                      type="submit"
+                      value="remove-tags"
+                      variant="secondary"
+                    >
                       Remove Tags
                     </Button>
-                    <Button onClick={() => setIsBulkMode(false)} type="button" variant="secondary">
-                      Cancel
+                    <Button onClick={closeBulkMode} type="button" variant="secondary">
+                      Done
                     </Button>
                   </div>
                 </div>
@@ -302,17 +375,19 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
               <div
                 className={
-                  isListView
-                    ? "recipe-list large"
-                    : isGridView
-                      ? "recipe-dense-grid"
-                      : "recipe-card-grid"
+                  isListView ? "recipe-list large" : "recipe-dense-grid"
                 }
               >
                 {loadedRecipes.map((recipe) =>
                   isListView ? (
                     <article className="recipe-row large selectable-recipe" key={recipe.id}>
-                      {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
+                      {showBulkTools ? (
+                        <RecipeSelect
+                          checked={selectedRecipeIds.has(recipe.id)}
+                          onChange={(selected) => toggleRecipeSelection(recipe.id, selected)}
+                          recipe={recipe}
+                        />
+                      ) : null}
                       <div className="recipe-row-image-frame">
                         <RecipeImage
                           className="recipe-row-image"
@@ -329,9 +404,15 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                         <RecipeMeta query={query} recipe={recipe} />
                       </div>
                     </article>
-                  ) : isGridView ? (
+                  ) : (
                     <article className="recipe-grid-tile selectable-recipe" key={recipe.id}>
-                      {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
+                      {showBulkTools ? (
+                        <RecipeSelect
+                          checked={selectedRecipeIds.has(recipe.id)}
+                          onChange={(selected) => toggleRecipeSelection(recipe.id, selected)}
+                          recipe={recipe}
+                        />
+                      ) : null}
                       <Link className="recipe-grid-image-link" to={getRecipeBrowseDetailPath(recipe, query)}>
                         <RecipeImage
                           className="recipe-grid-image"
@@ -344,34 +425,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                         <Link to={getRecipeBrowseDetailPath(recipe, query)}>{recipe.title}</Link>
                       </h3>
                       <RecipeSignals recipe={recipe} />
-                    </article>
-                  ) : (
-                    <article className="recipe-card selectable-recipe" key={recipe.id}>
-                      {showBulkTools ? <RecipeSelect recipe={recipe} /> : null}
-                      <Link
-                        className="recipe-card-image-link"
-                        to={getRecipeBrowseDetailPath(recipe, query)}
-                        aria-label={recipe.title}
-                      >
-                        <RecipeImage
-                          className="recipe-card-image"
-                          src={recipe.imageUrl}
-                          title={recipe.title}
-                        />
-                        <RecipeFavoriteMarker recipe={recipe} />
-                      </Link>
-                      <div className="recipe-card-copy">
-                        <div>
-                          <p className="recipe-card-kicker">
-                            {recipe.source?.name ?? recipe.yield?.notes ?? "Recipe"}
-                          </p>
-                          <h3>
-                            <Link to={getRecipeBrowseDetailPath(recipe, query)}>{recipe.title}</Link>
-                          </h3>
-                          <RecipeSignals recipe={recipe} />
-                        </div>
-                        <RecipeMeta query={query} recipe={recipe} />
-                      </div>
                     </article>
                   ),
                 )}
@@ -402,14 +455,61 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   );
 }
 
-function startCookingSelected() {
-  const checkedRecipeIds = Array.from(
-    document.querySelectorAll<HTMLInputElement>(
-      ".library-organizer-form input[name='recipeIds']:checked",
-    ),
-  ).map((input) => input.value);
+function LibrarySearch({
+  navigate,
+  query,
+}: {
+  navigate: ReturnType<typeof useNavigate>;
+  query: RecipeLibraryQuery;
+}) {
+  const [searchValue, setSearchValue] = useState(query.q);
 
-  window.location.assign(getCookSessionHref(checkedRecipeIds));
+  useEffect(() => {
+    setSearchValue(query.q);
+  }, [query.q]);
+
+  useEffect(() => {
+    if (searchValue === query.q) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      navigate(getLibraryQueryHref({ ...query, page: 1, q: searchValue }), { replace: true });
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [navigate, query, searchValue]);
+
+  return (
+    <form
+      className="library-search-form"
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        navigate(getLibraryQueryHref({ ...query, page: 1, q: searchValue }));
+      }}
+    >
+      <label className="library-search-field">
+        <span className="sr-only">Search recipes</span>
+        <Search className="library-search-icon" aria-hidden="true" />
+        <input
+          type="search"
+          name="q"
+          placeholder="Search recipes"
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.currentTarget.value)}
+        />
+      </label>
+    </form>
+  );
+}
+
+function startCookingSelected(recipeIds: string[]) {
+  if (recipeIds.length === 0) {
+    return;
+  }
+
+  window.location.assign(getCookSessionHref(recipeIds));
 }
 
 type RecipeMetaProps = {
@@ -435,6 +535,7 @@ function RecipeFavoriteMarker({ recipe }: { recipe: RecipeLibraryItem }) {
 
 function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   const sourceFilter = getRecipeSourceFilterLink(recipe, query);
+  const visibleTags = getRecipeVisibleTagLabels(recipe);
 
   return (
     <div className="recipe-meta">
@@ -444,7 +545,7 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
           {sourceFilter.label}
         </Link>
       ) : null}
-      {recipe.tags.slice(0, 4).map((tag) => (
+      {visibleTags.slice(0, 4).map((tag) => (
         <Link key={tag} to={getSearchHref(query, tag)} className="tag">
           {tag}
         </Link>
@@ -453,10 +554,24 @@ function RecipeMeta({ query, recipe }: RecipeMetaProps) {
   );
 }
 
-function RecipeSelect({ recipe }: { recipe: RecipeLibraryItem }) {
+function RecipeSelect({
+  checked,
+  onChange,
+  recipe,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  recipe: RecipeLibraryItem;
+}) {
   return (
     <label className="recipe-select-checkbox">
-      <input name="recipeIds" type="checkbox" value={recipe.id} />
+      <input
+        checked={checked}
+        name="recipeIds"
+        onChange={(event) => onChange(event.currentTarget.checked)}
+        type="checkbox"
+        value={recipe.id}
+      />
       <span>Select {recipe.title}</span>
     </label>
   );
@@ -469,12 +584,6 @@ function getViewTabs(query: RecipeLibraryQuery) {
       label: "Grid",
       href: getLibraryQueryHref({ ...query, page: 1, view: "grid" }),
       selected: query.view === "grid",
-    },
-    {
-      id: "cards",
-      label: "Cards",
-      href: getLibraryQueryHref({ ...query, page: 1, view: "cards" }),
-      selected: query.view === "cards",
     },
     {
       id: "list",

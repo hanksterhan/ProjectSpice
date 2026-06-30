@@ -12,6 +12,7 @@ import {
   getRecipeLibraryResults,
   getRecipeLibrarySlice,
   getRecipeSourceFilterLink,
+  getRecipeVisibleTagLabels,
   otherWebsitesFacetValue,
   parseBulkTagText,
   parseRecipeLibraryQuery,
@@ -41,6 +42,9 @@ describe("recipe library query helpers", () => {
     });
 
     expect(parseRecipeLibraryQuery("https://spice.test/?view=grid")).toMatchObject({
+      view: "grid",
+    });
+    expect(parseRecipeLibraryQuery("https://spice.test/?view=cards")).toMatchObject({
       view: "grid",
     });
 
@@ -129,7 +133,7 @@ describe("recipe library query helpers", () => {
       sources: [],
       tags: [],
       topRated: false,
-      view: "cards",
+      view: "grid",
       websites: [],
     });
 
@@ -148,7 +152,7 @@ describe("recipe library query helpers", () => {
       sources: ["Cookbook"],
       tags: ["chilled dessert"],
       topRated: false,
-      view: "cards",
+      view: "grid",
       websites: [],
     });
 
@@ -297,7 +301,7 @@ describe("recipe library query helpers", () => {
       sources: [],
       tags: [],
       topRated: false,
-      view: "cards",
+      view: "grid",
       websites: [],
     });
     const timeResults = getRecipeLibraryResults(seedRecipes, {
@@ -311,7 +315,7 @@ describe("recipe library query helpers", () => {
       sources: [],
       tags: [],
       topRated: false,
-      view: "cards",
+      view: "grid",
       websites: [],
     });
 
@@ -335,7 +339,7 @@ describe("recipe library query helpers", () => {
       sources: [],
       tags: [],
       topRated: false,
-      view: "cards",
+      view: "grid",
       websites: [],
     });
 
@@ -470,12 +474,40 @@ describe("recipe library query helpers", () => {
 
     expect(cookbookRecipe ? getRecipeSourceFilterLink(cookbookRecipe, query) : undefined).toMatchObject({
       href: "/?cookbook=Joshua+Weissman+-+Texture+Over+Taste",
-      label: "Joshua Weissman - Texture Over Taste",
+      label: "Texture Over Taste",
     });
     expect(websiteRecipe ? getRecipeSourceFilterLink(websiteRecipe, query) : undefined).toMatchObject({
       href: "/?website=cooking.nytimes.com",
       label: "cooking.nytimes.com",
     });
+  });
+
+  it("hides cookbook source labels from visible recipe tags", () => {
+    const cookbookRecipe = seedRecipes.find(
+      (recipe) =>
+        recipe.source?.name === "Joshua Weissman - Texture Over Taste",
+    );
+
+    const recipeWithSourceTags = cookbookRecipe
+      ? {
+          ...cookbookRecipe,
+          tags: [
+            ...cookbookRecipe.tags,
+            "Joshua Weissman",
+            "Texture Over Taste",
+            "Joshua Weissman - Texture Over Taste",
+          ],
+        }
+      : undefined;
+
+    expect(recipeWithSourceTags).toBeDefined();
+    expect(recipeWithSourceTags ? getRecipeVisibleTagLabels(recipeWithSourceTags) : []).not.toEqual(
+      expect.arrayContaining([
+        "Joshua Weissman",
+        "Texture Over Taste",
+        "Joshua Weissman - Texture Over Taste",
+      ]),
+    );
   });
 
   it("shortens cookbook active filter labels under the author tree", () => {

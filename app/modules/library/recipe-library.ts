@@ -3,7 +3,7 @@ import { getCookbookChapterOverrides } from "~/modules/library/cookbook-chapter-
 
 export const recipeLibrarySortOptions = ["recent", "title", "time", "rating"] as const;
 export const recipeLibrarySortDirectionOptions = ["asc", "desc"] as const;
-export const recipeLibraryViewOptions = ["cards", "grid", "list"] as const;
+export const recipeLibraryViewOptions = ["grid", "list"] as const;
 export const maxRecipeTags = 12;
 export const websiteFacetMinimumRecipeCount = 3;
 export const otherWebsitesFacetValue = "Other websites";
@@ -688,7 +688,7 @@ export function getRecipeSourceFilterLink(
         page: 1,
         websites: [],
       }),
-      label: cookbook,
+      label: getCookbookTitleLabel(cookbook),
     };
   }
 
@@ -707,6 +707,10 @@ export function getRecipeSourceFilterLink(
   }
 
   return undefined;
+}
+
+export function getRecipeVisibleTagLabels(recipe: RecipeLibraryItem): string[] {
+  return getVisibleTagLabels(recipe);
 }
 
 export function getLibraryQueryHref(query: RecipeLibraryQuery): string {
