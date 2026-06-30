@@ -462,6 +462,11 @@ p {
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
+.screen-wake-lock-toggle.unavailable {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .settings-switch-label {
   align-items: center;
   display: inline-flex;
@@ -473,6 +478,14 @@ p {
 
 .settings-switch-label svg {
   flex: 0 0 auto;
+}
+
+.screen-wake-lock-label {
+  gap: 0.42rem;
+}
+
+.settings-wake-lock-toggle {
+  margin: 0;
 }
 
 .shell-menu-nav {
@@ -2914,12 +2927,16 @@ p {
   position: fixed;
   right: clamp(0.2rem, 0.75vw, 0.45rem);
   top: 5.5rem;
-  transition: top 180ms ease;
+  transition:
+    opacity 140ms ease,
+    visibility 140ms ease;
   z-index: 12;
 }
 
 .app-shell:has(.shell-settings-menu[open]) .recipe-action-rail {
-  top: 19.5rem;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .recipe-action-rail form {

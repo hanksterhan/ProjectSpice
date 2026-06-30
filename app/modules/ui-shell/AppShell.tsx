@@ -27,12 +27,13 @@ import {
   Sun,
   UserRound,
 } from "lucide-react";
-import { NavLink, useFetcher } from "react-router";
+import { NavLink, useFetcher, useLocation } from "react-router";
 
 import type {
   LibraryPreferences,
   ThemePreference,
 } from "~/server/user-preferences/user-preferences.types";
+import { ScreenWakeLockToggle } from "./ScreenWakeLockToggle";
 
 type AppShellProps = {
   authEnabled?: boolean;
@@ -106,10 +107,12 @@ export function AppShell({
     max: 520,
   });
   const [drawerWidth, setDrawerWidth] = useState(defaultDrawerWidth);
+  const location = useLocation();
   const activeDrawer = drawer ?? defaultDrawer;
   const activeCommand = command ?? defaultCommand;
   const isDrawerVisible = drawerMode !== "closed";
   const canRevealDrawer = Boolean(activeDrawer);
+  const isScreenWakeLockPage = isRecipeWakeLockPage(location.pathname);
   const shellStyle = {
     "--shell-drawer-width": `${drawerWidth}px`,
   } as CSSProperties;
@@ -267,6 +270,7 @@ export function AppShell({
               <SettingsMenu
                 authEnabled={authEnabled}
                 hideCookbooksByDefault={hideCookbooksByDefault}
+                isScreenWakeLockPage={isScreenWakeLockPage}
                 onCookbookDefaultChange={(hideCookbooks) => {
                   setHideCookbooksByDefault(hideCookbooks);
                   submitSettingsUpdate({
@@ -423,12 +427,14 @@ function ShellNav({ className }: { className: string }) {
 function SettingsMenu({
   authEnabled,
   hideCookbooksByDefault,
+  isScreenWakeLockPage,
   onCookbookDefaultChange,
   onThemePreferenceChange,
   themePreference,
 }: {
   authEnabled: boolean;
   hideCookbooksByDefault: boolean;
+  isScreenWakeLockPage: boolean;
   onCookbookDefaultChange: (hideCookbooks: boolean) => void;
   onThemePreferenceChange: (themePreference: ThemePreference) => void;
   themePreference: ThemePreference;
@@ -507,6 +513,14 @@ function SettingsMenu({
           </div>
         </fieldset>
         <div className="shell-settings-menu-separator" />
+        <fieldset className="settings-fieldset">
+          <legend>Cooking</legend>
+          <ScreenWakeLockToggle
+            active={isScreenWakeLockPage}
+            className="settings-wake-lock-toggle"
+          />
+        </fieldset>
+        <div className="shell-settings-menu-separator" />
         <label className="settings-switch">
           <input
             checked={!hideCookbooksByDefault}
@@ -524,6 +538,10 @@ function SettingsMenu({
       </div>
     </details>
   );
+}
+
+function isRecipeWakeLockPage(pathname: string): boolean {
+  return pathname === "/cook" || /^\/recipes\/[^/]+$/.test(pathname);
 }
 
 function ThemePreferenceButton({
